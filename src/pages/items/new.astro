@@ -1,0 +1,12 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import { ItemCreateForm } from '../../components/items/ItemCreateForm';
+import { listWarehouses } from '../../lib/data/warehouses';
+
+const warehouses = await listWarehouses();
+const defaultWarehouseId = warehouses.find((warehouse) => warehouse.type === 'central')?.id ?? warehouses[0]?.id ?? null;
+---
+
+<AppLayout title="Artikel anlegen" description="Lege neue Artikel an und buche optional initialen Bestand.">
+  <ItemCreateForm client:load warehouses={warehouses} defaultWarehouseId={defaultWarehouseId} />
+</AppLayout>

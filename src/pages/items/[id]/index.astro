@@ -1,0 +1,118 @@
+---
+import AppLayout from '../../../layouts/AppLayout.astro';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { getInventorySnapshot } from '../../../lib/data/inventory';
+import { getWarehouseById } from '../../../lib/data/warehouses';
+
+const { id } = Astro.params;
+const snapshot = await getInventorySnapshot();
+const item = snapshot.items.find((entry) => entry.itemId === id);
+
+if (!item) {
+  throw new Error('Artikel nicht gefunden.');
+}
+---
+
+<AppLayout title={item.name} description={`SKU: ${item.sku}`}>
+  <div class="flex flex-col gap-6 lg:flex-row">
+    <div class="flex-1 space-y-4">
+      <Card>
+        <CardHeader class="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Artikelinformationen</CardTitle>
+            <p class="text-sm text-muted-foreground">{item.description ?? 'Keine Beschreibung hinterlegt.'}</p>
+          </div>
+          <div class="flex gap-2">
+            <Button variant="outline" asChild>
+              <a href={`/items/${item.itemId}/edit`}>Bearbeiten</a>
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (confirm(`Artikel "${item.name}" wirklich löschen?`)) {
+                  fetch(`/api/items/${item.itemId}`, {
+                    method: 'DELETE',
+                    headers: { 'content-type': 'application/json' }
+                  })
+                    .then(() => {
+                      window.location.href = '/items';
+                    })
+                    .catch(() => {
+                      alert('Löschen fehlgeschlagen.');
+                    });
+                }
+              }}
+            >
+              Löschen
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent class="grid gap-3 text-sm">
+          <div>
+            <p class="text-muted-foreground">Einheit</p>
+            <p class="text-foreground font-medium">{item.unit}</p>
+          </div>
+          <div>
+            <p class="text-muted-foreground">Gesamtbestand</p>
+            <p class="text-foreground font-medium">{item.totalOnHand}</p>
+          </div>
+          <div>
+            <p class="text-muted-foreground">Reserviert</p>
+            <p class="text-foreground font-medium">{item.totalReserved}</p>
+          </div>
+          <div>
+            <p class="text-muted-foreground">Verfügbar</p>
+            <p class="text-foreground font-medium">{item.totalOnHand - item.totalReserved}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Bestände pro Lager</CardTitle>
+        </CardHeader>
+        <CardContent class="space-y-3 text-sm">
+          {item.breakdown.map((entry) => (
+            <div class="flex items-center justify-between rounded-md border border-border px-3 py-2">
+              <span class="text-muted-foreground">{entry.warehouseName}</span>
+              <span class="font-medium text-foreground">{entry.quantityOnHand}</span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+    <div class="lg:w-80 space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Aktionen</CardTitle>
+        </CardHeader>
+        <CardContent class="space-y-2">
+          <Button variant="outline" class="w-full" asChild>
+            <a href="/inventory">Zum Inventar</a>
+          </Button>
+          <Button
+            variant="destructive"
+            class="w-full"
+            onClick={() => {
+              if (confirm(`Artikel "${item.name}" wirklich löschen?`)) {
+                fetch(`/api/items/${item.itemId}`, {
+                  method: 'DELETE',
+                  headers: { 'content-type': 'application/json' }
+                })
+                  .then(() => {
+                    window.location.href = '/items';
+                  })
+                  .catch(() => {
+                    alert('Löschen fehlgeschlagen.');
+                  });
+              }
+            }}
+          >
+            Artikel löschen
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+</AppLayout>

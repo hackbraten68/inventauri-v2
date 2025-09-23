@@ -1,0 +1,11 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import { InventoryManager } from '../../components/inventory/InventoryManager';
+import { getInventorySnapshot } from '../../lib/data/inventory';
+
+const snapshot = await getInventorySnapshot();
+---
+
+<AppLayout title="Gesamt Inventar" description="Aktuelle Bestände pro Lager inkl. Zentrallager & POS">
+  <InventoryManager client:load initialSnapshot={snapshot} />
+</AppLayout>
