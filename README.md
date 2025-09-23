@@ -1,115 +1,126 @@
-# Inventauri v2 – Astro + Supabase + Shadcn UI + Prisma
+# ♉ Inventauri v2 – Astro + Supabase + Shadcn UI + Prisma
 
-Dieses Setup liefert ein startfertiges Astro-Projekt mit Supabase-Anbindung, React-Komponenten im Shadcn-Stil sowie einer Prisma-Datenbankstruktur für Lager, Artikel und Bewegungen.
+Inventauri v2 is a lightweight web-based inventory system for micro-shops, featuring item management, stock tracking and simple sales insights.
 
-## 🔧 Schnellstart
+## 🔧 Quickstart
 
-1. Supabase lokal starten (z.B. [Supabase CLI](https://supabase.com/docs/guides/cli/local-development)) oder auf dein bestehendes Projekt verweisen.
+1. Start Supabase locally (e.g. via the [Supabase CLI](https://supabase.com/docs/guides/cli/local-development)) or point the project at your existing instance.
    ```bash
    supabase start
    ```
-   > Stelle sicher, dass die Postgres-Instanz erreichbar ist und `DATABASE_URL` darauf zeigt (Standard lokal: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`).
+   > Ensure the Postgres instance is reachable and `DATABASE_URL` points to it (local default: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`).
 
-2. Abhängigkeiten installieren:
+2. Install dependencies:
    ```bash
    npm install
    ```
-3. Environment-Datei anlegen:
-   - Kopiere `.env.example` zu `.env.local` und hinterlege deine echten Werte (Supabase Keys + `DATABASE_URL`).
-   - `.env.local` ist in `.gitignore` eingetragen und wird nicht versioniert.
-4. Optional zentrale Lager-Defaults setzen (ebenfalls in `.env.local`):
+
+3. Configure environment variables:
+   - Copy `.env.example` to `.env.local` and insert your real values (Supabase keys + `DATABASE_URL`).
+   - `.env.local` is ignored by git and stays local-only.
+
+4. Optional: configure default warehouse names in `.env.local`:
    ```ini
-   SEED_CENTRAL_NAME="Hauptlager HQ"
+   SEED_CENTRAL_NAME="Main Warehouse HQ"
    SEED_CENTRAL_SLUG="central-hq"
    ```
-5. Datenbank migrieren & Seed ausführen (alle Scripts laden automatisch `.env.local`):
+
+5. Run migrations & seed (all scripts automatically load `.env.local`):
    ```bash
-   npm run db:migrate      # erstellt/aktualisiert Tabellen via Prisma
-   npm run db:seed         # legt das standard Hauptlager an
+   npm run db:migrate      # applies Prisma migrations
+   npm run db:seed         # creates the default central warehouse
    ```
-6. Entwicklungsserver starten:
+
+6. Launch the dev server:
    ```bash
    npm run dev
    ```
 
-Der Astro-Server läuft anschließend unter [http://localhost:4321](http://localhost:4321).
+Astro serves the app on [http://localhost:4321](http://localhost:4321).
 
-## 🗂️ Projektüberblick
+## 🗂️ Project Structure
 
 ```text
 src/
 ├── components/
-│   ├── auth/             # Login/Logout Komponenten mit Supabase
-│   └── ui/               # Shadcn UI-Basiskomponenten (React)
-├── layouts/
-│   └── AppLayout.astro   # App-Shell mit Navigation & Logout
+│   ├── auth/             # Supabase login/logout helpers
+│   ├── dashboard/        # Dashboard widgets & lists
+│   ├── items/            # Item list & create form
+│   ├── pos/              # POS terminal UI
+│   └── ui/               # Shadcn-inspired React primitives
+├── layouts/              # App shell
 ├── lib/
+│   ├── api/              # Fetch helpers for authenticated routes
+│   ├── auth/             # Cookie/session utilities
+│   ├── data/             # Prisma data-access helpers (dashboard, items, POS, warehouses)
+│   ├── services/         # Stock mutation services
 │   ├── supabase-client.ts
-│   ├── supabase-admin.ts
 │   └── utils.ts
-├── pages/                # Landing, Login, Dashboard, Inventory, POS, Items
-└── styles/global.css      # Tailwind & Design Tokens
+├── pages/
+│   ├── api/              # JSON APIs (stock, items, dashboard)
+│   ├── dashboard/
+│   ├── inventory/
+│   ├── items/
+│   ├── pos/
+│   └── ...               # Landing, login, etc.
+└── styles/
+    └── global.css        # Tailwind base & design tokens
 
 prisma/
-├── migrations/           # Versionierte SQL-Migrationen (Postgres/Supabase)
-├── schema.prisma         # Datenmodell (Warehouses, Items, Transaktionen)
-└── seed.ts               # Legt das Standard-Hauptlager an
+├── migrations/           # Versioned SQL migrations
+├── schema.prisma         # Data model (warehouses, items, transactions)
+└── seed.ts               # Seeds default warehouse and demo data
+
+ROADMAP.md                # Backlog / todo list
 ```
 
-## 🗃️ Datenmodell (Prisma + Supabase)
+## 🗃️ Data Model (Prisma + Supabase)
 
-- `Warehouse` (`type = central | pos | virtual`) verwaltet HQ und POS-Lager, `slug` identifiziert jedes Lager eindeutig.
-- `PosLocation` erweitert POS-Lager um optionale Kontaktdaten.
-- `Item` repräsentiert Produkte (SKU, Barcode, Einheit, Metadaten).
-- `ItemStockLevel` hält Bestände je Lager (on hand, reserved, reorder/safety stock).
-- `StockTransaction` protokolliert Einbuchungen, Umbuchungen, Verkäufe und Korrekturen mit Historie.
+- `Warehouse` (`type = central | pos | virtual`) represents HQ and POS locations, identified by `slug`.
+- `PosLocation` stores optional POS contact metadata.
+- `Item` contains product master data (SKU, barcode, unit, metadata).
+- `ItemStockLevel` tracks stock per warehouse (on hand, reserved, reorder/safety thresholds).
+- `StockTransaction` records inbound, transfers, sales, adjustments, donations, returns with history.
 
-Die initiale Migration (`prisma/migrations/*_init_inventory/`) erzeugt Tabellen & Enums. Row Level Security bleibt bewusst deaktiviert; sobald Policies definiert sind, können die auskommentierten `ENABLE ROW LEVEL SECURITY`-Statements reaktiviert werden.
+Row Level Security is currently disabled; once policies are defined you can re-enable it in future migrations (see comments inside the generated SQL).
 
-## 🔐 Supabase Auth & Env Handling
+## 🔐 Supabase Auth & Environment Handling
 
-- `PUBLIC_SUPABASE_URL` & `PUBLIC_SUPABASE_ANON_KEY` in `.env.local` versorgen den Browser-Client (`src/lib/supabase-client.ts`).
-- `SUPABASE_SERVICE_ROLE_KEY` ist optional, nur für serverseitige Tasks gedacht.
-- `DATABASE_URL` in `.env.local` dient Prisma für Migrationen/Seed (`dotenv-cli` lädt die Werte für alle `dev/build/preview/db` Skripte).
-- Login über `/login` nutzt Supabase Email/Passwort (`signInWithPassword`). Logout befindet sich in der Sidebar.
-- Auth-Guards: Middleware prüft das `sb-access-token`-Cookie und leitet nicht eingeloggte Nutzer auf `/login` um. Zusätzlich sichert ein `SessionGuard`-Client-Component alle App-Layouts ab.
-- Geschützte API-Routen (`/api/stock/*`) verlangen ein Supabase Access Token im `Authorization: Bearer <token>` Header.
+- `PUBLIC_SUPABASE_URL` & `PUBLIC_SUPABASE_ANON_KEY` in `.env.local` feed the browser client (`src/lib/supabase-client.ts`).
+- `SUPABASE_SERVICE_ROLE_KEY` is optional (for server tasks only).
+- `DATABASE_URL` is consumed by Prisma (all CLI scripts run through `dotenv-cli`).
+- `/login` uses Supabase email/password (`signInWithPassword`); logout is in the sidebar.
+- Middleware checks the `sb-access-token` cookie and redirects unauthenticated users to `/login`. The client-side `SessionGuard` also keeps cookies & redirects aligned.
+- Protected APIs (e.g. `/api/stock/*`, `/api/items`) require a Supabase access token via `Authorization: Bearer <token>`.
 
-## 🔄 Bestands-API & UI-Interaktion
+## 🔄 Inventory API & UI Interactions
 
-- Stock-Mutationen stehen unter `/api/stock/{inbound|transfer|adjust|sale|writeoff|donation|return}` zur Verfügung und liefern neben der Transaktion auch eine aktualisierte Inventar-Snapshot-Struktur.
-- Der Inventar-Screen nutzt `InventoryManager` (React) um Aktionen wie Umbuchung, Ein-/Ausbuchung, Korrekturen etc. direkt auszuführen und anschließend den neuen Snapshot zu rendern.
-- Warenhistorie pro Artikel wird über `/api/stock/history` geladen.
-- POS-Terminal erzeugt pro Verkauf eine Referenznummer. Rückgaben laufen über die Eingabe/den Scan der Referenz und buchen mit `/api/stock/return` automatisch in den Lagerbestand zurück.
-- Neue Artikel können über `/api/items` angelegt werden. Das Formular unter `/items/new` legt den Stammsatz an, schreibt optionale Metadaten (Preis/Lieferant) und bucht einen Startbestand ins ausgewählte Lager.
+- Stock mutations live under `/api/stock/{inbound|transfer|adjust|sale|writeoff|donation|return}` and return updated inventory snapshots.
+- `InventoryManager` (React) performs transfers, adjustments, inbound/outbound bookings and refreshes stock instantly.
+- Item history is available via `/api/stock/history`.
+- The POS terminal generates sales references; returns accept a reference scan and book items back via `/api/stock/return`.
+- New items are created through `/api/items`. The `/items/new` form creates the master record, stores metadata (price/supplier), and optionally books initial stock into a warehouse.
 
-## 🛠️ Nützliche Skripte
+## 🛠️ Useful Scripts
 
-| Befehl                     | Zweck                                                        |
-| -------------------------- | ------------------------------------------------------------ |
-| `npm run dev`              | Startet Astro Dev-Server                                      |
-| `npm run build`            | Produktions-Build                                             |
-| `npm run db:generate`      | Prisma Client generieren (`dotenv` lädt `.env.local`)         |
-| `npm run db:migrate`       | `prisma migrate dev` (Entwicklung)                            |
-| `npm run db:migrate:deploy`| Migrationen ohne Reset ausrollen (z.B. CI/CD)                 |
-| `npm run db:seed`          | `prisma db seed` (legt Hauptlager an)                        |
+| Command                     | Purpose                                                     |
+| -------------------------- | ----------------------------------------------------------- |
+| `npm run dev`              | Start Astro dev server                                       |
+| `npm run build`            | Production build                                             |
+| `npm run db:generate`      | Generate Prisma client (`dotenv` loads `.env.local`)         |
+| `npm run db:migrate`       | Run `prisma migrate dev`                                     |
+| `npm run db:migrate:deploy`| Apply migrations without reset (e.g. CI/CD)                  |
+| `npm run db:seed`          | Execute `prisma db seed` (creates default warehouse)         |
 
-## ✅ Nächste Schritte
+## ✅ Next Steps
 
-- Supabase RLS-Policies definieren und in neuen Migrationen versionieren.
-- Edge Function für atomare Umbuchungen (Zentrallager ➜ POS) schreiben.
-- Inventar-UI mit Prisma-Abfragen befüllen (z.B. Gesamtsummen + Lagerverteilung).
-- POS-Wizard ergänzen, der neue Lager (`Warehouse` + `PosLocation`) erstellt und Umbuchungen triggert.
+- Define Supabase RLS policies and version them via migrations.
+- Add a Supabase Edge Function for atomic transfers (HQ ➜ POS).
+- Populate inventory UI with tailored Prisma queries (summaries, filters).
+- Build a POS wizard to create new POS warehouses and trigger transfers.
 
 ## 📝 TODO / Roadmap
 
-- Konfigurierbare Bestandswarnungen (zentral & POS) inkl. Eingabefelder, Speicherung und Anzeige im Dashboard.
-- Dashboard ausbauen: echte Umsatzberechnung, Diagramme (Verlauf/Verteilung), Deep-Links zu Detailseiten.
-- Echtzeit-Updates via Supabase Realtime (Dashboard, Inventar, POS) statt Polling.
-- Sidebar-Settings-Footer (Theme, Sprache/i18n, Profil, Logout, Admin-Switch); Admin-Bereich für Organisation, Benutzer & Rollen.
-- Rollen- & Berechtigungssystem mit Supabase Policies und UI-Anpassungen.
-- Artikel bearbeiten (inkl. Warnschwellen) & erweiterte Detailansicht.
-- POS-Rückgaben um Rückerstattungslogik/Belegausgabe erweitern.
-- Report-Export als CSV & formatiertes PDF.
-- Installer/Setup-Skript (CLI oder Docker) inkl. Option für Blank- vs. Sample-Daten und automatischem Demo-User.
-Viel Erfolg beim Ausbau deiner Inventariums-App! 🚀
+See [ROADMAP.md](./ROADMAP.md) for the current backlog.
+
+Happy building with Inventauri! ♉
