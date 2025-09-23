@@ -1,13 +1,23 @@
 ---
 import '../styles/global.css';
 import { SessionGuard } from '../components/auth/SessionGuard';
-import { LogoutButton } from '../components/auth/LogoutButton';
+import { SidebarSettings } from '../components/layout/SidebarSettings';
 
 interface NavItem {
   href: string;
   label: string;
   description: string;
 }
+
+const themePreferenceCookie = Astro.cookies.get('inventauri-theme')?.value;
+const initialThemePreference = ['dark', 'system', 'catppuccin'].includes(themePreferenceCookie ?? '')
+  ? themePreferenceCookie
+  : 'dark';
+const initialThemeClass = initialThemePreference === 'catppuccin'
+  ? 'catppuccin dark'
+  : initialThemePreference === 'dark'
+    ? 'dark'
+    : '';
 
 const {
   title = 'Inventauri',
@@ -23,18 +33,52 @@ const {
 } = Astro.props;
 ---
 
-<html lang="de" class="h-full">
+<html lang="de" class={`h-full ${initialThemeClass}`} data-theme-preference={initialThemePreference} data-theme={initialThemePreference === 'catppuccin' ? 'catppuccin' : 'dark'}>
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <title>{title}</title>
+    <script>
+      {`
+        (function() {
+          try {
+            const storageKey = 'inventauri-theme';
+            const stored = localStorage.getItem(storageKey);
+            const datasetPreference = document.documentElement.dataset.themePreference;
+            const isValidPreference = (value) => ['dark', 'system', 'catppuccin'].includes(value);
+            const preference = isValidPreference(stored)
+              ? stored
+              : isValidPreference(datasetPreference)
+                ? datasetPreference
+                : 'dark';
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = preference === 'system'
+              ? (prefersDark ? 'dark' : 'dark')
+              : preference;
+
+            document.documentElement.classList.remove('catppuccin');
+            if (preference === 'catppuccin') {
+              document.documentElement.classList.add('catppuccin');
+              document.documentElement.classList.add('dark');
+            } else {
+              document.documentElement.classList.remove('catppuccin');
+              document.documentElement.classList.toggle('dark', theme === 'dark');
+            }
+            document.documentElement.dataset.theme = preference === 'catppuccin' ? 'catppuccin' : theme;
+            document.documentElement.dataset.themePreference = preference;
+          } catch (err) {
+            console.warn('Failed to apply stored theme preference.', err);
+          }
+        })();
+      `}
+    </script>
   </head>
   <body class={`min-h-full bg-background text-foreground` + (className ? ` ${className}` : '')}>
     <SessionGuard client:load />
     <div class="flex min-h-screen flex-col md:flex-row">
-      <aside class="flex flex-col border-b border-r border-border bg-card/60 backdrop-blur supports-[backdrop-filter]:bg-card/70 md:w-64 md:min-h-screen">
+      <aside class="flex flex-col border-b border-r border-border bg-card/60 backdrop-blur supports-[backdrop-filter]:bg-card/70 md:sticky md:top-0 md:h-screen md:w-64">
         <div class="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
             <p class="text-sm font-semibold text-muted-foreground">Inventauri</p>
@@ -56,7 +100,7 @@ const {
           ))}
         </nav>
         <div class="border-t border-border px-3 py-4">
-          <LogoutButton client:load />
+          <SidebarSettings client:load />
         </div>
       </aside>
       <main class="flex-1 bg-background">

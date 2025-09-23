@@ -64,6 +64,36 @@
   --ring: 212 88% 60%;
 }
 
+.catppuccin {
+  --background: 231 23% 16%; /* #24273A */
+  --foreground: 219 68% 83%; /* #cad3f5 */
+
+  --card: 232 24% 18%; /* slightly lighter base */
+  --card-foreground: 219 68% 83%;
+
+  --popover: 232 24% 18%;
+  --popover-foreground: 219 68% 83%;
+
+  --primary: 267 83% 79%; /* #c6a0f6 */
+  --primary-foreground: 231 23% 16%;
+
+  --secondary: 219 83% 78%; /* #8aadf4 */
+  --secondary-foreground: 231 23% 16%;
+
+  --muted: 233 17% 24%; /* #363a4f */
+  --muted-foreground: 219 33% 71%; /* #b7c5f0 */
+
+  --accent: 14 74% 83%; /* #f4dbd6 */
+  --accent-foreground: 231 23% 16%;
+
+  --destructive: 349 73% 72%; /* #ed8796 */
+  --destructive-foreground: 231 23% 16%;
+
+  --border: 233 17% 24%;
+  --input: 233 17% 24%;
+  --ring: 267 83% 79%;
+}
+
 body {
   @apply bg-background text-foreground antialiased;
 }
@@ -72,4 +102,3 @@ body {
 .skeleton {
   @apply animate-pulse rounded-md bg-muted/60;
 }
-
