@@ -6,7 +6,7 @@
 - [ ] Echtzeit-Updates via Supabase Realtime für Dashboard, Inventar und POS.
 
 ## Einstellungen & Administration
-- [ ] Sidebar-Footer mit Settings (Theme, Sprache/i18n, Profil, Logout, Admin-Switch).
+- [ ] Sidebar-Footer mit Settings (Theme ✅, Sprache/i18n, Profil, Logout, Admin-Switch).
 - [ ] Admin-Bereich: Organisationsdaten, Benutzer-/Rollenverwaltung, Supabase-Anbindung.
 - [ ] Rollen- & Policy-System (Supabase RLS) plus UI-Zugriffsbeschränkungen.
 
