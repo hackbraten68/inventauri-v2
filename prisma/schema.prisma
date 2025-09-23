@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Role { 
+  OWNER 
+  ADMIN 
+  MEMBER 
+}
+
+// Models
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String? @db.Text
+  access_token       String? @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String? @db.Text
+  session_state      String?
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String       @id @default(cuid())
+  name          String?
+  email         String?      @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  memberships   Membership[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Org {
+  id          String       @id @default(cuid())
+  name        String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  memberships Membership[]
+  items       Item[]
+  stockMoves  StockMove[]
+  sales       Sale[]
+  saleItems   SaleItem[]
+}
+
+model Membership {
+  org    Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId  String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  role   Role   @default(MEMBER)
+
+  @@id([orgId, userId])
+}
+
+model Item {
+  id          String     @id @default(cuid())
+  org         Org        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId       String
+  sku         String?    @unique
+  name        String
+  category    String?
+  unit        String?
+  priceCents  Int        @default(0)
+  active      Boolean    @default(true)
+  moves       StockMove[]
+  saleItems   SaleItem[]
+  createdAt   DateTime   @default(now())
+
+  @@index([orgId])
+}
+
+model StockMove {
+  id        String   @id @default(cuid())
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId     String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId    String
+  qty       Decimal
+  reason    String?
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  @@index([orgId, itemId])
+}
+
+model Sale {
+  id        String     @id @default(cuid())
+  org       Org        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId     String
+  soldAt    DateTime   @default(now())
+  customer  String?
+  createdBy String?
+  items     SaleItem[]
+
+  @@index([orgId, soldAt])
+}
+
+model SaleItem {
+  id             String   @id @default(cuid())
+  sale           Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  saleId         String
+  org            Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId          String
+  item           Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId         String
+  qty            Decimal
+  unitPriceCents Int
+  lineTotalCents Int
+
+  @@index([orgId, itemId])
+}
