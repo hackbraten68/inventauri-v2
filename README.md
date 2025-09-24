@@ -295,13 +295,6 @@ npm run db:seed
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
-
-- [Astro](https://astro.build/) for the amazing web framework
-- [Supabase](https://supabase.com/) for authentication and database
-- [Shadcn UI](https://ui.shadcn.com/) for beautiful components
-- [Prisma](https://www.prisma.io/) for type-safe database access
-
 ---
 
 Made with ❤️ by [Your Name] | [Website](https://your-website.com) | [Twitter](https://twitter.com/your-handle)
