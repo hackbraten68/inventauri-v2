@@ -1,45 +1,128 @@
-# Quickstart (Phase 1)
+# Quickstart (Phase 2)
 
-This guide helps a non-technical operator self-host and validate core flows.
+This guide helps operators and administrators set up and use the multi-tenant inventory system.
 
 ## Prerequisites
 - Docker and Docker Compose installed
-- .env configured (see `.env.example`)
+- `.env` file configured (see `.env.example`)
+- Node.js 18+ for local development
 
-## Start Services
+## Initial Setup
+
+### Start Services
 ```bash
 # From repository root
 docker compose up -d
+
+# Install dependencies
+npm install
+
+# Run database migrations
+npx prisma migrate dev
 ```
 
-## Initialize Admin Account
-1. Open the app in your browser: http://localhost:4321
-2. Register an Owner user with email/password.
-3. Create your Shop (name and slug).
+## First-Time Setup
 
-## Create Catalog
-1. Create a Category (e.g., "Beverages").
-2. Create a Product (e.g., "Cola").
-3. Add Variants with SKUs (e.g., size: 330ml / 500ml) and set unit per variant.
+### 1. Initialize Admin Account
+1. Open the application: http://localhost:4321
+2. Click "Register" and create an Owner account
+3. Complete your shop setup with name and unique slug
 
-## Stock Inbound
-1. Go to Inventory → Inbound.
-2. Add stock for each variant and location.
+### 2. Configure Shop Settings
+1. Navigate to Settings → Shop
+2. Configure:
+   - Business hours
+   - Tax settings
+   - Default units of measure
+   - Currency and locale
 
-## Make a Sale (online only)
-1. Go to POS.
-2. Add items to cart.
-3. Checkout.
+## Core Workflows
 
-Expected: Inventory decreases per variant; transaction recorded; dashboard reflects sale.
+### Managing Products
+1. **Create a Category**
+   - Go to Catalog → Categories
+   - Click "Add Category"
+   - Enter category name and description
 
-## Low-Stock Alerts
-- Set `reorder_level` on variants.
-- View dashboard to see low-stock items.
+2. **Add Products with Variants**
+   - Go to Catalog → Products
+   - Click "Add Product"
+   - Enter product details (name, description, category)
+   - Add variants with unique SKUs, prices, and units
+   - Set reorder levels for inventory management
 
-## Reporting (v1)
-- View sales totals by day/week/month.
+### Inventory Management
+1. **Receive Stock**
+   - Go to Inventory → Receiving
+   - Select a product variant
+   - Enter quantity and location
+   - Add any notes or reference numbers
+
+2. **Adjust Inventory**
+   - Go to Inventory → Adjustments
+   - Select a reason (damage, loss, etc.)
+   - Enter positive or negative quantities
+   - Add notes for auditing
+
+### Point of Sale
+1. **Process a Sale**
+   - Go to POS
+   - Search and add items by SKU or name
+   - Apply discounts if needed
+   - Select payment method
+   - Complete the sale
+
+2. **Handle Returns**
+   - Go to POS → Returns
+   - Look up the original transaction
+   - Select items to return
+   - Process the refund
+
+## Reporting
+
+### Sales Reports
+- View daily, weekly, and monthly sales totals
+- Filter by date range, product, or category
+- Export to CSV/Excel
+
+### Inventory Reports
+- Current stock levels
+- Low stock alerts
+- Inventory valuation
+- Stock movement history
+
+## User Management
+1. **Add Team Members**
+   - Go to Settings → Users
+   - Click "Invite User"
+   - Enter email and assign role (Owner/Manager/Staff)
+   - User will receive an invitation email
+
+2. **Manage Permissions**
+   - Edit user roles as needed
+   - Deactivate/reactivate users
+   - View login history
 
 ## Troubleshooting
-- If offline, checkout is disabled; try again when online.
-- Ensure SKUs are unique per shop.
+
+### Common Issues
+- **Can't log in**
+  - Check email and password
+  - Verify account is active in admin settings
+  - Check email for verification link if required
+
+- **Inventory discrepancies**
+  - Review transaction history
+  - Check for unprocessed adjustments
+  - Verify user permissions
+
+- **Performance issues**
+  - Check server resources
+  - Clear browser cache
+  - Optimize database queries if needed
+
+## Support
+For additional help:
+- Check the [Admin Guide](./admin-guide.md) for detailed instructions
+- Contact support@inventauri.example.com
+- Visit our [documentation site](https://docs.inventauri.example.com)

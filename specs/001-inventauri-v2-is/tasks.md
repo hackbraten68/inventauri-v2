@@ -59,8 +59,8 @@ Strategy: TDD-first. Generate tests and contracts before implementation. Paralle
 33. Performance smoke tests: POS path < 250ms local; dashboard hydrate < 1s with mock summarized data
 
 ## 9. Documentation & Quickstart
-34. Update `quickstart.md` with steps validated during QA
-35. Admin guide [P]: how to manage shops, users, roles; backup/restore pointers
+- [x] 34. Update `quickstart.md` with steps validated during QA
+- [x] 35. Admin guide [P]: how to manage shops, users, roles; backup/restore pointers
 
 ## 10. Readiness Gate
 36. Constitution conformance check: code quality, tests, UX consistency, performance metrics
