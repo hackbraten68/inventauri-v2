@@ -18,3 +18,8 @@
 ## Setup & Infrastruktur
 - [ ] Installer/Setup-Skript (Blank vs. Sample-Daten, Demo-User) über CLI/Docker.
 - [ ] Tests & Monitoring für Services, APIs und kritische Aktionen.
+
+## Flaws gefunden beim Testen
+- [ ] Wenn Retoure mit 2 oder mehr Artikel und nur einer wird zurückgegeben, erscheint der andere Artikel ind er Historie als Retoure, obwohl es da kein Retourenbewegung gab.
+- [ ] Es muss sichergestellt werden, das der Bestand der zurueckgegeben Waren auf die referenznummer abgespeichert wird. Wenn die ich selbe nummer nochmal eingebe, erscheint der gleiche Bestand wie zu beginn. -. Shadow Bestand
+- [ ] 
