@@ -2,6 +2,44 @@ generator client {
   provider = "prisma-client-js"
 }
 
+/// Variant-ready product catalog (backward-compatible scaffold)
+model Product {
+  id        String   @id @default(uuid()) @db.Uuid
+  shopId    String   @db.Uuid
+  name      String
+  description String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shop      Shop     @relation(fields: [shopId], references: [id])
+  variants  ProductVariant[]
+
+  @@index([shopId])
+}
+
+model ProductVariant {
+  id         String   @id @default(uuid()) @db.Uuid
+  productId  String   @db.Uuid
+  shopId     String   @db.Uuid
+  sku        String
+  unit       String   @default("pcs")
+  price      Decimal? @db.Decimal(16, 2)
+  barcode    String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  shop       Shop     @relation(fields: [shopId], references: [id])
+  itemStockLevels ItemStockLevel[]
+  stockTransactions StockTransaction[]
+
+  @@index([productId])
+  @@index([shopId])
+  @@unique([shopId, sku])
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -56,7 +94,7 @@ model PosLocation {
 
 model Item {
   id           String             @id @default(uuid()) @db.Uuid
-  sku          String             @unique
+  sku          String
   barcode      String?            @unique
   name         String
   description  String?
@@ -65,14 +103,25 @@ model Item {
   metadata     Json?
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
+  // Multi-tenant (enforced)
+  shopId       String             @db.Uuid
 
-  stockLevels  ItemStockLevel[]
+  shop         Shop               @relation(fields: [shopId], references: [id])
+
+  stockLevels          ItemStockLevel[]
   transactions StockTransaction[]
+
+  @@index([shopId])
+  @@unique([shopId, sku])
 }
 
 model ItemStockLevel {
   warehouseId      String   @db.Uuid
   itemId           String   @db.Uuid
+  // Multi-tenant (enforced)
+  shopId           String   @db.Uuid
+  // Phase 3: link to ProductVariant (nullable during migration)
+  variantId        String?  @db.Uuid
   quantityOnHand   Decimal  @default(0) @db.Decimal(16, 3)
   quantityReserved Decimal  @default(0) @db.Decimal(16, 3)
   reorderPoint     Decimal? @db.Decimal(16, 3)
@@ -82,10 +131,14 @@ model ItemStockLevel {
 
   warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
   item      Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  shop      Shop      @relation(fields: [shopId], references: [id])
+  variant   ProductVariant? @relation(fields: [variantId], references: [id])
 
   @@id([warehouseId, itemId])
   @@index([itemId])
   @@index([warehouseId])
+  @@index([shopId])
+  @@index([variantId])
 }
 
 model StockTransaction {
@@ -101,14 +154,54 @@ model StockTransaction {
   metadata           Json?
   occurredAt         DateTime         @default(now())
   createdAt          DateTime         @default(now())
+  // Multi-tenant (enforced)
+  shopId             String           @db.Uuid
+  // Phase 3: link to ProductVariant (nullable during migration)
+  variantId          String?          @db.Uuid
 
   item             Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
   sourceWarehouse  Warehouse? @relation("SourceTransactions", fields: [sourceWarehouseId], references: [id])
   targetWarehouse  Warehouse? @relation("TargetTransactions", fields: [targetWarehouseId], references: [id])
+  shop             Shop      @relation(fields: [shopId], references: [id])
+  variant          ProductVariant? @relation(fields: [variantId], references: [id])
 
   @@index([itemId])
   @@index([sourceWarehouseId])
   @@index([targetWarehouseId])
   @@index([transactionType])
   @@index([occurredAt])
+  @@index([shopId])
+  @@index([variantId])
+}
+
+/// Multi-tenant scaffolding (Step 1 partial):
+/// Introduce Shop (tenant) and UserShop mapping without altering existing models yet.
+/// Follow-up will add shopId to tenant-scoped tables and constraints.
+
+model Shop {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users UserShop[]
+  items Item[]
+  itemStockLevels ItemStockLevel[]
+  stockTransactions StockTransaction[]
+  products Product[]
+  productVariants ProductVariant[]
+}
+
+model UserShop {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  shopId    String   @db.Uuid
+  role      String   // owner | manager | staff (mirrors app roles)
+  createdAt DateTime @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, shopId])
+  @@index([shopId])
 }

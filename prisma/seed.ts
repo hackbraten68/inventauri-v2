@@ -4,6 +4,9 @@ const prisma = new PrismaClient();
 
 const DEFAULT_WAREHOUSE_SLUG = process.env.SEED_CENTRAL_SLUG ?? 'central-hq';
 const DEFAULT_WAREHOUSE_NAME = process.env.SEED_CENTRAL_NAME ?? 'Hauptlager HQ';
+const DEFAULT_SHOP_NAME = process.env.SEED_SHOP_NAME ?? 'Demo Shop';
+const DEFAULT_SHOP_SLUG = process.env.SEED_SHOP_SLUG ?? 'demo-shop';
+const SEED_OWNER_USER_ID = process.env.SEED_OWNER_USER_ID; // optional UUID from Supabase auth
 
 const POS_PRESETS = [
   {
@@ -110,6 +113,31 @@ async function seedItems() {
   return items;
 }
 
+async function ensureDefaultShop() {
+  let shop = await prisma.shop.findUnique({ where: { slug: DEFAULT_SHOP_SLUG } });
+  if (!shop) {
+    shop = await prisma.shop.create({
+      data: {
+        name: DEFAULT_SHOP_NAME,
+        slug: DEFAULT_SHOP_SLUG
+      }
+    });
+    console.info(`Shop '${shop.name}' angelegt.`);
+  }
+
+  if (SEED_OWNER_USER_ID) {
+    const existing = await prisma.userShop.findFirst({ where: { userId: SEED_OWNER_USER_ID, shopId: shop.id } });
+    if (!existing) {
+      await prisma.userShop.create({ data: { userId: SEED_OWNER_USER_ID, shopId: shop.id, role: 'owner' } });
+      console.info(`UserShop Mapping für User ${SEED_OWNER_USER_ID} -> Shop '${shop.slug}' angelegt.`);
+    }
+  } else {
+    console.info('SEED_OWNER_USER_ID nicht gesetzt; kein UserShop Mapping erzeugt.');
+  }
+
+  return shop;
+}
+
 async function seedStock(
   centralWarehouseId: string,
   posWarehouses: { id: string }[],
@@ -181,6 +209,9 @@ async function seedStock(
 
 async function main() {
   console.info('Seed gestartet…');
+
+  // Ensure a default Shop exists (optional UserShop mapping if SEED_OWNER_USER_ID provided)
+  await ensureDefaultShop();
 
   const centralWarehouse = await ensureCentralWarehouse();
   if (!centralWarehouse) {

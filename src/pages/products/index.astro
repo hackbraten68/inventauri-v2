@@ -1,0 +1,94 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getAuthHeaders } from '../../lib/auth/client';
+
+// Fetch products on the server side
+const headers = await getAuthHeaders();
+const response = await fetch(`${import.meta.env.PUBLIC_API_URL}/api/products`, { 
+  headers 
+});
+const products = response.ok ? await response.json() : [];
+---
+
+<Layout title="Products">
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-900">Products</h1>
+      <a 
+        href="/products/new" 
+        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+      >
+        Add Product
+      </a>
+    </div>
+
+    {products.length === 0 ? (
+      <div class="text-center py-12">
+        <p class="text-gray-500 mb-4">No products found.</p>
+        <a 
+          href="/products/new" 
+          class="text-blue-600 hover:underline"
+        >
+          Create your first product
+        </a>
+      </div>
+    ) : (
+      <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul class="divide-y divide-gray-200">
+          {products.map((product: any) => (
+            <li key={product.id} class="p-4 hover:bg-gray-50">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h3 class="text-lg font-medium text-gray-900">{product.name}</h3>
+                  {product.description && (
+                    <p class="mt-1 text-sm text-gray-500">{product.description}</p>
+                  )}
+                  
+                  <div class="mt-2">
+                    <h4 class="text-sm font-medium text-gray-700">Variants</h4>
+                    <ul class="mt-1 space-y-2">
+                      {product.variants.map((variant: any) => (
+                        <li 
+                          key={variant.id} 
+                          class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-md"
+                        >
+                          <div>
+                            <span class="font-mono text-sm">{variant.sku}</span>
+                            <span class="ml-2 text-sm text-gray-500">
+                              ({variant.unit})
+                            </span>
+                          </div>
+                          <span class="text-sm font-medium">
+                            {variant.isActive ? (
+                              <span class="text-green-600">Active</span>
+                            ) : (
+                              <span class="text-gray-400">Inactive</span>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                <div class="ml-4 flex-shrink-0">
+                  <a 
+                    href={`/products/${product.id}`}
+                    class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    View Details
+                  </a>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .container {
+    max-width: 1200px;
+  }
+</style>
