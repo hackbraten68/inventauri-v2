@@ -1,0 +1,68 @@
+openapi: 3.0.3
+info:
+  title: Inventauri v2 API (v1)
+  version: 0.1.0
+  description: Basic contracts derived from v1 scope and clarifications.
+servers:
+  - url: http://localhost:4321/api
+paths:
+  /items:
+    get:
+      summary: List products and variants (searchable)
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+  /items:
+    post:
+      summary: Create product (and variants)
+      responses:
+        '201': { description: Created }
+  /items/{id}:
+    get:
+      summary: Get product by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /inventory/adjust:
+    post:
+      summary: Inventory adjustment with reason
+      responses:
+        '200': { description: Adjusted }
+  /inventory/inbound:
+    post:
+      summary: Inbound stock
+      responses:
+        '200': { description: Stock added }
+  /pos/sale:
+    post:
+      summary: Create sale transaction (online only)
+      responses:
+        '201': { description: Sale recorded }
+  /reports/sales:
+    get:
+      summary: Sales totals and trends (daily/weekly/monthly)
+      parameters:
+        - in: query
+          name: range
+          schema: { type: string, enum: [daily, weekly, monthly] }
+      responses:
+        '200': { description: OK }
+components:
+  securitySchemes:
+    session:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - session: []
