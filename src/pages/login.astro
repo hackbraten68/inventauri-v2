@@ -1,0 +1,31 @@
+---
+import '../styles/global.css';
+import { LoginForm } from '../components/auth/LoginForm';
+
+const redirectTo = Astro.url.searchParams.get('redirectTo') ?? '/dashboard';
+---
+
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login • Inventauri</title>
+  </head>
+  <body class="flex min-h-screen items-center justify-center bg-background text-foreground">
+    <div class="w-full max-w-md space-y-8 rounded-2xl border border-border bg-card/80 p-8 shadow-lg">
+      <div class="space-y-2 text-center">
+        <h1 class="text-2xl font-bold">Willkommen zurück</h1>
+        <p class="text-sm text-muted-foreground">
+          Melde dich mit deinen Supabase Zugangsdaten an. Bei Erfolg leiten wir dich automatisch zum Dashboard weiter.
+        </p>
+      </div>
+      <LoginForm client:load redirectTo={redirectTo} />
+      <div class="space-y-3 text-xs text-muted-foreground">
+        <p>
+          Tipp: Ergänze Magic Links oder OAuth Provider, indem du die Logik in
+          <code>src/components/auth/LoginForm.tsx</code> erweiterst.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

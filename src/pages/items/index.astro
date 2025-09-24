@@ -1,0 +1,31 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import { Button } from '../../components/ui/button';
+import { ItemList } from '../../components/items/ItemList';
+import { getInventorySnapshot } from '../../lib/data/inventory';
+
+const snapshot = await getInventorySnapshot();
+---
+
+<AppLayout title="Artikelverwaltung" description="Verwalte Produktdaten, Varianten und Lieferanten">
+  <section class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div>
+      <h2 class="text-lg font-semibold">Produktliste</h2>
+      <p class="text-sm text-muted-foreground">Alle Artikel inklusive Beständen pro Lager.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <Button client:load asChild>
+        <a href="/items/new">Neuen Artikel anlegen</a>
+      </Button>
+    </div>
+  </section>
+
+  <ItemList
+    client:load
+    items={snapshot.items}
+    warehouseTotals={snapshot.warehouseTotals.map((warehouse) => ({
+      warehouseId: warehouse.warehouseId,
+      warehouseName: warehouse.warehouseName
+    }))}
+  />
+</AppLayout>

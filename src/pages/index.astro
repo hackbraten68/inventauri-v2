@@ -1,0 +1,47 @@
+---
+import '../styles/global.css';
+import { Button } from '../components/ui/button';
+---
+
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Inventauri – Micro-Shop Inventory</title>
+  </head>
+  <body class="min-h-screen bg-background text-foreground">
+    <div class="container mx-auto flex min-h-screen flex-col items-center justify-center gap-14 py-24">
+      <div class="max-w-xl text-center">
+        <span class="text-xs uppercase tracking-[0.35em] text-muted-foreground">Inventauri</span>
+        <h1 class="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">Leichtgewichtiges Inventar für Micro-Shops</h1>
+        <p class="mt-4 text-base text-muted-foreground sm:text-lg">
+          Verwalte Artikel, tracke Bestände und verkaufe direkt aus dem Browser. Dieses Setup liefert dir das
+          Grundgerüst mit Supabase Auth und Shadcn UI Komponenten – bereit für deine individuelle Logik.
+        </p>
+      </div>
+      <div class="flex flex-col items-center gap-6 sm:flex-row">
+        <Button client:load size="lg" className="shadow-lg">
+          <a href="/login">Zum Login</a>
+        </Button>
+        <a href="/dashboard" class="text-sm text-muted-foreground underline-offset-4 hover:underline">
+          Dashboard Vorschau ansehen
+        </a>
+      </div>
+      <div class="grid w-full max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="rounded-lg border border-dashed border-border p-4">
+          <p class="text-sm font-semibold">Realtime Lagerstände</p>
+          <p class="mt-2 text-xs text-muted-foreground">Placeholder für KPIs & Alerts</p>
+        </div>
+        <div class="rounded-lg border border-dashed border-border p-4">
+          <p class="text-sm font-semibold">POS Schnellerfassung</p>
+          <p class="mt-2 text-xs text-muted-foreground">Registrierkasse Workflows, Rabattlogik, Zahlarten</p>
+        </div>
+        <div class="rounded-lg border border-dashed border-border p-4">
+          <p class="text-sm font-semibold">Artikelkatalog</p>
+          <p class="mt-2 text-xs text-muted-foreground">Varianten, Lieferanten, Mindestbestände</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

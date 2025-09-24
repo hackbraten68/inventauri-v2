@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WarehouseType {
+  central
+  pos
+  virtual
+}
+
+enum TransactionType {
+  inbound
+  transfer
+  sale
+  adjustment
+  writeoff
+  donation
+  return
+}
+
+model Warehouse {
+  id            String             @id @default(uuid()) @db.Uuid
+  name          String
+  slug          String             @unique
+  type          WarehouseType      @default(pos)
+  address       String?
+  details       Json?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  stockLevels          ItemStockLevel[]
+  outgoingTransactions StockTransaction[] @relation("SourceTransactions")
+  incomingTransactions StockTransaction[] @relation("TargetTransactions")
+  posProfile           PosLocation?
+
+  @@index([type])
+}
+
+model PosLocation {
+  id          String    @id @default(uuid()) @db.Uuid
+  warehouseId String    @unique @db.Uuid
+  contactName String?
+  contactEmail String?
+  contactPhone String?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+}
+
+model Item {
+  id           String             @id @default(uuid()) @db.Uuid
+  sku          String             @unique
+  barcode      String?            @unique
+  name         String
+  description  String?
+  unit         String             @default("pcs")
+  isActive     Boolean            @default(true)
+  metadata     Json?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  stockLevels  ItemStockLevel[]
+  transactions StockTransaction[]
+}
+
+model ItemStockLevel {
+  warehouseId      String   @db.Uuid
+  itemId           String   @db.Uuid
+  quantityOnHand   Decimal  @default(0) @db.Decimal(16, 3)
+  quantityReserved Decimal  @default(0) @db.Decimal(16, 3)
+  reorderPoint     Decimal? @db.Decimal(16, 3)
+  safetyStock      Decimal? @db.Decimal(16, 3)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  item      Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([warehouseId, itemId])
+  @@index([itemId])
+  @@index([warehouseId])
+}
+
+model StockTransaction {
+  id                 String           @id @default(uuid()) @db.Uuid
+  itemId             String           @db.Uuid
+  sourceWarehouseId  String?          @db.Uuid
+  targetWarehouseId  String?          @db.Uuid
+  transactionType    TransactionType
+  quantity           Decimal          @db.Decimal(16, 3)
+  reference          String?
+  notes              String?
+  performedBy        String?
+  metadata           Json?
+  occurredAt         DateTime         @default(now())
+  createdAt          DateTime         @default(now())
+
+  item             Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  sourceWarehouse  Warehouse? @relation("SourceTransactions", fields: [sourceWarehouseId], references: [id])
+  targetWarehouse  Warehouse? @relation("TargetTransactions", fields: [targetWarehouseId], references: [id])
+
+  @@index([itemId])
+  @@index([sourceWarehouseId])
+  @@index([targetWarehouseId])
+  @@index([transactionType])
+  @@index([occurredAt])
+}
