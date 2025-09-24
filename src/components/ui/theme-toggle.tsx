@@ -3,7 +3,7 @@ import { Label } from './label';
 
 const STORAGE_KEY = 'inventauri-theme';
 
-type ThemePreference = 'dark' | 'system' | 'catppuccin';
+type ThemePreference = 'light' | 'dark' | 'catppuccin';
 
 type ThemeToggleProps = {
   className?: string;
@@ -12,9 +12,6 @@ type ThemeToggleProps = {
 function resolveTheme(preference: ThemePreference): 'light' | 'dark' {
   if (typeof window === 'undefined') {
     return 'light';
-  }
-  if (preference === 'system') {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'dark';
   }
   if (preference === 'catppuccin') {
     return 'dark';
@@ -51,11 +48,11 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
     if (typeof window === 'undefined') {
       return;
     }
-    const datasetPreference = document.documentElement.dataset.themePreference as ThemePreference | undefined;
     const stored = window.localStorage.getItem(STORAGE_KEY) as ThemePreference | null;
-    const initial: ThemePreference = stored && (stored === 'dark' || stored === 'system' || stored === 'catppuccin')
+    const datasetPreference = document.documentElement.dataset.themePreference as ThemePreference | undefined;
+    const initial: ThemePreference = stored && (stored === 'light' || stored === 'dark' || stored === 'catppuccin')
       ? stored
-      : datasetPreference && (datasetPreference === 'dark' || datasetPreference === 'system' || datasetPreference === 'catppuccin')
+      : datasetPreference && (datasetPreference === 'light' || datasetPreference === 'dark' || datasetPreference === 'catppuccin')
         ? datasetPreference
         : 'dark';
     setPreference(initial);
@@ -85,8 +82,8 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
         value={preference}
         onChange={(event) => setPreference(event.target.value as ThemePreference)}
       >
+        <option value="light">Light</option>
         <option value="dark">Dark</option>
-        <option value="system">System Default</option>
         <option value="catppuccin">Catppuccin (fun)</option>
       </select>
     </div>

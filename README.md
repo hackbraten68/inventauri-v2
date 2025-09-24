@@ -1,5 +1,7 @@
 # ♉ Inventauri v2 – Astro + Supabase + Shadcn UI + Prisma
 
+![Inventauri v2 - Landing Page](./src/assets/landing_page.png)
+
 Inventauri v2 is a lightweight web-based inventory system for micro-shops, featuring item management, stock tracking and simple sales insights.
 
 ## 🔧 Quickstart
@@ -84,6 +86,8 @@ ROADMAP.md                # Backlog / todo list
 
 Row Level Security is currently disabled; once policies are defined you can re-enable it in future migrations (see comments inside the generated SQL).
 
+![Warehouse / POS](./src/assets/warehouse_mngmt.png)
+
 ## 🔐 Supabase Auth & Environment Handling
 
 - `PUBLIC_SUPABASE_URL` & `PUBLIC_SUPABASE_ANON_KEY` in `.env.local` feed the browser client (`src/lib/supabase-client.ts`).
@@ -124,3 +128,5 @@ Row Level Security is currently disabled; once policies are defined you can re-e
 See [ROADMAP.md](./ROADMAP.md) for the current backlog.
 
 Happy building with Inventauri! ♉
+
+![Dashboard](./src/assets/dashboard.png)
