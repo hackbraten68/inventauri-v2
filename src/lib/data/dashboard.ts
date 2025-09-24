@@ -6,6 +6,7 @@ const SALE_TYPE: TransactionType = 'sale';
 
 export interface DashboardOptions {
   rangeDays?: number;
+  shopId?: string;
 }
 
 export interface DashboardSnapshot {
@@ -56,13 +57,15 @@ function parsePrice(metadata: unknown): number {
 
 export async function getDashboardSnapshot(options: DashboardOptions = {}): Promise<DashboardSnapshot> {
   const rangeDays = options.rangeDays ?? 7;
+  const shopId = options.shopId;
   const since = subDays(new Date(), rangeDays);
 
   const [items, salesGroup, recentTransactions] = await Promise.all([
     prisma.item.findMany({
-      where: { isActive: true },
+      where: { isActive: true, ...(shopId ? { shopId } : {}) },
       include: {
         stockLevels: {
+          where: shopId ? { shopId } : undefined,
           include: {
             warehouse: true
           }
@@ -73,13 +76,15 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
       by: ['itemId'],
       where: {
         transactionType: SALE_TYPE,
+        ...(shopId ? { shopId } : {}),
         occurredAt: { gte: since }
       },
       _sum: { quantity: true }
     }),
     prisma.stockTransaction.findMany({
       where: {
-        occurredAt: { gte: since }
+        occurredAt: { gte: since },
+        ...(shopId ? { shopId } : {})
       },
       orderBy: { occurredAt: 'desc' },
       take: 15,

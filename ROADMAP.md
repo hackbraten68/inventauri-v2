@@ -22,4 +22,6 @@
 ## Flaws gefunden beim Testen
 - [ ] Wenn Retoure mit 2 oder mehr Artikel und nur einer wird zurückgegeben, erscheint der andere Artikel ind er Historie als Retoure, obwohl es da kein Retourenbewegung gab.
 - [ ] Es muss sichergestellt werden, das der Bestand der zurueckgegeben Waren auf die referenznummer abgespeichert wird. Wenn die ich selbe nummer nochmal eingebe, erscheint der gleiche Bestand wie zu beginn. -. Shadow Bestand
-- [ ] 
+- [ ] POS Verwaltung fehlt komplett
+- [ ] Scan Code quagga einbinden
+- [ ] Wenn Artikel angelgt wurde und ich will ueber das Zentrallager auf POS umbuchen, kann ich keine anwaehlen. Tauchen jedoch ueberall sonst (POS Lager) und Artikel anlegen (Startbestand Lager) auf. 

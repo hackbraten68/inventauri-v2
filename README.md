@@ -1,8 +1,18 @@
+
 # ♉ Inventauri v2 – Astro + Supabase + Shadcn UI + Prisma
+
+## Specification
+
+Inventauri v2 is a lightweight web-based inventory system for micro-shops, featuring:
+- Item management
+- Stock tracking
+- Simple sales insights
+
+**End project requirement:** The application must be executable via a Docker Compose file, enabling easy deployment and local development with all dependencies (app and database) managed as containers.
 
 ![Inventauri v2 - Landing Page](./src/assets/landing_page.png)
 
-Inventauri v2 is a lightweight web-based inventory system for micro-shops, featuring item management, stock tracking and simple sales insights.
+...existing code...
 
 ## 🔧 Quickstart
 

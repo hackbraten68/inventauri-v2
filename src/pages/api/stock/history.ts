@@ -4,10 +4,12 @@ import { requireUser } from '../../../lib/auth/server';
 import { json, errorResponse } from '../../../lib/api/response';
 import { getItemHistory } from '../../../lib/services/stock';
 import { TransactionType } from '@prisma/client';
+import { getUserShopIdOrThrow } from '../../../lib/tenant';
 
 export const GET: APIRoute = async ({ request }) => {
   try {
-    await requireUser(request);
+    const user = await requireUser(request);
+    const shopId = await getUserShopIdOrThrow(user.id);
 
     const url = new URL(request.url);
     const itemId = url.searchParams.get('itemId');
@@ -42,7 +44,8 @@ export const GET: APIRoute = async ({ request }) => {
       transactionTypes,
       warehouseId: warehouseId ?? undefined,
       from,
-      to
+      to,
+      shopId
     });
 
     return json({

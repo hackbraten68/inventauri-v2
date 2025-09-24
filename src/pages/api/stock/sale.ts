@@ -7,17 +7,19 @@ import { getInventorySnapshot } from '../../../lib/data/inventory';
 import { getSalesByReference } from '../../../lib/data/pos';
 import { generateSaleReference } from '../../../lib/utils';
 import { prisma } from '../../../lib/prisma';
+import { getUserShopIdOrThrow } from '../../../lib/tenant';
 
 export const GET: APIRoute = async ({ request }) => {
   try {
-    await requireUser(request);
+    const user = await requireUser(request);
+    const shopId = await getUserShopIdOrThrow(user.id);
     const url = new URL(request.url);
     const reference = url.searchParams.get('reference');
     if (!reference) {
       return errorResponse('reference ist erforderlich.');
     }
 
-    const transactions = await getSalesByReference(reference);
+    const transactions = await getSalesByReference(reference, shopId);
     if (transactions.length === 0) {
       return json({ reference, items: [], transactions: [] });
     }
@@ -62,6 +64,7 @@ export const GET: APIRoute = async ({ request }) => {
       transactions: transactions.map((transaction) => ({
         id: transaction.id,
         itemId: transaction.itemId,
+        transactionType: transaction.transactionType,
         quantity: Number(transaction.quantity),
         occurredAt: transaction.occurredAt,
         notes: transaction.notes,
@@ -77,6 +80,7 @@ export const GET: APIRoute = async ({ request }) => {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const user = await requireUser(request);
+    const shopId = await getUserShopIdOrThrow(user.id);
     const payload = await request.json();
     const { itemId, warehouseId, quantity, reference, notes, occurredAt } = payload ?? {};
 
@@ -101,9 +105,10 @@ export const POST: APIRoute = async ({ request }) => {
       reference: saleReference,
       notes,
       occurredAt: occurredAt ? new Date(occurredAt) : undefined,
-      performedBy: user.email ?? user.id
+      performedBy: user.email ?? user.id,
+      shopId
     });
-    const snapshot = await getInventorySnapshot();
+    const snapshot = await getInventorySnapshot(shopId);
 
     return json({ result, snapshot, reference: saleReference });
   } catch (error) {
