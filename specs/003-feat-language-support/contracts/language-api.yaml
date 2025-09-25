@@ -1,0 +1,181 @@
+openapi: 3.0.3
+info:
+  title: Language Support API
+  version: 1.0.0
+  description: API contracts for internationalization features
+
+servers:
+  - url: http://localhost:4321/api
+    description: Development server
+
+paths:
+  /language/detect:
+    get:
+      summary: Detect user's preferred language
+      description: |
+        Detects the user's preferred language based on browser settings and URL parameters.
+        Returns the detected language configuration.
+      operationId: detectLanguage
+      responses:
+        '200':
+          description: Successfully detected language
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LanguageResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /language/switch:
+    post:
+      summary: Switch application language
+      description: |
+        Switches the application language and updates the user session.
+        Expects the new language code in the request body.
+      operationId: switchLanguage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LanguageSwitchRequest'
+      responses:
+        '200':
+          description: Successfully switched language
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LanguageResponse'
+        '400':
+          description: Invalid language code provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /translations/{lang}:
+    get:
+      summary: Load translations for a specific language
+      description: |
+        Loads all translation strings for the specified language.
+        Falls back to English for missing translations.
+      operationId: loadTranslations
+      parameters:
+        - name: lang
+          in: path
+          required: true
+          description: Language code (ISO 639-1)
+          schema:
+            type: string
+            pattern: '^[a-z]{2}$'
+          example: "en"
+      responses:
+        '200':
+          description: Successfully loaded translations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationsResponse'
+        '404':
+          description: Language not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    LanguageResponse:
+      type: object
+      required:
+        - code
+        - name
+        - nativeName
+        - flagIcon
+        - isDefault
+      properties:
+        code:
+          type: string
+          description: ISO 639-1 language code
+          example: "en"
+        name:
+          type: string
+          description: English name of the language
+          example: "English"
+        nativeName:
+          type: string
+          description: Native name of the language
+          example: "English"
+        flagIcon:
+          type: string
+          description: Icon identifier for the language flag
+          example: "flag-en"
+        isDefault:
+          type: boolean
+          description: Whether this is the default/fallback language
+          example: true
+        textDirection:
+          type: string
+          enum: [ltr, rtl]
+          description: Text direction for the language
+          example: "ltr"
+
+    LanguageSwitchRequest:
+      type: object
+      required:
+        - languageCode
+      properties:
+        languageCode:
+          type: string
+          description: ISO 639-1 language code to switch to
+          example: "de"
+        persist:
+          type: boolean
+          description: Whether to persist the language choice (default: true)
+          example: true
+
+    TranslationsResponse:
+      type: object
+      description: Translation key-value pairs for the requested language
+      additionalProperties:
+        type: string
+      example:
+        "nav.home": "Home"
+        "nav.inventory": "Inventory"
+        "auth.login": "Login"
+        "auth.logout": "Logout"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+          example: "INVALID_LANGUAGE"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "The provided language code is not supported"
+        details:
+          type: object
+          description: Additional error details (optional)
+          additionalProperties: true
