@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { LoginForm } from '../components/auth/LoginForm';
+import { ThemeToggle } from '../components/ui/theme-toggle';
 
 const redirectTo = Astro.url.searchParams.get('redirectTo') ?? '/dashboard';
 ---
@@ -20,6 +21,16 @@ const redirectTo = Astro.url.searchParams.get('redirectTo') ?? '/dashboard';
         </p>
       </div>
       <LoginForm client:load redirectTo={redirectTo} />
+
+      {/* Theme toggle positioned at bottom of login card on mobile, top-right on desktop */}
+      <div class="flex justify-end sm:justify-center">
+        <ThemeToggle
+          client:load
+          className="sm:absolute sm:top-4 sm:right-4"
+          disabled={false}
+        />
+      </div>
+
       <div class="space-y-3 text-xs text-muted-foreground">
         <p>
           Tipp: Ergänze Magic Links oder OAuth Provider, indem du die Logik in
