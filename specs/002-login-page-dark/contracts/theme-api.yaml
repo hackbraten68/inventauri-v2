@@ -1,0 +1,122 @@
+openapi: 3.0.3
+info:
+  title: Login Page Theme API
+  description: API for managing login page theme preferences
+  version: 1.0.0
+
+servers:
+  - url: /api
+    description: Local development server
+
+paths:
+  /theme/preference:
+    get:
+      summary: Get current theme preference
+      description: Retrieve the current theme preference for the login page
+      operationId: getThemePreference
+      responses:
+        '200':
+          description: Current theme preference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThemePreference'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Update theme preference
+      description: Set a new theme preference for the login page
+      operationId: updateThemePreference
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThemeUpdateRequest'
+      responses:
+        '200':
+          description: Updated theme preference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThemePreference'
+        '400':
+          description: Invalid theme value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Clear theme preference
+      description: Remove user-set theme preference, reverting to system default
+      operationId: clearThemePreference
+      responses:
+        '200':
+          description: System theme preference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThemePreference'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    ThemePreference:
+      type: object
+      required:
+        - theme
+        - source
+        - timestamp
+      properties:
+        theme:
+          type: string
+          enum: [light, dark]
+          description: The selected theme
+        source:
+          type: string
+          enum: [system, user]
+          description: Source of the theme preference
+        timestamp:
+          type: string
+          format: date-time
+          description: When the preference was last updated
+
+    ThemeUpdateRequest:
+      type: object
+      required:
+        - theme
+      properties:
+        theme:
+          type: string
+          enum: [light, dark]
+          description: The new theme to set
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
