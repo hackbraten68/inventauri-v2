@@ -6,6 +6,18 @@
 [![Astro](https://img.shields.io/badge/Astro-FF5D01?style=flat\&logo=astro\&logoColor=white)](https://astro.build/)
 [![Supabase](https://img.shields.io/badge/Supabase-181818?style=flat\&logo=supabase\&logoColor=white)](https://supabase.com/)
 
+- [🚀 Quick Start](#-quick-start)  
+  - [Prerequisites](#prerequisites)  
+  - [Local Development](#local-development)  
+- [🛠 Tech Stack](#-tech-stack)  
+- [🛠 Development](#-development)  
+  - [Available Scripts](#available-scripts)  
+  - [Database Management](#database-management)  
+- [🚀 Deployment](#-deployment)  
+  - [Production](#production)  
+  - [Development](#development)  
+- [📊 API Endpoints](#-api-endpoints)  
+
 ---
 
 ## 🚀 Features
