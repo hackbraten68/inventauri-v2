@@ -106,8 +106,8 @@ export function LanguageSwitcher({
           window.location.href = newUrl;
         }
       } else if (i18n?.changeLanguage) {
-        // Use i18n provider if available
-        await i18n.changeLanguage(languageCode);
+        // Use i18n provider if available, passing 'language-switcher' as the source
+        await i18n.changeLanguage(languageCode, 'language-switcher');
       } else if (typeof window !== 'undefined') {
         // Fallback to URL-based language switching
         const url = new URL(window.location.href);
@@ -231,9 +231,8 @@ export function LanguageSwitcher({
     return (
       <div className="relative">
         <Button
-          variant="ghost"
-          size="sm"
           {...getButtonProps()}
+          className={cn('h-8 w-8 p-0', getButtonProps().className)}
         >
           <Globe className="h-4 w-4" />
           <span className="sr-only">
@@ -256,9 +255,8 @@ export function LanguageSwitcher({
     return (
       <div className="relative">
         <Button
-          variant="ghost"
-          size="sm"
           {...getButtonProps()}
+          className={cn('w-full justify-start gap-2 px-2 h-8 text-sm font-normal', getButtonProps().className)}
         >
           <Globe className="h-4 w-4 flex-shrink-0" />
           <span className="text-xs truncate">
@@ -290,9 +288,8 @@ export function LanguageSwitcher({
   return (
     <div className="relative">
       <Button
-        variant="ghost"
-        size="sm"
         {...getButtonProps()}
+        className={cn('gap-2 h-8 text-sm font-normal', getButtonProps().className)}
       >
         <Globe className="h-4 w-4 flex-shrink-0" />
         <span className="hidden sm:inline-block truncate">

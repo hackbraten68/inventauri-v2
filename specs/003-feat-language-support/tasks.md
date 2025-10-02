@@ -86,10 +86,10 @@
 - [x] T038 [P] Unit tests for translation loading in tests/unit/i18n/test-translation-loading.ts
 - [x] T039 [P] Unit tests for language switcher components in tests/unit/components/test-language-switcher.ts
 - [x] T040 [P] Unit tests for language modal components in tests/unit/components/test-language-modal.ts
-- [ ] T046 Redesign language switcher modal UI/UX for better user experience
-- [ ] T047 Fix language switching functionality (modal not updating language state)
-- [ ] T048 Add visual feedback for language switching (loading states, animations)
-- [ ] T049 Improve language modal responsiveness and mobile experience
+- [x] T046 Redesign language switcher modal UI/UX for better user experience
+- [x] T047 Fix language switching functionality (modal not updating language state)
+- [x] T048 Add visual feedback for language switching (loading states, animations)
+- [x] T049 Improve language modal responsiveness and mobile experience
 
 ## Dependencies
 - Setup (T001-T004) before everything

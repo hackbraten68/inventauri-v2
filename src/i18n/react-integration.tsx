@@ -10,7 +10,7 @@ import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from '../i18n/config';
 interface I18nContextType {
   t: (key: string, params?: Record<string, any> & { defaultValue?: string }) => string;
   language: string;
-  changeLanguage: (language: string) => Promise<void>;
+  changeLanguage: (language: string, source?: string) => Promise<void>;
   isLoading: boolean;
   supportedLanguages: typeof SUPPORTED_LANGUAGES;
 }
@@ -22,10 +22,60 @@ interface I18nProviderProps {
   initialLanguage?: string;
 }
 
+const isSupportedLanguage = (code?: string | null) =>
+  !!code && SUPPORTED_LANGUAGES.some((lang) => lang.code === code);
+
+const getClientPreferredLanguage = (fallback?: string) => {
+  if (typeof window === 'undefined') {
+    return fallback || DEFAULT_LANGUAGE;
+  }
+
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlLanguage = urlParams.get('lang');
+    if (isSupportedLanguage(urlLanguage)) {
+      window.localStorage.setItem('preferredLanguage', urlLanguage!);
+      return urlLanguage!;
+    }
+
+    const storedLanguage = window.localStorage.getItem('preferredLanguage');
+    if (isSupportedLanguage(storedLanguage)) {
+      return storedLanguage!;
+    }
+
+    if (fallback && isSupportedLanguage(fallback)) {
+      return fallback;
+    }
+
+    const browserLanguage = window.navigator.language.split('-')[0];
+    if (isSupportedLanguage(browserLanguage)) {
+      return browserLanguage;
+    }
+  } catch (error) {
+    console.warn('Unable to resolve preferred language from client context', error);
+  }
+
+  return DEFAULT_LANGUAGE;
+};
+
 export function I18nProvider({ children, initialLanguage }: I18nProviderProps) {
-  const [language, setLanguage] = useState(initialLanguage || DEFAULT_LANGUAGE);
+  const [language, setLanguage] = useState(() =>
+    getClientPreferredLanguage(initialLanguage || DEFAULT_LANGUAGE)
+  );
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem('preferredLanguage', language);
+    } catch (error) {
+      console.warn('Unable to persist preferred language', error);
+    }
+  }, [language]);
 
   // Load translations when language changes
   useEffect(() => {
@@ -85,30 +135,50 @@ export function I18nProvider({ children, initialLanguage }: I18nProviderProps) {
     return translation;
   };
 
-  const changeLanguage = async (newLanguage: string) => {
+  const changeLanguage = async (newLanguage: string, source: string = 'unknown') => {
     if (newLanguage === language) return;
+
+    console.log(`🌐 changeLanguage called from ${source} to ${newLanguage}`);
+    
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem('preferredLanguage', newLanguage);
+      } catch (storageError) {
+        console.warn('Unable to persist preferred language', storageError);
+      }
+    }
 
     setIsLoading(true);
     try {
-      // Update URL parameter
-      const url = new URL(window.location.href);
-      if (newLanguage === DEFAULT_LANGUAGE) {
-        url.searchParams.delete('lang');
-      } else {
-        url.searchParams.set('lang', newLanguage);
+      if (typeof window !== 'undefined') {
+        // Update URL parameter without page reload
+        const url = new URL(window.location.href);
+        if (newLanguage === DEFAULT_LANGUAGE) {
+          url.searchParams.delete('lang');
+        } else {
+          url.searchParams.set('lang', newLanguage);
+        }
+
+        // Update the URL without reloading the page
+        window.history.pushState({}, '', url.toString());
+      }
+
+      // Update the language state
+      setLanguage(newLanguage);
+      
+      // Only dispatch the event if not coming from the provider to prevent loops
+      if (source !== 'i18n-provider') {
+        console.log(`🌐 Dispatching languageChanged event for ${newLanguage}`);
+        const event = new CustomEvent('languageChanged', { 
+          detail: { 
+            language: newLanguage,
+            source: 'i18n-provider' 
+          } 
+        });
+        window.dispatchEvent(event);
       }
       
-      // Update URL without causing a full page reload
-      window.history.replaceState({}, '', url.toString());
-      
-      // Dispatch a custom event to notify other components about the language change
-      window.dispatchEvent(new CustomEvent('languageChanged', { 
-        detail: { language: newLanguage, source: 'i18n-provider' } 
-      }));
-
-      setLanguage(newLanguage);
-
-      // Reload translations
+      // Load the translations for the new language
       const loadedTranslations = await loadTranslations({
         language: newLanguage,
         fallbackLanguage: DEFAULT_LANGUAGE,
