@@ -39,7 +39,7 @@ const {
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <title>{title}</title>
+    <title>{title}</title>  
     <script>
       {`
         (function() {
@@ -84,7 +84,7 @@ const {
           <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">IA</span>
         </div>
         <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {navItems.map((item) => (
+          {navItems.map((item: NavItem) => (
             <a
               href={item.href}
               class="group block rounded-lg px-3 py-2 transition-colors hover:bg-accent hover:text-accent-foreground"
