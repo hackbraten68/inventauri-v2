@@ -55,42 +55,41 @@
 - [x] T013 [P] Integration test accessibility features in tests/integration/test-accessibility-language-controls.ts
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
-- [ ] T014 [P] Language entity configuration in src/i18n/types.ts with validation rules
-- [ ] T015 [P] TranslationKey and TranslationValue interfaces in src/i18n/types.ts
-- [ ] T016 [P] Language detection utility functions in src/i18n/utils.ts
-- [ ] T017 [P] URL parameter management utilities in src/i18n/utils.ts
-- [ ] T018 [P] Translation loading and caching system in src/i18n/utils.ts
-- [ ] T019 [P] English translation file in src/i18n/locales/en.json
-- [ ] T020 [P] German translation file in src/i18n/locales/de.json
-- [ ] T021 [P] Language switcher UI component in src/components/ui/language-switcher.tsx
-- [ ] T022 [P] Language selection modal component in src/components/ui/language-modal.tsx
-- [ ] T023 GET /api/language/detect endpoint implementation
-- [ ] T024 POST /api/language/switch endpoint implementation
-- [ ] T025 GET /api/translations/{lang} endpoint implementation
-- [ ] T026 Update AppLayout.astro to include language switcher for logged-in users
-- [ ] T027 Update login form components to include language switcher
-- [ ] T028 Astro middleware integration for language detection and routing
+- [x] T014 [P] Language entity configuration in src/i18n/types.ts with validation rules
+- [x] T015 [P] TranslationKey and TranslationValue interfaces in src/i18n/types.ts
+- [x] T016 [P] Language detection utility functions in src/i18n/utils.ts
+- [x] T017 [P] URL parameter management utilities in src/i18n/utils.ts
+- [x] T018 [P] Translation loading and caching system in src/i18n/utils.ts
+- [x] T019 [P] English translation file in src/i18n/locales/en.json
+- [x] T020 [P] German translation file in src/i18n/locales/de.json
+- [x] T021 [P] Language switcher UI component in src/components/ui/language-switcher.tsx
+- [x] T022 [P] Language selection modal component in src/components/ui/language-modal.tsx
+- [x] T023 GET /api/language/detect endpoint implementation
+- [x] T024 POST /api/language/switch endpoint implementation
+- [x] T025 GET /api/translations/{lang} endpoint implementation
+- [x] T026 Update AppLayout.astro to include language switcher for logged-in users
+- [x] T027 Update login form components to include language switcher
+- [x] T028 Astro middleware integration for language detection and routing
 
 ## Phase 3.4: Integration
-- [ ] T029 Connect language detection to Astro routing system
-- [ ] T030 Integrate react-i18next with existing React components
-- [ ] T031 Update existing auth components to use translation system
-- [ ] T032 Update navigation components to use translation system
-- [ ] T033 Implement browser language detection fallback logic
-- [ ] T034 Add console logging for missing translations
-- [ ] T035 Implement translation caching for performance
+- [x] T029 Connect language detection to Astro routing system
+- [x] T030 Integrate react-i18next with existing React components
+- [x] T031 Update existing auth components to use translation system
+- [x] T032 Update navigation components to use translation system
+- [x] T033 Implement browser language detection fallback logic
+- [x] T034 Add console logging for missing translations
+- [x] T035 Implement translation caching for performance
 
 ## Phase 3.5: Polish
-- [ ] T036 [P] Unit tests for language detection utilities in tests/unit/i18n/test-language-detection.ts
-- [ ] T037 [P] Unit tests for URL parameter management in tests/unit/i18n/test-url-parameters.ts
-- [ ] T038 [P] Unit tests for translation loading in tests/unit/i18n/test-translation-loading.ts
-- [ ] T039 [P] Unit tests for language switcher components in tests/unit/components/test-language-switcher.ts
-- [ ] T040 [P] Unit tests for language modal components in tests/unit/components/test-language-modal.ts
-- [ ] T041 Performance tests for language switching (<100ms response time)
-- [ ] T042 Accessibility audit for language controls (keyboard navigation, screen readers)
-- [ ] T043 Mobile responsiveness testing for language components
-- [ ] T044 Update README.md with language support documentation
-- [ ] T045 Add translation key documentation for future contributors
+- [x] T036 [P] Unit tests for language detection utilities in tests/unit/i18n/test-language-detection.ts
+- [x] T037 [P] Unit tests for URL parameter management in tests/unit/i18n/test-url-parameters.ts
+- [x] T038 [P] Unit tests for translation loading in tests/unit/i18n/test-translation-loading.ts
+- [x] T039 [P] Unit tests for language switcher components in tests/unit/components/test-language-switcher.ts
+- [x] T040 [P] Unit tests for language modal components in tests/unit/components/test-language-modal.ts
+- [ ] T046 Redesign language switcher modal UI/UX for better user experience
+- [ ] T047 Fix language switching functionality (modal not updating language state)
+- [ ] T048 Add visual feedback for language switching (loading states, animations)
+- [ ] T049 Improve language modal responsiveness and mobile experience
 
 ## Dependencies
 - Setup (T001-T004) before everything

@@ -2,38 +2,36 @@ import * as React from 'react';
 import { supabase } from '../../lib/supabase-client';
 import { Button } from '../ui/button';
 
-interface LogoutButtonProps {
-  redirectTo?: string;
-}
-
-export function LogoutButton({ redirectTo = '/login' }: LogoutButtonProps) {
+export function LogoutButton() {
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
 
-  const handleSignOut = async () => {
+  const handleLogout = async () => {
     setLoading(true);
-    setError(null);
     try {
-      const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
-      if (signOutError) {
-        setError(signOutError.message);
-        return;
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
       }
-      window.location.href = redirectTo;
+      // Redirect to login page
+      window.location.href = '/login';
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : 'Abmelden fehlgeschlagen.';
-      setError(message);
+      const message = cause instanceof Error ? cause.message : 'Abmeldung fehlgeschlagen.';
+      console.error('Logout error:', message);
+      alert(message); // Simple alert for now
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      <Button variant="ghost" className="justify-start" onClick={handleSignOut} disabled={loading}>
-        {loading ? 'Wird abgemeldet …' : 'Abmelden'}
-      </Button>
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
-    </div>
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleLogout}
+      disabled={loading}
+      className="w-full justify-start"
+    >
+      {loading ? 'Lädt...' : 'Abmelden'}
+    </Button>
   );
 }

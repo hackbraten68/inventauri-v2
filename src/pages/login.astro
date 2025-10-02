@@ -1,40 +1,49 @@
 ---
 import '../styles/global.css';
-import { LoginForm } from '../components/auth/LoginForm';
-import { ThemeToggle } from '../components/ui/theme-toggle';
+import { loadTranslations } from '../i18n/utils';
+import { LoginInteractiveSection } from '../components/auth/LoginInteractiveSection';
 
-const redirectTo = Astro.url.searchParams.get('redirectTo') ?? '/dashboard';
+// Get current language from URL or default to 'de'
+const url = new URL(Astro.request.url);
+const currentLanguage = url.searchParams.get('lang') || 'de';
+const redirectTo = url.searchParams.get('redirectTo') || '/dashboard';
+
+// Load translations for the current language
+const translations = await loadTranslations({
+  language: currentLanguage,
+  fallbackLanguage: 'en',
+  cacheTranslations: true,
+  logMissingTranslations: true
+});
+
 ---
 
-<html lang="de">
+<html lang={currentLanguage}>
   <head>
     <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Login • Inventauri</title>
+    <meta name="description" content={translations['login.meta.description'] || 'Login to Inventauri'} />
+    <title>{translations['login.title'] || 'Login'} • Inventauri</title>
   </head>
   <body class="flex min-h-screen items-center justify-center bg-background text-foreground">
     <div class="w-full max-w-md space-y-8 rounded-2xl border border-border bg-card/80 p-8 shadow-lg">
       <div class="space-y-2 text-center">
-        <h1 class="text-2xl font-bold">Willkommen zurück</h1>
+        <h1 class="text-2xl font-bold">{translations['login.welcome'] || 'Willkommen zurück'}</h1>
         <p class="text-sm text-muted-foreground">
-          Melde dich mit deinen Supabase Zugangsdaten an. Bei Erfolg leiten wir dich automatisch zum Dashboard weiter.
+          {translations['login.description'] || 'Melde dich mit deinen Supabase Zugangsdaten an. Bei Erfolg leiten wir dich automatisch zum Dashboard weiter.'}
         </p>
       </div>
-      <LoginForm client:load redirectTo={redirectTo} />
-
-      {/* Theme toggle positioned at bottom of login card on mobile, top-right on desktop */}
-      <div class="flex justify-end sm:justify-center">
-        <ThemeToggle
-          client:load
-          className="sm:absolute sm:top-4 sm:right-4"
-          disabled={false}
-        />
-      </div>
+      <LoginInteractiveSection
+        client:load
+        initialLanguage={currentLanguage}
+        redirectTo={redirectTo}
+      />
 
       <div class="space-y-3 text-xs text-muted-foreground">
         <p>
-          Tipp: Ergänze Magic Links oder OAuth Provider, indem du die Logik in
-          <code>src/components/auth/LoginForm.tsx</code> erweiterst.
+          {translations['login.tip'] || 'Tipp: Ergänze Magic Links oder OAuth Provider, indem du die Logik in'}
+          <code>src/components/auth/LoginForm.tsx</code> {translations['login.tipEnd'] || 'erweiterst.'}
         </p>
       </div>
     </div>

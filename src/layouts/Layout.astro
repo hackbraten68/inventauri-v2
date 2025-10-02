@@ -1,0 +1,17 @@
+---
+import AppLayout from './AppLayout.astro';
+
+const {
+  title = 'Inventauri',
+  description = 'Lightweight inventory for micro-shops',
+  className = ''
+} = Astro.props;
+---
+
+<AppLayout
+  title={title}
+  description={description}
+  className={className}
+>
+  <slot />
+</AppLayout>
