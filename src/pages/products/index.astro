@@ -1,9 +1,13 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { getAuthHeaders } from '../../lib/auth/client';
 
 // Fetch products on the server side
-const headers = await getAuthHeaders();
+const accessToken = Astro.cookies.get('sb-access-token')?.value;
+const headers = accessToken
+  ? {
+      Authorization: `Bearer ${accessToken}`
+    }
+  : {};
 const response = await fetch(`${import.meta.env.PUBLIC_API_URL}/api/products`, { 
   headers 
 });

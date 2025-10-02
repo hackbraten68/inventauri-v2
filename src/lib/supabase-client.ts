@@ -1,10 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+// Use the defined constants from Vite
+const supabaseUrl = __SUPABASE_URL__;
+const supabaseAnonKey = __SUPABASE_ANON_KEY__;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase client initialised without URL or anon key. Set PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY.');
+  console.error('Supabase client initialised without URL or anon key. Check environment variables.');
+  throw new Error('Missing Supabase configuration');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

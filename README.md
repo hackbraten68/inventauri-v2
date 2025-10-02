@@ -9,12 +9,42 @@
 ## 🚀 Features
 
 - **Multi-tenant Architecture** - Support for multiple shops with isolated data
+- **Internationalization (i18n)** - Full language support with English and German
 - **Modern Tech Stack** - Built with Astro, Supabase, and Prisma
 - **Role-Based Access Control** - Owner, Manager, and Staff roles with granular permissions
 - **Real-time Inventory** - Track stock levels across multiple locations
 - **Point of Sale** - Process sales with an intuitive interface
 - **Comprehensive Reporting** - Sales, inventory, and performance insights
 - **API-First Design** - Full-featured REST API for integration
+
+## 🌐 Internationalization (i18n)
+
+Inventauri v2 supports multiple languages with a comprehensive internationalization system:
+
+### Supported Languages
+- **English** (en) - Default language
+- **German** (de) - Full German translation
+
+### Features
+- **Automatic Language Detection** - Detects user's browser language preference
+- **URL-based Language Switching** - Language persists in URL parameters
+- **Responsive Language Controls** - Mobile-optimized language switchers
+- **Accessibility Support** - Full keyboard navigation and screen reader support
+- **Performance Optimized** - Translation caching and lazy loading
+- **Developer Friendly** - Easy to add new languages and translations
+
+### Language Switching
+- **Login Page** - Globe icon button for language selection
+- **Main Application** - Language switcher in sidebar settings
+- **Modal Interface** - Full-screen language selection modal
+- **Mobile Optimized** - Compact interface for mobile devices
+
+### Technical Implementation
+- **astro-i18n** for server-side rendering and routing
+- **react-i18next** for client-side React components
+- **Translation Caching** - Optimized performance with memory caching
+- **Type Safety** - Full TypeScript support with type checking
+- **Testing** - Comprehensive test coverage for all i18n features
 
 ## 🛠 Tech Stack
 

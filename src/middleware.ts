@@ -13,7 +13,19 @@ function requiresAuth(pathname: string) {
 
 function hasAccessCookie(request: Request) {
   const cookieHeader = request.headers.get('cookie');
-  return cookieHeader?.split(';').some((cookie) => cookie.trim().startsWith(`${AUTH_COOKIE_NAME}=`)) ?? false;
+  if (!cookieHeader) {
+    return false;
+  }
+
+  const cookies = cookieHeader.split(';').map(cookie => cookie.trim());
+  const accessTokenCookie = cookies.find(cookie => cookie.startsWith(`${AUTH_COOKIE_NAME}=`));
+
+  if (!accessTokenCookie) {
+    return false;
+  }
+
+  const token = accessTokenCookie.split('=')[1];
+  return token && token.length > 0;
 }
 
 function detectLanguageFromRequest(request: Request): string {
@@ -37,8 +49,45 @@ function detectLanguageFromRequest(request: Request): string {
     }
   }
 
-  // 3. Return default language
+  // 3. Enhanced browser language detection with quality values
+  if (acceptLanguage) {
+    const languagePreferences = acceptLanguage.split(',')
+      .map(lang => {
+        const [code, quality = '1'] = lang.trim().split(';q=');
+        return {
+          code: code.split('-')[0].toLowerCase(), // Normalize to primary language code
+          quality: parseFloat(quality)
+        };
+      })
+      .filter(lang => supportedLanguages.includes(lang.code))
+      .sort((a, b) => b.quality - a.quality); // Sort by quality (highest first)
+
+    if (languagePreferences.length > 0) {
+      return languagePreferences[0].code;
+    }
+  }
+
+  // 4. Check for language preferences in cookies
+  const cookieHeader = request.headers.get('cookie');
+  if (cookieHeader) {
+    const cookies = cookieHeader.split(';');
+    const langCookie = cookies.find(cookie => cookie.trim().startsWith('lang='));
+    if (langCookie) {
+      const cookieLang = langCookie.split('=')[1];
+      if (supportedLanguages.includes(cookieLang)) {
+        return cookieLang;
+      }
+    }
+  }
+
+  // 5. Return default language
   return DEFAULT_LANGUAGE;
+}
+
+function setLanguageCookie(language: string, response: Response): void {
+  // Set language preference in cookie for persistence
+  const cookieValue = `lang=${language}; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+  response.headers.set('Set-Cookie', cookieValue);
 }
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
@@ -73,7 +122,23 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
           redirectUrl.searchParams.set('lang', newLanguage);
         }
 
-        return redirect(redirectUrl.toString());
+        // Create response with language cookie
+        const response = new Response(
+          JSON.stringify({
+            language: newLanguage,
+            redirectTo: redirectUrl.toString()
+          }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Redirect-To': redirectUrl.toString()
+            }
+          }
+        );
+
+        setLanguageCookie(newLanguage, response);
+        return response;
       }
     } catch (error) {
       console.error('Language switching error:', error);
