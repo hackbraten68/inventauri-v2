@@ -10,9 +10,11 @@ export * from './types';
 export * from './utils';
 
 // Export configuration
-export * from './config';
+export { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, I18N_CONFIG } from './config';
+
+// Export React integration
+export * from './react-integration';
 
 // Re-export commonly used i18n functions for convenience
 export { detectLanguage, updateLanguageInUrl, loadTranslations } from './utils';
-export { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE, I18N_CONFIG } from './config';
 export type { Language, LanguageDetectionOptions, TranslationLoadOptions } from './types';

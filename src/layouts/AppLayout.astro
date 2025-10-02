@@ -3,7 +3,7 @@ import '../styles/global.css';
 import { SessionGuard } from '../components/auth/SessionGuard';
 import { SidebarSettingsPanel } from '../components/layout/SidebarSettingsPanel';
 import { loadTranslations } from '../i18n/utils';
-import { DEFAULT_LANGUAGE } from '../i18n/config';
+import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } from '../i18n/config';
 
 interface NavItem {
   href: string;
@@ -23,7 +23,10 @@ const initialThemeClass = initialThemePreference === 'catppuccin'
 
 // Get current language from URL or default to 'de'
 const url = new URL(Astro.request.url);
-const currentLanguage = url.searchParams.get('lang') || 'de';
+const langParam = url.searchParams.get('lang');
+const currentLanguage = SUPPORTED_LANGUAGES.some((lang: { code: string }) => lang.code === langParam) && langParam
+  ? langParam as string
+  : 'de';
 
 // Navigation items with translation keys
 const navItems = [
@@ -51,7 +54,7 @@ const {
 } = Astro.props;
 ---
 
-<html lang={currentLanguage} class={`h-full ${initialThemeClass}`} data-theme-preference={initialThemePreference} data-theme={initialThemePreference === 'catppuccin' ? 'catppuccin' : initialThemePreference}>
+<html lang={currentLanguage} class={`h-full ${initialThemeClass}`} data-theme-preference={initialThemePreference} data-theme={initialThemePreference === 'catppuccin' ? 'catppuccin' : initialThemePreference} data-current-lang={currentLanguage}>
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
