@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getThemeService } from '../../lib/theme-service';
 import type { Theme } from '../../lib/theme';
 
@@ -17,13 +17,21 @@ export function ThemeToggle({
   disabled = false,
   onToggle
 }: ThemeToggleProps) {
-  const [mounted, setMounted] = useState(false);
+  const themeService = useMemo(() => getThemeService(), []);
+  const [currentTheme, setCurrentTheme] = useState<Theme>('light');
+  const [isHydrated, setIsHydrated] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const themeService = getThemeService();
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    setIsHydrated(true);
+    setCurrentTheme(themeService.getCurrentTheme());
+
+    const unsubscribe = themeService.subscribe(preference => {
+      setCurrentTheme(preference.theme);
+    });
+
+    return unsubscribe;
+  }, [themeService]);
 
   const handleToggle = () => {
     if (disabled) {
@@ -31,14 +39,16 @@ export function ThemeToggle({
       return;
     }
 
-    const newTheme = themeService.getCurrentTheme() === 'light' ? 'dark' : 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    setCurrentTheme(newTheme);
     themeService.setTheme(newTheme);
     onToggle?.(newTheme);
   };
 
   const handleConfirmToggle = () => {
     setShowConfirmation(false);
-    const newTheme = themeService.getCurrentTheme() === 'light' ? 'dark' : 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    setCurrentTheme(newTheme);
     themeService.setTheme(newTheme);
     onToggle?.(newTheme);
   };
@@ -46,8 +56,6 @@ export function ThemeToggle({
   const handleCancelToggle = () => {
     setShowConfirmation(false);
   };
-
-  const currentTheme = themeService.getCurrentTheme();
 
   if (variant === 'select') {
     return (
@@ -62,6 +70,7 @@ export function ThemeToggle({
           value={currentTheme}
           onChange={(event) => {
             const newTheme = event.target.value as Theme;
+            setCurrentTheme(newTheme);
             themeService.setTheme(newTheme);
             onToggle?.(newTheme);
           }}
@@ -86,7 +95,7 @@ export function ThemeToggle({
           disabled:pointer-events-none disabled:opacity-50
           h-10 w-10 p-0
           ${currentTheme === 'dark'
-            ? 'bg-yellow-500 text-yellow-900 hover:bg-yellow-600'
+            ? 'bg-white text-yellow-900 hover:bg-primary/90'
             : 'bg-gray-900 text-gray-100 hover:bg-gray-800'
           }
           ${className}
@@ -94,7 +103,7 @@ export function ThemeToggle({
         aria-label={`Switch to ${currentTheme === 'dark' ? 'light' : 'dark'} mode`}
         title={`Switch to ${currentTheme === 'dark' ? 'light' : 'dark'} mode`}
       >
-        {mounted ? (
+        {isHydrated ? (
           currentTheme === 'dark' ? (
             // Sun icon for dark mode (click to go to light)
             <svg
