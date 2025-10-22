@@ -10,12 +10,15 @@ function toNumber(value: DecimalLike) {
   return Number(value);
 }
 
+export type SalesMetric = 'revenue' | 'units';
+
 export interface SalesDeltaResult {
   currentTotal: number;
   priorTotal: number;
   absolute: number;
   percentage: number | null;
   direction: 'up' | 'down' | 'flat' | 'na';
+  metric: SalesMetric;
 }
 
 export interface SalesVelocityResult {
@@ -27,6 +30,13 @@ export interface InboundCoverageResult {
   totalInboundUnits: number;
   nextArrivalDate: Date | null;
   references: string[];
+}
+
+export interface DaysOfCoverResult {
+  daysOfCover: number | null;
+  status: 'ok' | 'risk' | 'insufficient-data';
+  averageDaily: number | null;
+  observedDays: number;
 }
 
 function resolveDirection(absolute: number, percentage: number | null): SalesDeltaResult['direction'] {
@@ -44,7 +54,7 @@ function safePercentage(current: number, prior: number) {
 export async function computeSalesDelta(params: {
   shopId?: string;
   rangeDays: number;
-  metric: 'revenue' | 'units';
+  metric: SalesMetric;
 }): Promise<SalesDeltaResult> {
   const { shopId, rangeDays, metric } = params;
   const now = new Date();
@@ -87,7 +97,8 @@ export async function computeSalesDelta(params: {
     priorTotal,
     absolute,
     percentage,
-    direction: resolveDirection(absolute, percentage)
+    direction: resolveDirection(absolute, percentage),
+    metric
   };
 }
 
@@ -121,15 +132,20 @@ export async function computeSalesVelocity(params: {
     _min: { occurredAt: true }
   });
 
-  const totalSold = toNumber(aggregate._sum.quantity);
-  if (totalSold <= 0 || !aggregate._min.occurredAt) {
+  if (!aggregate._min.occurredAt) {
     return { averageDaily: null, observedDays: 0 };
   }
 
+  const totalSold = toNumber(aggregate._sum.quantity);
   const observedDays = Math.max(
     1,
     Math.min(rangeDays, Math.ceil((Date.now() - aggregate._min.occurredAt.getTime()) / (1000 * 60 * 60 * 24)))
   );
+
+  if (totalSold <= 0 || observedDays < 3) {
+    return { averageDaily: null, observedDays };
+  }
+
   const averageDaily = totalSold / observedDays;
 
   return {
@@ -183,5 +199,46 @@ export async function computeInboundCoverage(params: {
     totalInboundUnits,
     nextArrivalDate,
     references
+  };
+}
+
+export async function calculateDaysOfCover(params: {
+  shopId?: string;
+  itemId: string;
+  warehouseId: string;
+  onHandQuantity: number;
+  rangeDays: number;
+  riskDaysThreshold?: number;
+}): Promise<DaysOfCoverResult> {
+  const { shopId, itemId, warehouseId, onHandQuantity, rangeDays, riskDaysThreshold = 3 } = params;
+  const velocity = await computeSalesVelocity({ shopId, itemId, warehouseId, rangeDays });
+
+  if (!velocity.averageDaily || velocity.averageDaily <= 0) {
+    return {
+      daysOfCover: null,
+      status: 'insufficient-data',
+      averageDaily: null,
+      observedDays: velocity.observedDays
+    };
+  }
+
+  const rawCover = onHandQuantity / velocity.averageDaily;
+  if (!Number.isFinite(rawCover)) {
+    return {
+      daysOfCover: null,
+      status: 'insufficient-data',
+      averageDaily: velocity.averageDaily,
+      observedDays: velocity.observedDays
+    };
+  }
+
+  const roundedCover = Number(rawCover.toFixed(1));
+  const status = roundedCover <= riskDaysThreshold ? 'risk' : 'ok';
+
+  return {
+    daysOfCover: roundedCover,
+    status,
+    averageDaily: Number(velocity.averageDaily.toFixed(2)),
+    observedDays: velocity.observedDays
   };
 }
