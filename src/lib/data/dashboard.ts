@@ -2,7 +2,7 @@ import { subDays } from 'date-fns';
 import { prisma } from '../prisma';
 import type { TransactionType } from '@prisma/client';
 import type { SalesDeltaResult, InboundCoverageResult, SalesMetric, DaysOfCoverResult } from './dashboard-metrics';
-import { calculateDaysOfCover, computeSalesDelta } from './dashboard-metrics';
+import { calculateDaysOfCover, computeInboundCoverage, computeSalesDelta } from './dashboard-metrics';
 
 const SALE_TYPE: TransactionType = 'sale';
 
@@ -138,24 +138,39 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
   });
 
   const warnings = await Promise.all(
-    warningsBase.map(async (warning) => {
-      const cover: DaysOfCoverResult = await calculateDaysOfCover({
-        shopId,
-        itemId: warning.itemId,
-        warehouseId: warning.warehouseId,
-        onHandQuantity: warning.quantityOnHand,
-        rangeDays
+    (() => {
+      const inboundCache = new Map<string, InboundCoverageResult>();
+      return warningsBase.map(async (warning) => {
+        const cover: DaysOfCoverResult = await calculateDaysOfCover({
+          shopId,
+          itemId: warning.itemId,
+          warehouseId: warning.warehouseId,
+          onHandQuantity: warning.quantityOnHand,
+          rangeDays
+        });
+
+        let inbound = inboundCache.get(warning.itemId);
+        if (!inbound) {
+          inbound = await computeInboundCoverage({
+            shopId,
+            itemId: warning.itemId,
+            rangeDays
+          });
+          inboundCache.set(warning.itemId, inbound);
+        }
+
+        const hasInbound = inbound.totalInboundUnits > 0;
+
+        return {
+          ...warning,
+          daysOfCover: cover.daysOfCover,
+          daysOfCoverStatus: cover.status,
+          avgDailySales: cover.averageDaily,
+          inboundCoverage: hasInbound ? inbound : null
+        };
       });
-
-      return {
-        ...warning,
-        daysOfCover: cover.daysOfCover,
-        daysOfCoverStatus: cover.status,
-        avgDailySales: cover.averageDaily
-      };
-    })
+    })()
   );
-
   const mostSold = Array.from(saleMap.entries())
     .map(([itemId, quantity]) => {
       const item = items.find((entry) => entry.id === itemId);

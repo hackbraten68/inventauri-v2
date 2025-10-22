@@ -34,6 +34,11 @@ interface DashboardSnapshot {
     daysOfCover?: number | null;
     daysOfCoverStatus?: 'ok' | 'risk' | 'insufficient-data';
     avgDailySales?: number | null;
+    inboundCoverage?: {
+      totalInboundUnits: number;
+      nextArrivalDate: string | null;
+      references: string[];
+    } | null;
   }>;
   mostSold: Array<{
     itemId: string;
@@ -191,6 +196,18 @@ export function DashboardOverview() {
     } as const;
   }
 
+  function inboundMeta(warning: DashboardSnapshot['warnings'][number]) {
+    const inbound = warning.inboundCoverage;
+    if (!inbound) return null;
+
+    const quantity = numberFormatter.format(inbound.totalInboundUnits);
+    const arrival = inbound.nextArrivalDate ? new Date(inbound.nextArrivalDate).toLocaleDateString('de-DE') : 'Datum folgt';
+    const reference = inbound.references.length > 0 ? inbound.references[0] : null;
+
+    const referenceText = reference ? ` · Ref ${reference}` : '';
+    return `Nachschub ${quantity} Stück, nächste Lieferung ${arrival}${referenceText}`;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -321,6 +338,7 @@ export function DashboardOverview() {
               <div className="space-y-2">
                 {data.warnings.map((warning) => {
                   const meta = coverMeta(warning);
+                  const inbound = inboundMeta(warning);
                   return (
                     <div key={`${warning.itemId}-${warning.warehouseId}`} className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs">
                       <p className="font-medium text-destructive">{warning.itemName}</p>
@@ -329,6 +347,7 @@ export function DashboardOverview() {
                         Bestand {warning.quantityOnHand} / Schwelle {warning.threshold}
                       </p>
                       <p className={meta.className}>{meta.text}</p>
+                      {inbound ? <p className="text-muted-foreground">{inbound}</p> : null}
                     </div>
                   );
                 })}

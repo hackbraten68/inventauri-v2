@@ -83,14 +83,14 @@
 
 ### Tests for User Story 3
 
-- [ ] T015 [US3] Add unit coverage for inbound coverage summariser in tests/unit/dashboard-inbound-coverage.spec.ts
-- [ ] T016 [US3] Extend dashboard contract test to validate warnings[].inboundCoverage in tests/contracts/dashboard.test.ts
+- [x] T015 [US3] Add unit coverage for inbound coverage summariser in tests/unit/dashboard-inbound-coverage.test.ts
+- [x] T016 [US3] Extend dashboard contract test to validate warnings[].inboundCoverage in tests/contracts/dashboard.test.ts
 
 ### Implementation for User Story 3
 
-- [ ] T017 [US3] Summarise inbound stockTransactions by SKU and range in src/lib/data/dashboard-metrics.ts
-- [ ] T018 [US3] Attach inboundCoverage details to warnings payload in src/lib/data/dashboard.ts
-- [ ] T019 [US3] Present inbound quantity and arrival info in warning cards within src/components/dashboard/DashboardOverview.tsx
+- [x] T017 [US3] Summarise inbound stockTransactions by SKU and range in src/lib/data/dashboard-metrics.ts
+- [x] T018 [US3] Attach inboundCoverage details to warnings payload in src/lib/data/dashboard.ts
+- [x] T019 [US3] Present inbound quantity and arrival info in warning cards within src/components/dashboard/DashboardOverview.tsx
 
 **Checkpoint**: All user stories function independently and satisfy acceptance scenarios.
 
@@ -98,8 +98,8 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T020 Document validation steps for new dashboard metrics in specs/003-add-dashboard-metrics/quickstart.md
-- [ ] T021 Summarise dashboard metrics release notes in ROADMAP.md
+- [x] T020 Document validation steps for new dashboard metrics in specs/003-add-dashboard-metrics/quickstart.md
+- [x] T021 Summarise dashboard metrics release notes in ROADMAP.md
 
 ---
 
