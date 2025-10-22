@@ -1,6 +1,7 @@
 # ♉ Inventauri Roadmap
 
 ## Dashboard & Inventar
+- [x] Dashboard-Badges für Sales-Trend-Delta, Days-of-Cover und eingehende Bestellungen (Feature 003-add-dashboard-metrics).
 - [ ] Konfigurierbare Bestandswarnungen (zentral & POS) inkl. Eingabefelder und Speicherung.
 - [ ] Dashboard erweitern: echte Umsatzberechnung, Diagramme (Verlauf, Verteilung), Deep-Links.
 - [ ] Echtzeit-Updates via Supabase Realtime für Dashboard, Inventar und POS.

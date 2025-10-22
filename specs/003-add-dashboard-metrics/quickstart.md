@@ -19,29 +19,26 @@
    ```
    - Visit `http://localhost:4321/dashboard`.
    - Confirm baseline metrics render with seeded data.
-3. **Implement data changes**
-   - Update `src/lib/data/dashboard.ts` with new aggregation helpers:
-     - Sales delta queries.
-     - Days-of-cover computation (shared velocity utility).
-     - Inbound coverage summariser.
-   - Extend the returned `DashboardSnapshot` type accordingly.
-4. **Update API contract tests**
-   - Add assertions in `tests/contracts/dashboard.test.ts` (create if missing) to verify the new JSON fields.
-5. **Update UI**
-   - Enhance `src/components/dashboard/DashboardOverview.tsx` to render:
-     - Sales delta badges inline with totals.
-     - Days-of-cover text within each warning block.
-     - Inbound coverage details beside warnings.
-   - Keep layout changes minimal (badges, inline copy).
-6. **Run test suite**
+3. **Run targeted regression tests**
    ```bash
-   npm test
+   npm test tests/unit/dashboard-sales-delta.spec.ts
+   npm test tests/unit/dashboard-days-cover.spec.ts
+   npm test tests/unit/dashboard-inbound-coverage.test.ts
+   npm test tests/contracts/dashboard.test.ts
    ```
-   - Add focused unit tests for new helper functions under `tests/unit/`.
-   - Provide integration coverage for data assembly under `tests/integration/`.
-7. **Smoke test**
-   - Refresh dashboard in the browser across 7, 14, and 30 day ranges.
-   - Validate placeholder states for missing prior data or low sales history.
+   - Confirms the data helpers and API contract expose sales deltas, days of cover, and inbound coverage fields.
+4. **Validate API payload manually**
+   ```bash
+   curl -H "Authorization: Bearer <token>" http://localhost:4321/api/dashboard?range=7 | jq '.warnings[] | {sku, daysOfCover, inboundCoverage}'
+   ```
+   - Ensure warnings include `daysOfCover`, `daysOfCoverStatus`, and, when inventory is on the way, `inboundCoverage` metadata.
+5. **Review UI behaviour**
+   - With `npm run dev` running:
+     - Inspect the totals card: sales delta badge should display trend direction and fallback text when no prior data exists.
+     - In the warning list, verify days-of-cover copy and inbound replenishment details render with the seeded data (including the “Zu wenig Daten” message for sparse history).
+6. **Smoke test**
+   - Switch between 7, 14, and 30 day ranges and confirm metrics refresh without a full reload.
+   - Observe warnings for SKUs without recent sales to ensure placeholders remain accessible.
 
 ## Troubleshooting
 

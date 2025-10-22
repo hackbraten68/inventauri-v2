@@ -47,4 +47,21 @@ describe('Dashboard contracts', () => {
       expect(['ok', 'risk', 'insufficient-data']).toContain(warning.daysOfCoverStatus ?? 'insufficient-data');
     });
   });
+
+  it('GET /api/dashboard attaches inbound coverage details where available', async () => {
+    const res = await getJson(`/api/dashboard?range=7`, {
+      headers: {
+        ...authHeaders(ACCESS_TOKEN)
+      }
+    });
+
+    expect(res.status).toBe(200);
+    const warnings = res.body?.warnings ?? [];
+
+    warnings.forEach((warning: any) => {
+      if (!warning.inboundCoverage) return;
+      expect(typeof warning.inboundCoverage.totalInboundUnits).toBe('number');
+      expect(Array.isArray(warning.inboundCoverage.references)).toBe(true);
+    });
+  });
 });
