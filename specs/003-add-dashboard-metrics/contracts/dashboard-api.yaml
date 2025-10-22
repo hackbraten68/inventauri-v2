@@ -1,0 +1,222 @@
+openapi: 3.1.0
+info:
+  title: Dashboard Snapshot API
+  version: 0.2.0
+  description: >
+    Returns operational metrics for the inventory dashboard, including sales deltas,
+    days-of-cover insights, and inbound coverage per low-stock warning.
+servers:
+  - url: /api
+paths:
+  /dashboard:
+    get:
+      summary: Fetch dashboard snapshot
+      description: >
+        Retrieves aggregated metrics for the requested lookback range. Requires
+        an authenticated user scoped to a shop.
+      parameters:
+        - in: query
+          name: range
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 90
+          required: false
+          description: Number of trailing days (defaults to 7).
+      responses:
+        "200":
+          description: Dashboard snapshot for the selected range.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSnapshot'
+        "401":
+          description: Authentication required.
+        "403":
+          description: User lacks access to the requested shop.
+        "500":
+          description: Unexpected server error.
+components:
+  schemas:
+    DashboardSnapshot:
+      type: object
+      required:
+        - rangeDays
+        - totals
+        - warnings
+        - mostSold
+        - recentTransactions
+      properties:
+        rangeDays:
+          type: integer
+          minimum: 1
+        totals:
+          $ref: '#/components/schemas/TotalsSummary'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryRiskItem'
+        mostSold:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopSeller'
+        recentTransactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecentTransaction'
+    TotalsSummary:
+      type: object
+      required:
+        - itemCount
+        - totalOnHand
+        - totalValue
+        - salesQuantity
+        - salesRevenue
+        - salesDelta
+      properties:
+        itemCount:
+          type: integer
+          minimum: 0
+        totalOnHand:
+          type: number
+          format: double
+        totalValue:
+          type: number
+          format: double
+        salesQuantity:
+          type: number
+          format: double
+        salesRevenue:
+          type: number
+          format: double
+        salesDelta:
+          $ref: '#/components/schemas/SalesDelta'
+    SalesDelta:
+      type: object
+      required:
+        - absolute
+        - direction
+      properties:
+        absolute:
+          type: number
+          format: double
+        percentage:
+          type: number
+          nullable: true
+        direction:
+          type: string
+          enum: [up, down, flat, na]
+    InventoryRiskItem:
+      type: object
+      required:
+        - itemId
+        - sku
+        - itemName
+        - warehouseId
+        - warehouseName
+        - quantityOnHand
+        - threshold
+      properties:
+        itemId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        itemName:
+          type: string
+        warehouseId:
+          type: string
+          format: uuid
+        warehouseName:
+          type: string
+        quantityOnHand:
+          type: number
+          format: double
+        threshold:
+          type: number
+          format: double
+        daysOfCover:
+          type: number
+          format: double
+          nullable: true
+        daysOfCoverStatus:
+          type: string
+          enum: [ok, risk, insufficient-data]
+        avgDailySales:
+          type: number
+          format: double
+          nullable: true
+        inboundCoverage:
+          $ref: '#/components/schemas/InboundCoverage'
+          nullable: true
+    InboundCoverage:
+      type: object
+      required:
+        - totalInboundUnits
+      properties:
+        totalInboundUnits:
+          type: number
+          format: double
+        nextArrivalDate:
+          type: string
+          format: date-time
+          nullable: true
+        references:
+          type: array
+          items:
+            type: string
+          maxItems: 5
+    TopSeller:
+      type: object
+      required:
+        - itemId
+        - name
+        - sku
+        - quantity
+      properties:
+        itemId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: number
+          format: double
+    RecentTransaction:
+      type: object
+      required:
+        - id
+        - itemId
+        - itemName
+        - sku
+        - warehouseName
+        - quantity
+        - type
+        - occurredAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        itemId:
+          type: string
+          format: uuid
+        itemName:
+          type: string
+        sku:
+          type: string
+        warehouseName:
+          type: string
+        quantity:
+          type: number
+          format: double
+        type:
+          type: string
+          description: Stock transaction type (sale, inbound, etc.).
+        occurredAt:
+          type: string
+          format: date-time
+        reference:
+          type: string
+          nullable: true
