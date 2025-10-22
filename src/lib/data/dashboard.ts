@@ -1,6 +1,8 @@
 import { subDays } from 'date-fns';
 import { prisma } from '../prisma';
 import type { TransactionType } from '@prisma/client';
+import type { SalesDeltaResult, SalesVelocityResult, InboundCoverageResult } from './dashboard-metrics';
+import { computeInboundCoverage, computeSalesDelta, computeSalesVelocity } from './dashboard-metrics';
 
 const SALE_TYPE: TransactionType = 'sale';
 
@@ -16,6 +18,7 @@ export interface DashboardSnapshot {
     totalValue: number;
     salesQuantity: number;
     salesRevenue: number;
+    salesDelta?: SalesDeltaResult;
   };
   warnings: Array<{
     itemId: string;
@@ -25,6 +28,9 @@ export interface DashboardSnapshot {
     warehouseName: string;
     quantityOnHand: number;
     threshold: number;
+    daysOfCover?: number | null;
+    daysOfCoverStatus?: 'ok' | 'risk' | 'insufficient-data';
+    inboundCoverage?: InboundCoverageResult | null;
   }>;
   mostSold: Array<{
     itemId: string;
