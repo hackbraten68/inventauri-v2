@@ -41,14 +41,14 @@
 
 ### Tests for User Story 1
 
-- [ ] T005 [US1] Add unit coverage for sales delta calculations in tests/unit/dashboard-sales-delta.spec.ts
-- [ ] T006 [US1] Extend dashboard API contract assertions for totals.salesDelta in tests/contracts/dashboard.test.ts
+- [x] T005 [US1] Add unit coverage for sales delta calculations in tests/unit/dashboard-sales-delta.spec.ts
+- [x] T006 [US1] Extend dashboard API contract assertions for totals.salesDelta in tests/contracts/dashboard.test.ts
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Implement prior-range aggregation and delta calculation in src/lib/data/dashboard-metrics.ts
-- [ ] T008 [US1] Populate totals.salesDelta and direction state in getDashboardSnapshot within src/lib/data/dashboard.ts
-- [ ] T009 [US1] Render sales delta badge with fallback messaging in totals card in src/components/dashboard/DashboardOverview.tsx
+- [x] T007 [US1] Implement prior-range aggregation and delta calculation in src/lib/data/dashboard-metrics.ts
+- [x] T008 [US1] Populate totals.salesDelta and direction state in getDashboardSnapshot within src/lib/data/dashboard.ts
+- [x] T009 [US1] Render sales delta badge with fallback messaging in totals card in src/components/dashboard/DashboardOverview.tsx
 
 **Checkpoint**: User Story 1 is independently functional and testable.
 
@@ -62,14 +62,14 @@
 
 ### Tests for User Story 2
 
-- [ ] T010 [US2] Add unit coverage for sales velocity and days-of-cover helpers in tests/unit/dashboard-days-cover.spec.ts
-- [ ] T011 [US2] Extend dashboard contract test to expect warnings[].daysOfCover fields in tests/contracts/dashboard.test.ts
+- [x] T010 [US2] Add unit coverage for sales velocity and days-of-cover helpers in tests/unit/dashboard-days-cover.spec.ts
+- [x] T011 [US2] Extend dashboard contract test to expect warnings[].daysOfCover fields in tests/contracts/dashboard.test.ts
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] Implement rolling velocity + days-of-cover helper logic in src/lib/data/dashboard-metrics.ts
-- [ ] T013 [US2] Populate warnings entries with daysOfCover and status tags in src/lib/data/dashboard.ts
-- [ ] T014 [US2] Display days-of-cover values and insufficient-data notice in warning list UI within src/components/dashboard/DashboardOverview.tsx
+- [x] T012 [US2] Implement rolling velocity + days-of-cover helper logic in src/lib/data/dashboard-metrics.ts
+- [x] T013 [US2] Populate warnings entries with daysOfCover and status tags in src/lib/data/dashboard.ts
+- [x] T014 [US2] Display days-of-cover values and insufficient-data notice in warning list UI within src/components/dashboard/DashboardOverview.tsx
 
 **Checkpoint**: User Stories 1 and 2 both operate independently.
 
