@@ -1,4 +1,11 @@
-import { PrismaClient, TransactionType, WarehouseType } from '@prisma/client';
+import {
+  PrismaClient,
+  TransactionType,
+  WarehouseType,
+  NotificationCategory,
+  NotificationChannel,
+  UnitSystem
+} from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -7,6 +14,7 @@ const DEFAULT_WAREHOUSE_NAME = process.env.SEED_CENTRAL_NAME ?? 'Hauptlager HQ';
 const DEFAULT_SHOP_NAME = process.env.SEED_SHOP_NAME ?? 'Demo Shop';
 const DEFAULT_SHOP_SLUG = process.env.SEED_SHOP_SLUG ?? 'demo-shop';
 const SEED_OWNER_USER_ID = process.env.SEED_OWNER_USER_ID; // optional UUID from Supabase auth
+const SYSTEM_ACTOR_ID = '00000000-0000-0000-0000-000000000000';
 
 const POS_PRESETS = [
   {
@@ -138,6 +146,70 @@ async function ensureDefaultShop() {
   return shop;
 }
 
+async function ensureSettingsDefaults(shopId: string, actorId: string, shopName: string) {
+  await prisma.businessProfile.upsert({
+    where: { shopId },
+    update: {},
+    create: {
+      shopId,
+      legalName: shopName,
+      displayName: shopName,
+      taxId: null,
+      email: 'info@inventauri.app',
+      phone: '+491234567890',
+      website: 'https://inventauri.app',
+      addressLine1: 'Musterstraße 1',
+      addressLine2: null,
+      city: 'Berlin',
+      postalCode: '10115',
+      country: 'DE',
+      updatedBy: actorId
+    }
+  });
+
+  await prisma.operationalPreference.upsert({
+    where: { shopId },
+    update: {},
+    create: {
+      shopId,
+      currencyCode: 'EUR',
+      timezone: 'Europe/Berlin',
+      unitSystem: UnitSystem.metric,
+      defaultUnitPrecision: 2,
+      fiscalWeekStart: 1,
+      autoApplyTaxes: false,
+      updatedBy: actorId
+    }
+  });
+
+  const categories: NotificationCategory[] = [
+    NotificationCategory.low_stock,
+    NotificationCategory.failed_sync,
+    NotificationCategory.role_invite,
+    NotificationCategory.audit_alert
+  ];
+
+  for (const category of categories) {
+    await prisma.notificationPreference.upsert({
+      where: {
+        shopId_category_channel: {
+          shopId,
+          category,
+          channel: NotificationChannel.email
+        }
+      },
+      update: {},
+      create: {
+        shopId,
+        category,
+        channel: NotificationChannel.email,
+        isEnabled: true,
+        updatedBy: actorId
+      }
+    });
+  }
+}
+
 async function seedStock(
   centralWarehouseId: string,
   posWarehouses: { id: string }[],
@@ -211,7 +283,8 @@ async function main() {
   console.info('Seed gestartet…');
 
   // Ensure a default Shop exists (optional UserShop mapping if SEED_OWNER_USER_ID provided)
-  await ensureDefaultShop();
+  const shop = await ensureDefaultShop();
+  const actorId = SEED_OWNER_USER_ID ?? SYSTEM_ACTOR_ID;
 
   const centralWarehouse = await ensureCentralWarehouse();
   if (!centralWarehouse) {
@@ -222,6 +295,11 @@ async function main() {
   const items = await seedItems();
 
   await seedStock(centralWarehouse.id, posWarehouses, items);
+
+  const shops = await prisma.shop.findMany({ select: { id: true, name: true } });
+  for (const entry of shops) {
+    await ensureSettingsDefaults(entry.id, actorId, entry.name ?? DEFAULT_SHOP_NAME);
+  }
 
   console.info('Seed abgeschlossen.');
 }

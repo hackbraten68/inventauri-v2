@@ -1,25 +1,50 @@
-# Inventauri Engineering Constitution
+# [PROJECT_NAME] Constitution
+<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
 
-## Code Quality
-- Treat the Prisma schema and Supabase policies as first-class code; every schema change ships with docs and migration tests.
-- Prefer clear, composable components and server utilities over clever abstractions; optimize for readability and onboarding speed.
-- Enforce strict TypeScript types and linting; any `any` or unsafe cast needs a TODO with owner and expiry.
-- Review changes with a reliability mindset—surface risks, rollback strategy, and observability hooks before merge.
+## Core Principles
 
-## Testing Standards
-- Cover every API route and critical client workflow with automated tests (unit + integration) that run in CI with sample data.
-- Snapshot POS and dashboard states after transfers, returns, and sales to prevent regressions in totals and history feeds.
-- For bugs, always add a failing test first; fixes must close the loop with reproducible evidence.
-- Monitor test flakiness: two consecutive flaky runs require triage before shipping new features.
+### [PRINCIPLE_1_NAME]
+<!-- Example: I. Library-First -->
+[PRINCIPLE_1_DESCRIPTION]
+<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
 
-## User Experience Consistency
-- Keep navigation, forms, and themes consistent across pages; the settings footer and theme switchers behave identically everywhere.
-- Use shared design tokens (spacing, color, typography) so new features inherit dark, light, and Catppuccin support without extra work.
-- Validate inputs inline with clear error copy and recovery guidance; avoid server-only validation surprises.
-- Document UX flows (POS checkout, returns, transfers) and update them with every change so support can mirror the experience.
+### [PRINCIPLE_2_NAME]
+<!-- Example: II. CLI Interface -->
+[PRINCIPLE_2_DESCRIPTION]
+<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
 
-## Performance Requirements
-- POS interactions commit within 250 ms in the local network path; fall back gracefully if Supabase latency spikes.
-- Dashboard KPIs and charts hydrate under 1 s with cached summaries; live updates stream via lightweight diffs.
-- Keep bundle size lean: lazy-load admin-only modules, and audit dependencies quarterly.
-- Instrument API timing, DB query counts, and realtime fan-out; alert when thresholds drift beyond ±15 % of baseline.
+### [PRINCIPLE_3_NAME]
+<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
+[PRINCIPLE_3_DESCRIPTION]
+<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+
+### [PRINCIPLE_4_NAME]
+<!-- Example: IV. Integration Testing -->
+[PRINCIPLE_4_DESCRIPTION]
+<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+
+### [PRINCIPLE_5_NAME]
+<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
+[PRINCIPLE_5_DESCRIPTION]
+<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+
+## [SECTION_2_NAME]
+<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+
+[SECTION_2_CONTENT]
+<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+
+## [SECTION_3_NAME]
+<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+
+[SECTION_3_CONTENT]
+<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+
+## Governance
+<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+
+[GOVERNANCE_RULES]
+<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+
+**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
+<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
