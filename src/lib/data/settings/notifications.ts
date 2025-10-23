@@ -114,12 +114,15 @@ export async function updateNotificationPreferences(args: UpdateNotificationPref
 }
 
 export interface CreateRecipientArgs {
+  shopId: string;
   preferenceId: string;
+  actorId: string;
+  actorEmail?: string;
   userShopId?: string;
   email?: string;
 }
 
-export async function addNotificationRecipient(shopId: string, args: CreateRecipientArgs) {
+export async function addNotificationRecipient(args: CreateRecipientArgs) {
   if (!args.userShopId && !args.email) {
     throw new ValidationError('Empfänger benötigt entweder userShopId oder email.');
   }
@@ -129,7 +132,7 @@ export async function addNotificationRecipient(shopId: string, args: CreateRecip
     include: { recipients: true }
   });
 
-  if (!preference || preference.shopId !== shopId) {
+  if (!preference || preference.shopId !== args.shopId) {
     throw new ValidationError('Benachrichtigung nicht gefunden.');
   }
 
@@ -142,11 +145,11 @@ export async function addNotificationRecipient(shopId: string, args: CreateRecip
   });
 
   await recordSettingsChange({
-    shopId,
+    shopId: args.shopId,
     section: SettingsSection.notifications,
     changeType: SettingsChangeType.update,
-    actorId: preference.updatedBy,
-    actorEmail: 'system@inventauri.app',
+    actorId: args.actorId,
+    actorEmail: args.actorEmail ?? 'unknown@inventauri.app',
     diff: buildSettingsDiff(null, recipient)
   });
 
@@ -154,17 +157,20 @@ export async function addNotificationRecipient(shopId: string, args: CreateRecip
 }
 
 export interface RemoveRecipientArgs {
+  shopId: string;
   preferenceId: string;
+  actorId: string;
+  actorEmail?: string;
   userShopId?: string;
   email?: string;
 }
 
-export async function removeNotificationRecipient(shopId: string, args: RemoveRecipientArgs) {
+export async function removeNotificationRecipient(args: RemoveRecipientArgs) {
   const preference = await prisma.notificationPreference.findUnique({
     where: { id: args.preferenceId }
   });
 
-  if (!preference || preference.shopId !== shopId) {
+  if (!preference || preference.shopId !== args.shopId) {
     throw new ValidationError('Benachrichtigung nicht gefunden.');
   }
 
@@ -187,11 +193,11 @@ export async function removeNotificationRecipient(shopId: string, args: RemoveRe
   await prisma.notificationRecipient.delete({ where: { id: recipient.id } });
 
   await recordSettingsChange({
-    shopId,
+    shopId: args.shopId,
     section: SettingsSection.notifications,
     changeType: SettingsChangeType.update,
-    actorId: preference.updatedBy,
-    actorEmail: 'system@inventauri.app',
+    actorId: args.actorId,
+    actorEmail: args.actorEmail ?? 'unknown@inventauri.app',
     diff: buildSettingsDiff(recipient, null)
   });
 }

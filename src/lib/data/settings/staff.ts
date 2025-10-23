@@ -7,7 +7,7 @@ import {
 import { prisma } from '../../prisma';
 import { recordSettingsChange, buildSettingsDiff } from './audit';
 import { ValidationError } from '../../settings/validation';
-import { inviteUser, disableUser } from '../../services/settings/staff-admin';
+import { inviteUser, disableUser, fetchUserEmail, hasServiceRole } from '../../services/settings/staff-admin';
 
 export interface StaffMember {
   userShopId: string;
@@ -26,11 +26,25 @@ export async function listStaff(shopId: string): Promise<StaffMember[]> {
     where: { shopId },
     orderBy: { createdAt: 'asc' }
   });
+  const emailCache = new Map<string, string>();
+
+  if (hasServiceRole) {
+    await Promise.all(
+      members.map(async (member) => {
+        if (!emailCache.has(member.userId)) {
+          const email = await fetchUserEmail(member.userId);
+          if (email) {
+            emailCache.set(member.userId, email);
+          }
+        }
+      })
+    );
+  }
 
   return members.map((member) => ({
     userShopId: member.id,
     userId: member.userId,
-    email: member.userId,
+    email: emailCache.get(member.userId) ?? member.userId,
     role: member.role,
     status: member.status,
     deactivatedAt: member.deactivatedAt

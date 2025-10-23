@@ -13,8 +13,11 @@ export const POST: APIRoute = async ({ request, params }) => {
   try {
     const context = await requireSettingsAdmin(request);
     const payload = await request.json();
-    const recipient = await addNotificationRecipient(context.shopId, {
+    const recipient = await addNotificationRecipient({
+      shopId: context.shopId,
       preferenceId: params.preferenceId!,
+      actorId: context.userId,
+      actorEmail: context.userEmail,
       userShopId: payload.userShopId,
       email: payload.email
     });
@@ -34,8 +37,11 @@ export const DELETE: APIRoute = async ({ request, params }) => {
   try {
     const context = await requireSettingsAdmin(request);
     const payload = await request.json();
-    await removeNotificationRecipient(context.shopId, {
+    await removeNotificationRecipient({
+      shopId: context.shopId,
       preferenceId: params.preferenceId!,
+      actorId: context.userId,
+      actorEmail: context.userEmail,
       userShopId: payload.userShopId,
       email: payload.email
     });

@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '../../supabase-admin';
 
-const hasServiceRole = Boolean(import.meta.env.SUPABASE_SERVICE_ROLE_KEY);
+export const hasServiceRole = Boolean(import.meta.env.SUPABASE_SERVICE_ROLE_KEY);
 
 export interface InviteUserResult {
   userId: string | null;
@@ -43,4 +43,16 @@ export async function disableUser(userId: string): Promise<void> {
     (err as Error & { status?: number }).status = 502;
     throw err;
   }
+}
+
+export async function fetchUserEmail(userId: string): Promise<string | null> {
+  if (!hasServiceRole) {
+    return null;
+  }
+  const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+  if (error) {
+    console.warn('Failed to fetch Supabase user email', error);
+    return null;
+  }
+  return data.user?.email ?? null;
 }
