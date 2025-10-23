@@ -1,6 +1,8 @@
 import { subDays } from 'date-fns';
 import { prisma } from '../prisma';
 import type { TransactionType } from '@prisma/client';
+import type { SalesDeltaResult, InboundCoverageResult, SalesMetric, DaysOfCoverResult } from './dashboard-metrics';
+import { calculateDaysOfCover, computeInboundCoverage, computeSalesDelta } from './dashboard-metrics';
 
 const SALE_TYPE: TransactionType = 'sale';
 
@@ -16,6 +18,7 @@ export interface DashboardSnapshot {
     totalValue: number;
     salesQuantity: number;
     salesRevenue: number;
+    salesDelta?: SalesDeltaResult;
   };
   warnings: Array<{
     itemId: string;
@@ -25,6 +28,10 @@ export interface DashboardSnapshot {
     warehouseName: string;
     quantityOnHand: number;
     threshold: number;
+    daysOfCover?: number | null;
+    daysOfCoverStatus?: 'ok' | 'risk' | 'insufficient-data';
+    inboundCoverage?: InboundCoverageResult | null;
+    avgDailySales?: number | null;
   }>;
   mostSold: Array<{
     itemId: string;
@@ -103,7 +110,7 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
 
   let totalOnHand = 0;
   let totalValue = 0;
-  const warnings: DashboardSnapshot['warnings'] = [];
+  const warningsBase: DashboardSnapshot['warnings'] = [];
 
   items.forEach((item) => {
     const price = parsePrice(item.metadata);
@@ -117,7 +124,7 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
         ? Number(level.reorderPoint ?? 0)
         : Number(level.safetyStock ?? 0);
       if (threshold > 0 && quantity <= threshold) {
-        warnings.push({
+        warningsBase.push({
           itemId: item.id,
           itemName: item.name,
           sku: item.sku,
@@ -130,6 +137,40 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
     });
   });
 
+  const warnings = await Promise.all(
+    (() => {
+      const inboundCache = new Map<string, InboundCoverageResult>();
+      return warningsBase.map(async (warning) => {
+        const cover: DaysOfCoverResult = await calculateDaysOfCover({
+          shopId,
+          itemId: warning.itemId,
+          warehouseId: warning.warehouseId,
+          onHandQuantity: warning.quantityOnHand,
+          rangeDays
+        });
+
+        let inbound = inboundCache.get(warning.itemId);
+        if (!inbound) {
+          inbound = await computeInboundCoverage({
+            shopId,
+            itemId: warning.itemId,
+            rangeDays
+          });
+          inboundCache.set(warning.itemId, inbound);
+        }
+
+        const hasInbound = inbound.totalInboundUnits > 0;
+
+        return {
+          ...warning,
+          daysOfCover: cover.daysOfCover,
+          daysOfCoverStatus: cover.status,
+          avgDailySales: cover.averageDaily,
+          inboundCoverage: hasInbound ? inbound : null
+        };
+      });
+    })()
+  );
   const mostSold = Array.from(saleMap.entries())
     .map(([itemId, quantity]) => {
       const item = items.find((entry) => entry.id === itemId);
@@ -141,12 +182,15 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
     .sort((a, b) => (b!.quantity - a!.quantity))
     .slice(0, 5) as DashboardSnapshot['mostSold'];
 
-  const totalSalesQuantity = mostSold.reduce((sum, entry) => sum + entry.quantity, 0);
-  const totalSalesRevenue = mostSold.reduce((sum, entry) => {
-    const item = items.find((it) => it.id === entry.itemId);
+  const totalSalesQuantity = Array.from(saleMap.values()).reduce((sum, quantity) => sum + quantity, 0);
+  const totalSalesRevenue = Array.from(saleMap.entries()).reduce((sum, [itemId, quantity]) => {
+    const item = items.find((it) => it.id === itemId);
     const price = item ? parsePrice(item.metadata) : 0;
-    return sum + entry.quantity * price;
+    return sum + quantity * price;
   }, 0);
+
+  const salesMetric: SalesMetric = totalSalesRevenue > 0 ? 'revenue' : 'units';
+  const salesDelta = await computeSalesDelta({ shopId, rangeDays, metric: salesMetric });
 
   const recent = recentTransactions.map((transaction) => {
     const warehouse = transaction.targetWarehouse ?? transaction.sourceWarehouse;
@@ -169,7 +213,8 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
       totalOnHand,
       totalValue,
       salesQuantity: totalSalesQuantity,
-      salesRevenue: totalSalesRevenue
+      salesRevenue: totalSalesRevenue,
+      salesDelta
     },
     warnings,
     mostSold,

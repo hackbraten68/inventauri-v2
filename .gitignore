@@ -1,35 +1,92 @@
-# build output
+# ============================================
+# Build outputs
+# ============================================
 dist/
-
-# generated types
+out/
 .astro/
 .next/
+storybook-static/
 
-# dependencies
+# ============================================
+# Compiled artifacts
+# ============================================
+*.tsbuildinfo
+
+# ============================================
+# Dependencies
+# ============================================
 node_modules/
 
-# logs
+# ============================================
+# Coverage & reports
+# ============================================
+coverage/
+
+# ============================================
+# Logs
+# ============================================
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# environment variables
+# ============================================
+# Environment & secret files
+# ============================================
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
 
-# macOS-specific files
-.DS_Store
+# ============================================
+# Caches & tooling
+# ============================================
+.cache/
+.npm/
+.turbo/
 
-# jetbrains setting folder
+# ============================================
+# Editor & IDE
+# ============================================
 .idea/
 .vscode/
 
+# ============================================
+# OS-specific
+# ============================================
+.DS_Store
+Thumbs.db
+
+# ============================================
+# Generated code
+# ============================================
 /src/generated/prisma
-.codex/auth.json
-/.codex
-/.specify
-/.specify/memory
-/.specify/templates
-.specify
+
+# ============================================
+# Temp directories
+# ============================================
+tmp/
+
+# ============================================
+# AI / Codex / Specify local data
+# ============================================
+.codex/
+.specify/cache/
+.specify/tmp/
+.specify/logs/
+.specify/*.json
+
+# Keep important spec & retrospec files (documentation only)
+!.specify/specify.md
+!.specify/plan.md
+!.specify/tasks.md
+!.specify/retrospec.md
+!.specify/lessons-learned.md
+
+# ============================================
+# Local backup archives (optional)
+# ============================================
+*.tar.gz
+*.zip
+/backups/
+

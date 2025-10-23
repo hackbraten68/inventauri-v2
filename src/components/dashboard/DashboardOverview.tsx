@@ -1,7 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+
+type SalesDirection = 'up' | 'down' | 'flat' | 'na';
+
+interface SalesDelta {
+  currentTotal: number;
+  priorTotal: number;
+  absolute: number;
+  percentage: number | null;
+  direction: SalesDirection;
+  metric: 'revenue' | 'units';
+}
 
 interface DashboardSnapshot {
   totals: {
@@ -10,6 +21,7 @@ interface DashboardSnapshot {
     totalValue: number;
     salesQuantity: number;
     salesRevenue: number;
+    salesDelta?: SalesDelta;
   };
   warnings: Array<{
     itemId: string;
@@ -19,6 +31,14 @@ interface DashboardSnapshot {
     warehouseName: string;
     quantityOnHand: number;
     threshold: number;
+    daysOfCover?: number | null;
+    daysOfCoverStatus?: 'ok' | 'risk' | 'insufficient-data';
+    avgDailySales?: number | null;
+    inboundCoverage?: {
+      totalInboundUnits: number;
+      nextArrivalDate: string | null;
+      references: string[];
+    } | null;
   }>;
   mostSold: Array<{
     itemId: string;
@@ -92,6 +112,101 @@ export function DashboardOverview() {
 
   const warningCount = data?.warnings.length ?? 0;
   const totalSold = data?.mostSold.reduce((sum, entry) => sum + entry.quantity, 0) ?? 0;
+  const salesDelta = data?.totals.salesDelta;
+  const salesMetric = salesDelta?.metric ?? 'revenue';
+  const salesValue =
+    salesDelta?.currentTotal ??
+    (salesMetric === 'revenue' ? data?.totals.salesRevenue ?? 0 : data?.totals.salesQuantity ?? 0);
+
+  function formatSalesValue(value: number, metric: 'revenue' | 'units') {
+    return metric === 'revenue' ? currencyFormatter.format(value ?? 0) : numberFormatter.format(value ?? 0);
+  }
+
+  function deltaBadgeContent(delta?: SalesDelta) {
+    if (!delta || delta.direction === 'na') {
+      return { text: 'Keine Vergleichsdaten', variant: 'secondary' as const };
+    }
+
+    const sign = delta.absolute > 0 ? '+' : delta.absolute < 0 ? '−' : '';
+    const arrow = delta.direction === 'up' ? '▲' : delta.direction === 'down' ? '▼' : '→';
+    let percentage: string | null = null;
+    if (delta.percentage !== null) {
+      const value = Math.abs(delta.percentage).toFixed(1);
+      if (delta.percentage > 0) {
+        percentage = `+${value}%`;
+      } else if (delta.percentage < 0) {
+        percentage = `−${value}%`;
+      } else {
+        percentage = `${value}%`;
+      }
+    }
+    const textValue = percentage ?? `${sign}${formatSalesValue(Math.abs(delta.absolute), delta.metric)}`;
+
+    const variant: 'default' | 'secondary' | 'destructive' =
+      delta.direction === 'down' ? 'destructive' : delta.direction === 'up' ? 'default' : 'secondary';
+    return { text: `${arrow} ${textValue}`.trim(), variant };
+  }
+
+  function deltaDescription(delta?: SalesDelta) {
+    if (!delta || delta.direction === 'na') {
+      return 'Keine Vergleichsdaten für den vorherigen Zeitraum.';
+    }
+    const absolute = formatSalesValue(Math.abs(delta.absolute), delta.metric);
+    let percentage: string | null = null;
+    if (delta.percentage !== null) {
+      const value = Math.abs(delta.percentage).toFixed(1);
+      if (delta.percentage > 0) {
+        percentage = `+${value}%`;
+      } else if (delta.percentage < 0) {
+        percentage = `−${value}%`;
+      } else {
+        percentage = `${value}%`;
+      }
+    }
+    const prefix = delta.absolute >= 0 ? '+' : '−';
+    if (percentage) {
+      return `${prefix}${absolute} (${percentage}) gegenüber dem vorherigen Zeitraum.`;
+    }
+    return `${prefix}${absolute} gegenüber dem vorherigen Zeitraum.`;
+  }
+
+  const badge = deltaBadgeContent(salesDelta);
+
+  function coverMeta(warning: DashboardSnapshot['warnings'][number]) {
+    if (warning.daysOfCover === null || warning.daysOfCover === undefined) {
+      return {
+        text: 'Zu wenig Daten für Prognose.',
+        className: 'text-muted-foreground'
+      } as const;
+    }
+
+    const formatter = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const formatted = formatter.format(warning.daysOfCover);
+
+    if (warning.daysOfCoverStatus === 'risk') {
+      return {
+        text: `≈ ${formatted} Tage Abdeckung – kritisch`,
+        className: 'text-destructive font-medium'
+      } as const;
+    }
+
+    return {
+      text: `≈ ${formatted} Tage Abdeckung verfügbar`,
+      className: 'text-muted-foreground'
+    } as const;
+  }
+
+  function inboundMeta(warning: DashboardSnapshot['warnings'][number]) {
+    const inbound = warning.inboundCoverage;
+    if (!inbound) return null;
+
+    const quantity = numberFormatter.format(inbound.totalInboundUnits);
+    const arrival = inbound.nextArrivalDate ? new Date(inbound.nextArrivalDate).toLocaleDateString('de-DE') : 'Datum folgt';
+    const reference = inbound.references.length > 0 ? inbound.references[0] : null;
+
+    const referenceText = reference ? ` · Ref ${reference}` : '';
+    return `Nachschub ${quantity} Stück, nächste Lieferung ${arrival}${referenceText}`;
+  }
 
   return (
     <div className="space-y-6">
@@ -118,7 +233,7 @@ export function DashboardOverview() {
         <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <Card>
           <CardHeader>
             <CardTitle>Artikel gesamt</CardTitle>
@@ -150,6 +265,21 @@ export function DashboardOverview() {
             <p className="text-3xl font-semibold text-foreground">
               {loading ? '—' : currencyFormatter.format(data?.totals.totalValue ?? 0)}
             </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Verkäufe</CardTitle>
+              <CardDescription>Vergleich der letzten {range} Tage</CardDescription>
+            </div>
+            <Badge variant={badge.variant}>{badge.text}</Badge>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-semibold text-foreground">
+              {loading ? '—' : formatSalesValue(salesValue, salesMetric)}
+            </p>
+            <p className="text-sm text-muted-foreground">{loading ? 'Wird geladen …' : deltaDescription(salesDelta)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -206,15 +336,21 @@ export function DashboardOverview() {
               <p className="text-sm text-muted-foreground">Lade Daten …</p>
             ) : data && data.warnings.length > 0 ? (
               <div className="space-y-2">
-                {data.warnings.map((warning) => (
-                  <div key={`${warning.itemId}-${warning.warehouseId}`} className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs">
-                    <p className="font-medium text-destructive">{warning.itemName}</p>
-                    <p className="text-muted-foreground">{warning.warehouseName}</p>
-                    <p className="text-muted-foreground">
-                      Bestand {warning.quantityOnHand} / Schwelle {warning.threshold}
-                    </p>
-                  </div>
-                ))}
+                {data.warnings.map((warning) => {
+                  const meta = coverMeta(warning);
+                  const inbound = inboundMeta(warning);
+                  return (
+                    <div key={`${warning.itemId}-${warning.warehouseId}`} className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs">
+                      <p className="font-medium text-destructive">{warning.itemName}</p>
+                      <p className="text-muted-foreground">{warning.warehouseName}</p>
+                      <p className="text-muted-foreground">
+                        Bestand {warning.quantityOnHand} / Schwelle {warning.threshold}
+                      </p>
+                      <p className={meta.className}>{meta.text}</p>
+                      {inbound ? <p className="text-muted-foreground">{inbound}</p> : null}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">Aktuell keine Warnungen.</p>

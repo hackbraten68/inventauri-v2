@@ -97,11 +97,18 @@ async function ensurePosWarehouses() {
   return results;
 }
 
-async function seedItems() {
+async function seedItems(shopId: string) {
   const items = [];
 
   for (const preset of ITEM_PRESETS) {
-    let item = await prisma.item.findUnique({ where: { sku: preset.sku } });
+    let item = await prisma.item.findUnique({
+      where: {
+        shopId_sku: {
+          shopId,
+          sku: preset.sku
+        }
+      }
+    });
 
     if (!item) {
       item = await prisma.item.create({
@@ -109,7 +116,8 @@ async function seedItems() {
           sku: preset.sku,
           name: preset.name,
           description: preset.description,
-          unit: preset.unit
+          unit: preset.unit,
+          shopId
         }
       });
       console.info(`Artikel '${item.name}' angelegt.`);
@@ -213,7 +221,8 @@ async function ensureSettingsDefaults(shopId: string, actorId: string, shopName:
 async function seedStock(
   centralWarehouseId: string,
   posWarehouses: { id: string }[],
-  items: { id: string; sku: string }[]
+  items: { id: string; sku: string }[],
+  shopId: string
 ) {
   for (const item of items) {
     // Initialbestand im Zentrallager
@@ -230,6 +239,7 @@ async function seedStock(
       create: {
         warehouseId: centralWarehouseId,
         itemId: item.id,
+        shopId,
         quantityOnHand: 100,
         reorderPoint: 20
       }
@@ -240,6 +250,7 @@ async function seedStock(
         itemId: item.id,
         transactionType: TransactionType.inbound,
         quantity: 100,
+        shopId,
         reference: 'SEED-INBOUND',
         notes: 'Initialer Seed-Bestand Zentrallager'
       }
@@ -252,30 +263,32 @@ async function seedStock(
             warehouseId: pos.id,
             itemId: item.id
           }
-        },
-        update: {
-          quantityOnHand: { increment: 15 }
-        },
-        create: {
-          warehouseId: pos.id,
-          itemId: item.id,
-          quantityOnHand: 15,
-          reorderPoint: 5
-        }
-      });
+      },
+      update: {
+        quantityOnHand: { increment: 15 }
+      },
+      create: {
+        warehouseId: pos.id,
+        itemId: item.id,
+        shopId,
+        quantityOnHand: 15,
+        reorderPoint: 5
+      }
+    });
 
-      await prisma.stockTransaction.create({
-        data: {
-          itemId: item.id,
-          transactionType: TransactionType.transfer,
-          quantity: 15,
-          sourceWarehouseId: centralWarehouseId,
-          targetWarehouseId: pos.id,
-          reference: 'SEED-TRANSFER',
-          notes: 'Initiale POS-Bestückung'
-        }
-      });
-    }
+    await prisma.stockTransaction.create({
+      data: {
+        itemId: item.id,
+        transactionType: TransactionType.transfer,
+        quantity: 15,
+        sourceWarehouseId: centralWarehouseId,
+        targetWarehouseId: pos.id,
+        shopId,
+        reference: 'SEED-TRANSFER',
+        notes: 'Initiale POS-Bestückung'
+      }
+    });
+  }
   }
 }
 
@@ -292,9 +305,9 @@ async function main() {
   }
 
   const posWarehouses = await ensurePosWarehouses();
-  const items = await seedItems();
+  const items = await seedItems(shop.id);
 
-  await seedStock(centralWarehouse.id, posWarehouses, items);
+  await seedStock(centralWarehouse.id, posWarehouses, items, shop.id);
 
   const shops = await prisma.shop.findMany({ select: { id: true, name: true } });
   for (const entry of shops) {
