@@ -1,0 +1,628 @@
+openapi: 3.1.0
+info:
+  title: Basic Admin Settings API
+  version: 0.1.0
+  description: >
+    Endpoints enabling tenant administrators to manage business profile, operational defaults,
+    notification preferences, staff access, and view configuration audit logs.
+servers:
+  - url: https://{domain}
+    description: Production
+    variables:
+      domain:
+        default: app.inventauri.example
+  - url: http://localhost:4321
+    description: Development (Astro dev server)
+components:
+  securitySchemes:
+    SupabaseToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    BusinessProfile:
+      type: object
+      required:
+        - id
+        - legalName
+        - displayName
+        - email
+        - addressLine1
+        - city
+        - postalCode
+        - country
+        - version
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        legalName:
+          type: string
+          minLength: 3
+          maxLength: 120
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 80
+        taxId:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          nullable: true
+        website:
+          type: string
+          format: uri
+          nullable: true
+        addressLine1:
+          type: string
+        addressLine2:
+          type: string
+          nullable: true
+        city:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+          minLength: 2
+          maxLength: 2
+          description: ISO 3166-1 alpha-2
+        updatedBy:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          minimum: 1
+        updatedAt:
+          type: string
+          format: date-time
+    OperationalPreference:
+      type: object
+      required:
+        - id
+        - currencyCode
+        - timezone
+        - unitSystem
+        - defaultUnitPrecision
+        - fiscalWeekStart
+        - version
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        currencyCode:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        timezone:
+          type: string
+          description: IANA timezone identifier
+        unitSystem:
+          type: string
+          enum: [metric, imperial]
+        defaultUnitPrecision:
+          type: integer
+          minimum: 0
+          maximum: 4
+        fiscalWeekStart:
+          type: integer
+          minimum: 0
+          maximum: 6
+        autoApplyTaxes:
+          type: boolean
+        version:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+    NotificationPreference:
+      type: object
+      required:
+        - id
+        - category
+        - channel
+        - isEnabled
+        - version
+      properties:
+        id:
+          type: string
+          format: uuid
+        category:
+          type: string
+          enum: [low_stock, failed_sync, role_invite, audit_alert]
+        channel:
+          type: string
+          enum: [email]
+        isEnabled:
+          type: boolean
+        throttleMinutes:
+          type: integer
+          nullable: true
+        version:
+          type: integer
+        recipients:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationRecipient'
+    NotificationRecipient:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+        userShopId:
+          type: string
+          format: uuid
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+    StaffInvitation:
+      type: object
+      required:
+        - id
+        - email
+        - role
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [owner, manager, staff]
+        status:
+          type: string
+          enum: [pending, accepted, revoked, expired]
+        invitedBy:
+          type: string
+          format: uuid
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    StaffMember:
+      type: object
+      required:
+        - userShopId
+        - userId
+        - email
+        - role
+        - status
+      properties:
+        userShopId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [owner, manager, staff]
+        status:
+          type: string
+          enum: [active, deactivated]
+        deactivatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    SettingsAuditLog:
+      type: object
+      required:
+        - id
+        - section
+        - changeType
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        section:
+          type: string
+          enum: [business_profile, operational, notifications, staff]
+        changeType:
+          type: string
+          enum: [create, update, delete, deactivate]
+        actorId:
+          type: string
+          format: uuid
+        actorEmail:
+          type: string
+          format: email
+        diff:
+          type: object
+          description: JSON Patch-like payload describing the change
+        createdAt:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+          nullable: true
+paths:
+  /api/settings/business-profile:
+    get:
+      summary: Fetch the current business profile
+      security:
+        - SupabaseToken: []
+      responses:
+        '200':
+          description: Current profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessProfile'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: User not mapped to a shop
+    put:
+      summary: Update business profile
+      security:
+        - SupabaseToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BusinessProfile'
+              required:
+                - legalName
+                - displayName
+                - email
+                - addressLine1
+                - city
+                - postalCode
+                - country
+                - version
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessProfile'
+        '409':
+          description: Version conflict detected
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/settings/operational:
+    get:
+      summary: Fetch operational defaults
+      security:
+        - SupabaseToken: []
+      responses:
+        '200':
+          description: Operational preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationalPreference'
+    put:
+      summary: Update operational defaults
+      security:
+        - SupabaseToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/OperationalPreference'
+              required:
+                - currencyCode
+                - timezone
+                - unitSystem
+                - fiscalWeekStart
+                - version
+      responses:
+        '200':
+          description: Updated defaults
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationalPreference'
+        '409':
+          description: Version conflict
+  /api/settings/notifications:
+    get:
+      summary: List notification preferences
+      security:
+        - SupabaseToken: []
+      responses:
+        '200':
+          description: Notification preferences
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationPreference'
+    patch:
+      summary: Bulk update notification preferences
+      description: Toggles enablement and throttle values for multiple categories at once.
+      security:
+        - SupabaseToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required:
+                  - id
+                  - version
+                  - isEnabled
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  isEnabled:
+                    type: boolean
+                  throttleMinutes:
+                    type: integer
+                    nullable: true
+                  version:
+                    type: integer
+      responses:
+        '200':
+          description: Updated preferences
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationPreference'
+        '409':
+          description: At least one version mismatch
+  /api/settings/notifications/{preferenceId}/recipients:
+    post:
+      summary: Add a notification recipient
+      security:
+        - SupabaseToken: []
+      parameters:
+        - in: path
+          name: preferenceId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userShopId:
+                  type: string
+                  format: uuid
+                email:
+                  type: string
+                  format: email
+              oneOf:
+                - required: [userShopId]
+                - required: [email]
+      responses:
+        '201':
+          description: Recipient added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationRecipient'
+        '409':
+          description: Recipient already exists
+    delete:
+      summary: Remove a notification recipient
+      security:
+        - SupabaseToken: []
+      parameters:
+        - in: path
+          name: preferenceId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              oneOf:
+                - required: [userShopId]
+                - required: [email]
+              properties:
+                userShopId:
+                  type: string
+                  format: uuid
+                email:
+                  type: string
+                  format: email
+      responses:
+        '204':
+          description: Recipient removed
+  /api/settings/staff:
+    get:
+      summary: List current staff assignments
+      security:
+        - SupabaseToken: []
+      responses:
+        '200':
+          description: Staff list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StaffMember'
+  /api/settings/staff/invitations:
+    post:
+      summary: Invite a new staff member
+      security:
+        - SupabaseToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [manager, staff]
+      responses:
+        '201':
+          description: Invitation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffInvitation'
+        '409':
+          description: Pending invite already exists
+  /api/settings/staff/invitations/{invitationId}:
+    delete:
+      summary: Revoke a pending invitation
+      security:
+        - SupabaseToken: []
+      parameters:
+        - in: path
+          name: invitationId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Invitation revoked
+  /api/settings/staff/invitations/{invitationId}/resend:
+    post:
+      summary: Resend invitation email
+      security:
+        - SupabaseToken: []
+      parameters:
+        - in: path
+          name: invitationId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '202':
+          description: Resend scheduled
+  /api/settings/staff/{userShopId}:
+    patch:
+      summary: Update staff role or status
+      security:
+        - SupabaseToken: []
+      parameters:
+        - in: path
+          name: userShopId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum: [owner, manager, staff]
+                status:
+                  type: string
+                  enum: [active, deactivated]
+              minProperties: 1
+      responses:
+        '200':
+          description: Updated staff member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffMember'
+  /api/settings/audit:
+    get:
+      summary: List settings audit logs
+      security:
+        - SupabaseToken: []
+      parameters:
+        - in: query
+          name: section
+          schema:
+            type: string
+            enum: [business_profile, operational, notifications, staff]
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - in: query
+          name: cursor
+          schema:
+            type: string
+            description: Opaque pagination cursor
+      responses:
+        '200':
+          description: Audit entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SettingsAuditLog'
+                  nextCursor:
+                    type: string
+                    nullable: true
+security:
+  - SupabaseToken: []

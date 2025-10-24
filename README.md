@@ -88,7 +88,7 @@
 
 ## 📚 Documentation
 
-* [Quickstart Guide](./specs/001-inventauri-v2-is/quickstart.md)
+* [Quickstart Guide](./specs/004-add-admin-settings/quickstart.md)
 * [Admin Guide](./specs/001-inventauri-v2-is/admin-guide.md)
 * [API Reference](./docs/API.md)
 * [Deployment Guide](./docs/DEPLOYMENT.md)
@@ -148,10 +148,10 @@
 
 ### Environment Variables
 
-* `NEXT_PUBLIC_SUPABASE_URL`
-* `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+* `PUBLIC_SUPABASE_URL`
+* `PUBLIC_SUPABASE_ANON_KEY`
+* `SUPABASE_SERVICE_ROLE_KEY` (erforderlich für Team-Einladungen/Deaktivierungen)
 * `DATABASE_URL`
-* `JWT_SECRET`
 * `NODE_ENV`
 
 ---

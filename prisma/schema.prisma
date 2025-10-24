@@ -61,6 +61,48 @@ enum TransactionType {
   return
 }
 
+enum UnitSystem {
+  metric
+  imperial
+}
+
+enum NotificationChannel {
+  email
+}
+
+enum NotificationCategory {
+  low_stock
+  failed_sync
+  role_invite
+  audit_alert
+}
+
+enum StaffInvitationStatus {
+  pending
+  accepted
+  revoked
+  expired
+}
+
+enum SettingsSection {
+  business_profile
+  operational
+  notifications
+  staff
+}
+
+enum SettingsChangeType {
+  create
+  update
+  delete
+  deactivate
+}
+
+enum UserMembershipStatus {
+  active
+  deactivated
+}
+
 model Warehouse {
   id            String             @id @default(uuid()) @db.Uuid
   name          String
@@ -185,12 +227,17 @@ model Shop {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users UserShop[]
-  items Item[]
-  itemStockLevels ItemStockLevel[]
-  stockTransactions StockTransaction[]
-  products Product[]
-  productVariants ProductVariant[]
+  users                 UserShop[]
+  items                 Item[]
+  itemStockLevels       ItemStockLevel[]
+  stockTransactions     StockTransaction[]
+  products              Product[]
+  productVariants       ProductVariant[]
+  businessProfile       BusinessProfile?
+  operationalPreference OperationalPreference?
+  notificationPreferences NotificationPreference[]
+  staffInvitations      StaffInvitation[]
+  settingsAuditLogs     SettingsAuditLog[]
 }
 
 model UserShop {
@@ -199,9 +246,126 @@ model UserShop {
   shopId    String   @db.Uuid
   role      String   // owner | manager | staff (mirrors app roles)
   createdAt DateTime @default(now())
+  status    UserMembershipStatus @default(active)
+  deactivatedAt DateTime?
+  deactivatedBy String? @db.Uuid
 
-  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shop    Shop                        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  notificationRecipients NotificationRecipient[]
 
   @@unique([userId, shopId])
   @@index([shopId])
+  @@index([status])
+}
+
+model BusinessProfile {
+  id           String   @id @default(uuid()) @db.Uuid
+  shopId       String   @unique @db.Uuid
+  legalName    String
+  displayName  String
+  taxId        String?
+  email        String
+  phone        String?
+  website      String?
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  postalCode   String
+  country      String
+  updatedBy    String   @db.Uuid
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  version      Int      @default(1)
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model OperationalPreference {
+  id                   String      @id @default(uuid()) @db.Uuid
+  shopId               String      @unique @db.Uuid
+  currencyCode         String
+  timezone             String
+  unitSystem           UnitSystem  @default(metric)
+  defaultUnitPrecision Int         @default(2)
+  fiscalWeekStart      Int
+  autoApplyTaxes       Boolean     @default(false)
+  updatedBy            String      @db.Uuid
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  version              Int         @default(1)
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model NotificationPreference {
+  id              String               @id @default(uuid()) @db.Uuid
+  shopId          String               @db.Uuid
+  category        NotificationCategory
+  channel         NotificationChannel  @default(email)
+  isEnabled       Boolean              @default(true)
+  throttleMinutes Int?
+  updatedBy       String               @db.Uuid
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  version         Int                  @default(1)
+
+  shop        Shop                    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  recipients  NotificationRecipient[]
+
+  @@unique([shopId, category, channel])
+  @@index([shopId])
+  @@index([category])
+}
+
+model NotificationRecipient {
+  id            String   @id @default(uuid()) @db.Uuid
+  preferenceId  String   @db.Uuid
+  userShopId    String?  @db.Uuid
+  email         String?
+  createdAt     DateTime @default(now())
+
+  preference NotificationPreference @relation(fields: [preferenceId], references: [id], onDelete: Cascade)
+  userShop   UserShop?              @relation(fields: [userShopId], references: [id], onDelete: SetNull)
+
+  @@index([preferenceId])
+  @@index([userShopId])
+  @@unique([preferenceId, userShopId])
+  @@unique([preferenceId, email])
+}
+
+model StaffInvitation {
+  id                    String                @id @default(uuid()) @db.Uuid
+  shopId                String                @db.Uuid
+  email                 String
+  role                  String
+  status                StaffInvitationStatus @default(pending)
+  supabaseInvitationId  String
+  invitedBy             String                @db.Uuid
+  expiresAt             DateTime
+  acceptedAt            DateTime?
+  revokedAt             DateTime?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+  @@index([status])
+  @@unique([shopId, email, status])
+}
+
+model SettingsAuditLog {
+  id         String            @id @default(uuid()) @db.Uuid
+  shopId     String            @db.Uuid
+  section    SettingsSection
+  changeType SettingsChangeType
+  actorId    String            @db.Uuid
+  actorEmail String
+  diff       Json
+  createdAt  DateTime          @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, section])
+  @@index([createdAt])
 }
