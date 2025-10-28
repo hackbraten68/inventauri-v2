@@ -83,8 +83,8 @@ function ensureBoolean(value: unknown, field: string): boolean {
 
 function ensureVersion(value: unknown): number {
   const parsed = ensureNumber(value, 'version');
-  if (!Number.isInteger(parsed) || parsed < 1) {
-    throw new ValidationError('Version muss eine positive ganze Zahl sein.');
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new ValidationError('Version muss eine nicht-negative ganze Zahl sein (0 für neue Einträge).');
   }
   return parsed;
 }
@@ -216,6 +216,9 @@ export function parseNotificationPreferencePatch(payload: unknown): Notification
 
 export function ensureExpectedVersion(provided: number, current: number) {
   if (provided !== current) {
-    throw new ValidationError('Die gespeicherten Daten wurden bereits geändert. Bitte aktualisieren und erneut versuchen.', 409);
+    throw new ValidationError(
+      'Die gespeicherten Daten wurden bereits geändert oder die Version ist veraltet. Bitte Werte aktualisieren und erneut versuchen.',
+      409
+    );
   }
 }

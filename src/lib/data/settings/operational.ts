@@ -1,9 +1,10 @@
-import { SettingsChangeType, SettingsSection, UnitSystem } from '@prisma/client';
+import { Prisma, SettingsChangeType, SettingsSection, UnitSystem } from '@prisma/client';
 import { prisma } from '../../prisma';
 import { buildSettingsDiff, recordSettingsChange } from './audit';
 import {
   ensureExpectedVersion,
   parseOperationalPreferencePayload,
+  ValidationError,
   type OperationalPreferencePayload
 } from '../../settings/validation';
 
@@ -58,19 +59,30 @@ export async function updateOperationalPreference(args: UpdateOperationalPrefere
 
     if (!existing) {
       ensureExpectedVersion(parsed.version, 0);
-      const created = await tx.operationalPreference.create({
-        data: {
-          shopId,
-          currencyCode: parsed.currencyCode,
-          timezone: parsed.timezone,
-          unitSystem: parsed.unitSystem,
-          defaultUnitPrecision: parsed.defaultUnitPrecision,
-          fiscalWeekStart: parsed.fiscalWeekStart,
-          autoApplyTaxes: parsed.autoApplyTaxes ?? false,
-          updatedBy: actorId,
-          version: 1
+      let created;
+      try {
+        created = await tx.operationalPreference.create({
+          data: {
+            shopId,
+            currencyCode: parsed.currencyCode,
+            timezone: parsed.timezone,
+            unitSystem: parsed.unitSystem,
+            defaultUnitPrecision: parsed.defaultUnitPrecision,
+            fiscalWeekStart: parsed.fiscalWeekStart,
+            autoApplyTaxes: parsed.autoApplyTaxes ?? false,
+            updatedBy: actorId,
+            version: 1
+          }
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          throw new ValidationError('Betriebliche Vorgaben wurden bereits parallel erstellt. Bitte aktualisieren und erneut versuchen.', 409);
         }
-      });
+        if (error instanceof Error && error.message.includes('Unique constraint failed')) {
+          throw new ValidationError('Betriebliche Vorgaben wurden bereits parallel erstellt. Bitte aktualisieren und erneut versuchen.', 409);
+        }
+        throw error;
+      }
 
       await recordSettingsChange({
         shopId,

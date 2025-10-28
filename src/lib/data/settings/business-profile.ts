@@ -1,9 +1,10 @@
-import { SettingsChangeType, SettingsSection } from '@prisma/client';
+import { Prisma, SettingsChangeType, SettingsSection } from '@prisma/client';
 import { prisma } from '../../prisma';
 import { buildSettingsDiff, recordSettingsChange } from './audit';
 import {
   ensureExpectedVersion,
   parseBusinessProfilePayload,
+  ValidationError,
   type BusinessProfilePayload
 } from '../../settings/validation';
 
@@ -78,24 +79,35 @@ export async function updateBusinessProfile(args: UpdateBusinessProfileArgs): Pr
 
     if (!existing) {
       ensureExpectedVersion(parsed.version, 0);
-      const created = await tx.businessProfile.create({
-        data: {
-          shopId,
-          legalName: parsed.legalName,
-          displayName: parsed.displayName,
-          taxId: parsed.taxId,
-          email: parsed.email,
-          phone: parsed.phone,
-          website: parsed.website,
-          addressLine1: parsed.addressLine1,
-          addressLine2: parsed.addressLine2,
-          city: parsed.city,
-          postalCode: parsed.postalCode,
-          country: parsed.country,
-          updatedBy: actorId,
-          version: 1
+      let created;
+      try {
+        created = await tx.businessProfile.create({
+          data: {
+            shopId,
+            legalName: parsed.legalName,
+            displayName: parsed.displayName,
+            taxId: parsed.taxId,
+            email: parsed.email,
+            phone: parsed.phone,
+            website: parsed.website,
+            addressLine1: parsed.addressLine1,
+            addressLine2: parsed.addressLine2,
+            city: parsed.city,
+            postalCode: parsed.postalCode,
+            country: parsed.country,
+            updatedBy: actorId,
+            version: 1
+          }
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          throw new ValidationError('Die gespeicherten Daten wurden bereits parallel erstellt. Bitte aktualisieren und erneut versuchen.', 409);
         }
-      });
+        if (error instanceof Error && error.message.includes('Unique constraint failed')) {
+          throw new ValidationError('Die gespeicherten Daten wurden bereits parallel erstellt. Bitte aktualisieren und erneut versuchen.', 409);
+        }
+        throw error;
+      }
 
       await recordSettingsChange({
         shopId,
