@@ -10,6 +10,8 @@ const schema = a.schema({
   Todo: a
     .model({
       content: a.string(),
+  // Added boolean flag as suggested in the template comment
+  isDone: a.boolean(),
     })
     .authorization((allow) => [allow.guest()]),
 });

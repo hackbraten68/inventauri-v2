@@ -104,3 +104,4 @@ amplifyconfiguration*
 .codex/prompts/speckit.tasks.md
 .codex/prompts/speckit.tasks.md
 /.codex
+.codex/history.jsonl

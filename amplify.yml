@@ -1,0 +1,30 @@
+version: 1
+
+backend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        - npx ampx pipeline-deploy --branch "006-aws-amplify-integration" --app-id "d1lucbh3fk5jtg"
+  artifacts:
+    baseDirectory: .
+    files:
+      - amplify_outputs.json
+
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
