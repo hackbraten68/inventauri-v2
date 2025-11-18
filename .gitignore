@@ -71,6 +71,7 @@ tmp/
 # AI / Codex / Specify local data
 # ============================================
 .codex/
+.specify/scripts
 .specify/cache/
 .specify/tmp/
 .specify/logs/
@@ -90,3 +91,16 @@ tmp/
 *.zip
 /backups/
 
+
+# amplify
+.amplify
+amplify_outputs*
+amplifyconfiguration*
+/.codex
+/.specify
+.codex/prompts/speckit.clarify.md
+/.codex/prompts
+.codex/version.json
+.codex/prompts/speckit.tasks.md
+.codex/prompts/speckit.tasks.md
+/.codex
