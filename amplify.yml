@@ -25,6 +25,8 @@ frontend:
         - rm -rf node_modules
         - npm ci --omit=dev --omit=optional --no-audit --no-fund
         - npm dedupe
+        # Clean any previous compute bundle to avoid accumulation
+        - rm -rf ./.amplify-hosting/compute/default
         - mv node_modules ./.amplify-hosting/compute/default
   artifacts:
     baseDirectory: .amplify-hosting
