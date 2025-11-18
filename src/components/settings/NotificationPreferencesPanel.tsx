@@ -18,6 +18,24 @@ interface RecipientDraft {
   userShopId?: string;
 }
 
+function isNotificationPreferenceArray(value: unknown): value is NotificationPreferenceState[] {
+  return (
+    Array.isArray(value) &&
+    value.every((entry) => {
+      if (!entry || typeof entry !== 'object') {
+        return false;
+      }
+      const record = entry as Record<string, unknown>;
+      return (
+        typeof record.id === 'string' &&
+        typeof record.category === 'string' &&
+        typeof record.channel === 'string' &&
+        typeof record.isEnabled === 'boolean'
+      );
+    })
+  );
+}
+
 export function NotificationPreferencesPanel() {
   const [preferences, setPreferences] = useState<NotificationPreferenceState[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +84,23 @@ export function NotificationPreferencesPanel() {
         if (!response.ok) {
           throw new Error(body.error ?? body.message ?? 'Aktualisierung fehlgeschlagen.');
         }
-        setPreferences(body);
+        if (!isNotificationPreferenceArray(body)) {
+          throw new Error('Ungültige Antwort vom Server.');
+        }
+        const updatedPreferences = body;
+        setPreferences((current) => {
+          const updateMap = new Map(updatedPreferences.map((item) => [item.id, item]));
+          const existingIds = new Set(current.map((item) => item.id));
+          const merged = current.map((item) => updateMap.get(item.id) ?? item);
+
+          for (const preferenceItem of updatedPreferences) {
+            if (!existingIds.has(preferenceItem.id)) {
+              merged.push(preferenceItem);
+            }
+          }
+
+          return merged;
+        });
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : 'Unbekannter Fehler beim Speichern.');
       } finally {
