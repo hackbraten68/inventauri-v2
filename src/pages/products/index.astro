@@ -1,5 +1,5 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import AppLayout from '../../layouts/AppLayout.astro';
 import { getAuthHeaders } from '../../lib/auth/client';
 
 // Fetch products on the server side
@@ -10,7 +10,7 @@ const response = await fetch(`${import.meta.env.PUBLIC_API_URL}/api/products`, {
 const products = response.ok ? await response.json() : [];
 ---
 
-<Layout title="Products">
+<AppLayout title="Products">
   <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold text-gray-900">Products</h1>
