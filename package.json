@@ -11,6 +11,8 @@
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "db:migrate:deploy": "dotenv -e .env.local -- prisma migrate deploy",
     "db:seed": "dotenv -e .env.local -- prisma db seed",
+    "db:seed:cloud": "prisma db seed",
+    "db:migrate:deploy:cloud": "prisma migrate deploy",
     "test": "dotenv -e .env.local -- vitest run",
     "test:watch": "dotenv -e .env.local -- vitest",
     "test:contracts": "dotenv -e .env.local -- vitest run tests/contracts"
@@ -37,6 +39,7 @@
   "devDependencies": {
     "@aws-amplify/backend": "^1.18.0",
     "@aws-amplify/backend-cli": "^1.8.0",
+    "@aws-amplify/seed": "^1.1.0",
     "astro-aws-amplify": "^0.2.4",
     "aws-cdk-lib": "^2.216.0",
     "constructs": "^10.4.3",
