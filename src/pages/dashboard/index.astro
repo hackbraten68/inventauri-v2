@@ -1,8 +1,15 @@
 ---
 import AppLayout from '../../layouts/AppLayout.astro';
 import { DashboardOverview } from '../../components/dashboard/DashboardOverview';
+import { getBusinessProfileViewModel } from '../../lib/settings/view-model';
+
+const businessProfile = await getBusinessProfileViewModel();
+const pageTitle = `${businessProfile.displayName} · Dashboard`;
+const pageDescription = businessProfile.location
+  ? `Kennzahlen & Aufgaben für ${businessProfile.location}`
+  : 'Kennzahlen, offene Aufgaben & Schnellzugriffe';
 ---
 
-<AppLayout title="Dashboard" description="Kennzahlen, offene Aufgaben & Schnellzugriffe">
+<AppLayout title={pageTitle} description={pageDescription}>
   <DashboardOverview client:load />
 </AppLayout>

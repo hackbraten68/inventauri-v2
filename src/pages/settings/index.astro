@@ -1,0 +1,29 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import { SettingsWorkspace } from '../../components/settings/SettingsWorkspace';
+
+const navItems = [
+  { href: '/dashboard', label: 'Dashboard', description: 'Kennzahlen & Trends' },
+  { href: '/inventory', label: 'Gesamt Inventar', description: 'Artikelübersicht & Lagerbestände' },
+  { href: '/pos', label: 'POS / Warehouse', description: 'Schnelle Buchungen & Warenausgang' },
+  { href: '/items', label: 'Artikelverwaltung', description: 'Produkte, Varianten & Lieferanten' },
+  { href: '/items/new', label: 'Artikel anlegen', description: 'Neue Produkte erfassen' },
+  { href: '/settings', label: 'Admin Einstellungen', description: 'Profil, Betrieb & Zugriff' }
+];
+---
+
+<AppLayout
+  title="Admin Einstellungen"
+  description="Verwalte Geschäftsprofil, betriebliche Standards und Zugriffsrechte."
+  navItems={navItems}
+>
+  <section class="flex flex-col gap-4">
+    <div class="flex flex-col gap-1">
+      <h2 class="text-lg font-semibold text-foreground">Einstellungen</h2>
+      <p class="text-sm text-muted-foreground">
+        Wähle einen Bereich, um Stammdaten, operative Standards oder Teamrechte zu bearbeiten.
+      </p>
+    </div>
+    <SettingsWorkspace client:load />
+  </section>
+</AppLayout>
