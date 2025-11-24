@@ -1,5 +1,5 @@
 
-# ♉ Inventauri v2 – Astro + Supabase + Shadcn UI + Prisma
+# ♉ Inventauri v2 – Astro + PocketBase + Shadcn UI + Prisma
 
 ## Specification
 
@@ -16,46 +16,39 @@ Inventauri v2 is a lightweight web-based inventory system for micro-shops, featu
 
 ## 🔧 Quickstart
 
-1. Start Supabase locally (e.g. via the [Supabase CLI](https://supabase.com/docs/guides/cli/local-development)) or point the project at your existing instance.
-   ```bash
-   supabase start
-   ```
-   > Ensure the Postgres instance is reachable and `DATABASE_URL` points to it (local default: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`).
+1. Configure environments:
+   - `cp .env.example .env.local` → fill in PocketBase + Postgres values for local CLI development.
+   - `cp .env.docker.example .env.docker` → tweak if you want custom passwords/ports for Docker Compose.
 
-2. Install dependencies:
+2. Install dependencies for local CLI workflows:
    ```bash
    npm install
    ```
 
-3. Configure environment variables:
-   - Copy `.env.example` to `.env.local` and insert your real values (Supabase keys + `DATABASE_URL`).
-   - `.env.local` is ignored by git and stays local-only.
-
-4. Optional: configure default warehouse names in `.env.local`:
-   ```ini
-   SEED_CENTRAL_NAME="Main Warehouse HQ"
-   SEED_CENTRAL_SLUG="central-hq"
-   ```
-
-5. Run migrations & seed (all scripts automatically load `.env.local`):
+3. (Native dev) Run Prisma migrations and seeds:
    ```bash
-   npm run db:migrate      # applies Prisma migrations
-   npm run db:seed         # creates the default central warehouse
-   ```
-
-6. Launch the dev server:
-   ```bash
+   npm run db:migrate
+   npm run db:seed
    npm run dev
    ```
+   Astro serves the app on [http://localhost:4321](http://localhost:4321) using your local PocketBase/Postgres instances.
 
-Astro serves the app on [http://localhost:4321](http://localhost:4321).
+4. (Docker stack) Build and launch the full environment (PocketBase + Postgres + Astro) via Compose:
+   ```bash
+   npm run docker:build
+   npm run docker:up
+   # CTRL+C or npm run docker:down to stop
+   ```
+   - PocketBase admin UI: [http://localhost:8090/_](http://localhost:8090/_)
+   - Inventauri web app: [http://localhost:4321](http://localhost:4321)
+   - Data persists inside the named volumes `inventauri_pg`, `inventauri_pb_data`, and `inventauri_pb_public`.
 
 ## 🗂️ Project Structure
 
 ```text
 src/
 ├── components/
-│   ├── auth/             # Supabase login/logout helpers
+│   ├── auth/             # PocketBase login/logout helpers
 │   ├── dashboard/        # Dashboard widgets & lists
 │   ├── items/            # Item list & create form
 │   ├── pos/              # POS terminal UI
@@ -66,7 +59,7 @@ src/
 │   ├── auth/             # Cookie/session utilities
 │   ├── data/             # Prisma data-access helpers (dashboard, items, POS, warehouses)
 │   ├── services/         # Stock mutation services
-│   ├── supabase-client.ts
+│   ├── pocketbase-*      # PocketBase client + helpers
 │   └── utils.ts
 ├── pages/
 │   ├── api/              # JSON APIs (stock, items, dashboard)
@@ -86,7 +79,7 @@ prisma/
 ROADMAP.md                # Backlog / todo list
 ```
 
-## 🗃️ Data Model (Prisma + Supabase)
+## 🗃️ Data Model (Prisma + PocketBase)
 
 - `Warehouse` (`type = central | pos | virtual`) represents HQ and POS locations, identified by `slug`.
 - `PosLocation` stores optional POS contact metadata.
@@ -98,14 +91,14 @@ Row Level Security is currently disabled; once policies are defined you can re-e
 
 ![Warehouse / POS](./src/assets/warehouse_mngmt.png)
 
-## 🔐 Supabase Auth & Environment Handling
+## 🔐 PocketBase Auth & Environment Handling
 
-- `PUBLIC_SUPABASE_URL` & `PUBLIC_SUPABASE_ANON_KEY` in `.env.local` feed the browser client (`src/lib/supabase-client.ts`).
-- `SUPABASE_SERVICE_ROLE_KEY` is optional (for server tasks only).
+- `PUBLIC_POCKETBASE_URL` in `.env.local` feeds the browser-side PocketBase SDK.
+- `POCKETBASE_ADMIN_EMAIL` / `POCKETBASE_ADMIN_PASSWORD` (or `POCKETBASE_SERVICE_ROLE_TOKEN`) power server-side admin tasks such as staff invitations.
 - `DATABASE_URL` is consumed by Prisma (all CLI scripts run through `dotenv-cli`).
-- `/login` uses Supabase email/password (`signInWithPassword`); logout is in the sidebar.
-- Middleware checks the `sb-access-token` cookie and redirects unauthenticated users to `/login`. The client-side `SessionGuard` also keeps cookies & redirects aligned.
-- Protected APIs (e.g. `/api/stock/*`, `/api/items`) require a Supabase access token via `Authorization: Bearer <token>`.
+- `/login` talks to `/api/auth/login`, which authenticates against PocketBase and issues HttpOnly `pb-access-token`/`pb-refresh-token` cookies.
+- Middleware checks the `pb-access-token` cookie and redirects unauthenticated users to `/login`. The client-side `SessionGuard` polls `/api/auth/session` to keep cookies and redirects aligned.
+- Protected APIs (e.g. `/api/stock/*`, `/api/items`) validate PocketBase tokens server-side and scope every query to the user’s tenant.
 
 ## 🔄 Inventory API & UI Interactions
 
@@ -125,11 +118,15 @@ Row Level Security is currently disabled; once policies are defined you can re-e
 | `npm run db:migrate`       | Run `prisma migrate dev`                                     |
 | `npm run db:migrate:deploy`| Apply migrations without reset (e.g. CI/CD)                  |
 | `npm run db:seed`          | Execute `prisma db seed` (creates default warehouse)         |
+| `npm run docker:build`     | Build Docker images for the app + services                   |
+| `npm run docker:up`        | Launch PocketBase + Postgres + Astro via Compose             |
+| `npm run docker:down`      | Stop Compose stack (keeps volumes)                           |
+| `npm run docker:logs`      | Tail logs for `web`, `pocketbase`, and `postgres`            |
 
 ## ✅ Next Steps
 
-- Define Supabase RLS policies and version them via migrations.
-- Add a Supabase Edge Function for atomic transfers (HQ ➜ POS).
+- Harden PocketBase collections (verification flows, MFA, profile automation) and version them via migrations.
+- Expand tenant onboarding (self-serve shop creation + invitations).
 - Populate inventory UI with tailored Prisma queries (summaries, filters).
 - Build a POS wizard to create new POS warehouses and trigger transfers.
 

@@ -1,0 +1,18 @@
+{
+  "collections": [
+    {
+      "name": "profiles",
+      "type": "base",
+      "schema": [
+        { "name": "shopId", "type": "text", "required": true },
+        { "name": "userShopId", "type": "text", "required": true },
+        {
+          "name": "role",
+          "type": "select",
+          "required": true,
+          "options": { "maxSelect": 1, "values": ["owner", "manager", "staff"] }
+        }
+      ]
+    }
+  ]
+}

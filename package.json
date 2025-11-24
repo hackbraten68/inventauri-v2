@@ -13,7 +13,11 @@
     "db:seed": "dotenv -e .env.local -- prisma db seed",
     "test": "dotenv -e .env.local -- vitest run",
     "test:watch": "dotenv -e .env.local -- vitest",
-    "test:contracts": "dotenv -e .env.local -- vitest run tests/contracts"
+    "test:contracts": "dotenv -e .env.local -- vitest run tests/contracts",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f web pocketbase postgres"
   },
   "dependencies": {
     "@astrojs/node": "^9.4.4",

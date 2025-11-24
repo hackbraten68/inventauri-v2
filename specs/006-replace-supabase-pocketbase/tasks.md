@@ -82,11 +82,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T024 [US3] Add a multi-stage `Dockerfile` at repo root that installs dependencies, builds the Astro app, and serves it via Node 20 using environment variables loaded from `.env.docker`.
-- [ ] T025 [US3] Create `docker-compose.yml` defining `web`, `pocketbase`, and `postgres` services with health checks, shared network, env_file `.env.docker`, and named volumes (`inventauri_pg`, `inventauri_pb_data`, `inventauri_pb_public`).
-- [ ] T026 [US3] Check in PocketBase bootstrap artifacts under `pocketbase/` (e.g., `pocketbase/pb_migrations/001_bootstrap.pb.js` and `pocketbase/collections/schema.json`) so the container seeds admin + profile collections.
-- [ ] T027 [US3] Add Docker helper scripts and npm aliases in `package.json` (e.g., `docker:up`, `docker:down`, `docker:migrate`) plus mention them in `README.md`.
-- [ ] T028 [US3] Update `quickstart.md` and `README.md` with the Compose workflow, `.env.docker` usage, and PocketBase admin login steps.
+- [X] T024 [US3] Add a multi-stage `Dockerfile` at repo root that installs dependencies, builds the Astro app, and serves it via Node 20 using environment variables loaded from `.env.docker`.
+- [X] T025 [US3] Create `docker-compose.yml` defining `web`, `pocketbase`, and `postgres` services with health checks, shared network, env_file `.env.docker`, and named volumes (`inventauri_pg`, `inventauri_pb_data`, `inventauri_pb_public`).
+- [X] T026 [US3] Check in PocketBase bootstrap artifacts under `pocketbase/` (e.g., `pocketbase/pb_migrations/001_bootstrap.pb.js` and `pocketbase/collections/schema.json`) so the container seeds admin + profile collections.
+- [X] T027 [US3] Add Docker helper scripts and npm aliases in `package.json` (e.g., `docker:up`, `docker:down`, `docker:migrate`) plus mention them in `README.md`.
+- [X] T028 [US3] Update `quickstart.md` and `README.md` with the Compose workflow, `.env.docker` usage, and PocketBase admin login steps.
 
 **Checkpoint**: Entire stack runs via Docker with documented workflows and persistence.
 

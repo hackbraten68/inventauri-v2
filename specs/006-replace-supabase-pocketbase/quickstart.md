@@ -12,23 +12,26 @@
    ```
 
 ## Initial Setup
-1. Build the multi-stage web image once:
+1. Build the Docker images:
    ```bash
-   docker compose build web
+   npm run docker:build
    ```
-2. Start the stack:
+2. Bring up the stack (PocketBase + Postgres + Astro):
    ```bash
-   docker compose up pocketbase postgres -d
+   npm run docker:up
+   ```
+   Use `CTRL+C` (or `npm run docker:down`) to stop the stack later.
+3. Run Prisma migrations & seed inside the `web` container:
+   ```bash
    docker compose run --rm web npm run db:migrate
    docker compose run --rm web npm run db:seed
-   docker compose up web
    ```
-3. Visit `http://localhost:4321` (Astro app) and `http://localhost:8090/_` (PocketBase admin UI). Log in with the admin credentials from `.env.docker` and create staff accounts linked to Prisma `userShop` rows (see migration notes).
+4. Visit `http://localhost:4321` (Astro app) and `http://localhost:8090/_` (PocketBase admin UI). Log in with the admin credentials from `.env.docker` and create staff accounts linked to Prisma `userShop` rows (see migration notes).
 
 ## Everyday Development Loop
-1. `docker compose up` to run all services with live reload (the `web` container mounts the repo for hot reloading via `npm run dev`).
-2. Edit TypeScript/Prisma files locally; the dev server inside the container restarts automatically.
-3. Run tests in Docker to ensure parity:
+1. `npm run docker:up` to run all services (logs stream in the same terminal). Use `npm run docker:logs` in a second terminal if you prefer dedicated log tails.
+2. Edit TypeScript/Prisma files locally; rebuild via `docker compose run --rm web npm run build` or restart the stack when needed.
+3. Run tests inside the container for parity:
    ```bash
    docker compose run --rm web npm test
    ```
