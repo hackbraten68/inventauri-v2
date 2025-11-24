@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from 'astro';
 
 const PROTECTED_PREFIXES = ['/dashboard', '/inventory', '/pos', '/items'];
 const NON_PROTECTED_PREFIXES = ['/api', '/_astro', '/@fs', '/@id', '/node_modules', '/src', '/favicon', '/public'];
-const AUTH_COOKIE_NAME = 'sb-access-token';
+const AUTH_COOKIE_NAME = 'pb-access-token';
 
 function requiresAuth(pathname: string) {
   return PROTECTED_PREFIXES.some((prefix) =>

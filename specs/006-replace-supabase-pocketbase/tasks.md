@@ -40,14 +40,14 @@
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Update `src/lib/auth/cookies.ts` to write/delete the new `pb-access-token` and `pb-refresh-token` cookies with HttpOnly/SameSite attributes.
-- [ ] T009 [US1] Refactor `src/components/auth/LoginForm.tsx` to post to `/api/auth/login`, handle PocketBase errors, and reflect the new provider in button/copy.
-- [ ] T010 [US1] Refresh the messaging in `src/pages/login.astro` to describe PocketBase authentication and remove Supabase-specific text.
-- [ ] T011 [P] [US1] Implement `/src/pages/api/auth/login.ts` to call the PocketBase Admin API, verify credentials, and return user/profile data with cookies set.
-- [ ] T012 [P] [US1] Implement `/src/pages/api/auth/logout.ts` to revoke the PocketBase session and clear both cookies.
-- [ ] T013 [P] [US1] Implement `/src/pages/api/auth/session.ts` to validate existing cookies, refresh tokens when needed, and return the user profile.
-- [ ] T014 [US1] Rewrite `src/components/auth/SessionGuard.tsx` to call the new session endpoint, sync cookies, and redirect to `/login` when the PocketBase session disappears.
-- [ ] T015 [US1] Update `src/middleware.ts` to rely on `pb-access-token`, redirect unauthenticated users, and skip Supabase-only exclusions.
+- [X] T008 [US1] Update `src/lib/auth/cookies.ts` to write/delete the new `pb-access-token` and `pb-refresh-token` cookies with HttpOnly/SameSite attributes.
+- [X] T009 [US1] Refactor `src/components/auth/LoginForm.tsx` to post to `/api/auth/login`, handle PocketBase errors, and reflect the new provider in button/copy.
+- [X] T010 [US1] Refresh the messaging in `src/pages/login.astro` to describe PocketBase authentication and remove Supabase-specific text.
+- [X] T011 [P] [US1] Implement `/src/pages/api/auth/login.ts` to call the PocketBase Admin API, verify credentials, and return user/profile data with cookies set.
+- [X] T012 [P] [US1] Implement `/src/pages/api/auth/logout.ts` to revoke the PocketBase session and clear both cookies.
+- [X] T013 [P] [US1] Implement `/src/pages/api/auth/session.ts` to validate existing cookies, refresh tokens when needed, and return the user profile.
+- [X] T014 [US1] Rewrite `src/components/auth/SessionGuard.tsx` to call the new session endpoint, sync cookies, and redirect to `/login` when the PocketBase session disappears.
+- [X] T015 [US1] Update `src/middleware.ts` to rely on `pb-access-token`, redirect unauthenticated users, and skip Supabase-only exclusions.
 
 **Checkpoint**: PocketBase login works end-to-end; protected Astro pages require the new cookies.
 

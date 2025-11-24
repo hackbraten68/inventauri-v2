@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
-import { supabase } from '../../lib/supabase-client';
-import { setAccessTokenCookie } from '../../lib/auth/cookies';
+import { getAccessToken } from '../../lib/api/client';
 import type { InventoryItemSummary } from '../../lib/data/inventory';
 
 interface ItemListProps {
@@ -28,11 +27,7 @@ export function ItemList({ items, warehouseTotals }: ItemListProps) {
       setError(null);
       setSuccess(null);
 
-      const { data, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw sessionError;
-      const token = data.session?.access_token;
-      if (!token) throw new Error('Keine aktive Supabase Session.');
-      setAccessTokenCookie(token, data.session?.expires_in ?? undefined);
+      const token = await getAccessToken();
 
       const response = await fetch(`/api/items/${itemId}`, {
         method: 'DELETE',

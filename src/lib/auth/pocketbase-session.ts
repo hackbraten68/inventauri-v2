@@ -1,4 +1,4 @@
-import PocketBase from 'pocketbase';
+import PocketBase, { getTokenPayload } from 'pocketbase';
 
 const POCKETBASE_URL = import.meta.env.PUBLIC_POCKETBASE_URL ?? '';
 export const POCKETBASE_ACCESS_COOKIE = 'pb-access-token';
@@ -34,7 +34,6 @@ export function serializeAuthCookies(params: {
   refreshExpiresIn?: number;
   secure?: boolean;
 }) {
-  const now = Math.floor(Date.now() / 1000);
   const accessMaxAge = params.accessExpiresIn ?? 60 * 60;
   const refreshMaxAge = params.refreshExpiresIn ?? 60 * 60 * 24 * 7;
   const secureFlag = params.secure ?? !import.meta.env.DEV;
@@ -61,10 +60,12 @@ export async function refreshPocketBaseSession(tokens: PocketBaseSessionTokens) 
   client.authStore.save(tokens.accessToken, null);
   client.authStore.refreshToken = tokens.refreshToken;
   const result = await client.collection('users').authRefresh();
+  const expiresAt = getTokenExpiration(client.authStore.token);
   return {
     accessToken: client.authStore.token,
     refreshToken: client.authStore.refreshToken,
-    user: result.record
+    user: result.record,
+    expiresAt
   };
 }
 
@@ -75,6 +76,20 @@ export async function fetchPocketBaseProfile(tokens: PocketBaseSessionTokens) {
     tokens: {
       accessToken: refreshed.accessToken,
       refreshToken: refreshed.refreshToken
-    }
+    },
+    expiresAt: refreshed.expiresAt
   };
+}
+
+export function getTokenExpiration(token?: string) {
+  if (!token) return undefined;
+  try {
+    const payload = getTokenPayload(token) as { exp?: number } | undefined;
+    if (payload?.exp) {
+      return new Date(payload.exp * 1000).toISOString();
+    }
+  } catch {
+    // ignore decoding errors
+  }
+  return undefined;
 }

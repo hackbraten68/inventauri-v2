@@ -1,10 +1,8 @@
 import * as React from 'react';
-import { supabase } from '../../lib/supabase-client';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { cn } from '../../lib/utils';
-import { setAccessTokenCookie } from '../../lib/auth/cookies';
 
 interface LoginFormProps {
   className?: string;
@@ -25,20 +23,20 @@ export function LoginForm({ className, redirectTo = '/dashboard' }: LoginFormPro
     setSuccess(null);
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ email, password })
       });
 
-      if (signInError) {
-        setError(signInError.message);
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        setError(payload.error ?? 'PocketBase Login fehlgeschlagen.');
         return;
       }
 
-      if (data.session) {
-        setAccessTokenCookie(data.session.access_token, data.session.expires_in ?? undefined);
-      }
-
+      await response.json();
       setSuccess('Login erfolgreich. Du wirst weitergeleitet …');
       setTimeout(() => {
         window.location.href = redirectTo;
@@ -92,7 +90,7 @@ export function LoginForm({ className, redirectTo = '/dashboard' }: LoginFormPro
         ) : null}
       </div>
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? 'Anmeldung läuft …' : 'Mit Supabase anmelden'}
+        {loading ? 'Anmeldung läuft …' : 'Anmelden'}
       </Button>
     </form>
   );

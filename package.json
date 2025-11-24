@@ -21,6 +21,7 @@
     "@astrojs/tailwind": "^6.0.2",
     "@prisma/client": "^6.16.2",
     "@radix-ui/react-slot": "^1.2.3",
+    "@supabase/supabase-js": "^2.84.0",
     "astro": "^5.13.10",
     "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",
