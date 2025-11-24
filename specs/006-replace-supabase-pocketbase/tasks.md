@@ -23,10 +23,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 Update `package.json` and `package-lock.json` to add the `pocketbase` JS SDK dependency and remove unused Supabase packages.
-- [ ] T005 Create `src/lib/pocketbase-client.ts` (browser client wrapper) and remove `src/lib/supabase-client.ts`, updating exports so components can import the new helper.
-- [ ] T006 Add `src/lib/pocketbase-admin.ts` to initialize the server-side PocketBase admin client using service role credentials.
-- [ ] T007 Implement shared token utilities in `src/lib/auth/pocketbase-session.ts` (parse cookies, refresh tokens, fetch PocketBase profiles) for use by middleware, SessionGuard, and API routes.
+- [X] T004 Update `package.json` and `package-lock.json` to add the `pocketbase` JS SDK dependency and remove unused Supabase packages.
+- [X] T005 Create `src/lib/pocketbase-client.ts` (browser client wrapper) and remove `src/lib/supabase-client.ts`, updating exports so components can import the new helper.
+- [X] T006 Add `src/lib/pocketbase-admin.ts` to initialize the server-side PocketBase admin client using service role credentials.
+- [X] T007 Implement shared token utilities in `src/lib/auth/pocketbase-session.ts` (parse cookies, refresh tokens, fetch PocketBase profiles) for use by middleware, SessionGuard, and API routes.
 
 **Checkpoint**: Foundation ready—user story implementation can now begin in parallel.
 
