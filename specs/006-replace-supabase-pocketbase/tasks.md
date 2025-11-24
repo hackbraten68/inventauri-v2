@@ -11,9 +11,9 @@
 
 **Purpose**: Prepare environment scaffolding and configuration placeholders required across all stories.
 
-- [ ] T001 Update PocketBase environment placeholders in `.env.example` (root) for admin email/password, public URL, and service API tokens.
-- [ ] T002 Extend `src/env.d.ts` so Astro’s type-safe env access exposes the new `PUBLIC_POCKETBASE_URL`, `POCKETBASE_ADMIN_EMAIL`, `POCKETBASE_ADMIN_PASSWORD`, and related secrets.
-- [ ] T003 Create `.env.docker.example` at repo root containing Compose-ready defaults for Postgres, PocketBase, and the Astro app.
+- [X] T001 Update PocketBase environment placeholders in `.env.example` (root) for admin email/password, public URL, and service API tokens.
+- [X] T002 Extend `src/env.d.ts` so Astro’s type-safe env access exposes the new `PUBLIC_POCKETBASE_URL`, `POCKETBASE_ADMIN_EMAIL`, `POCKETBASE_ADMIN_PASSWORD`, and related secrets.
+- [X] T003 Create `.env.docker.example` at repo root containing Compose-ready defaults for Postgres, PocketBase, and the Astro app.
 
 ---
 

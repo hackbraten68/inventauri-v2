@@ -1,0 +1,30 @@
+# Node/TypeScript outputs
+node_modules/
+dist/
+out/
+.astro/
+.next/
+
+# Build artifacts & coverage
+build/
+coverage/
+*.tsbuildinfo
+*.log
+
+# Local env & secrets
+.env
+.env.*
+!.env.example
+!.env.docker.example
+
+# VCS & tooling
+.git/
+.gitignore
+.vscode/
+.idea/
+.specify/
+.codex/
+
+# OS junk
+.DS_Store
+Thumbs.db

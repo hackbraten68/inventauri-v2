@@ -2,9 +2,11 @@
 /// <reference types="astro/client" />
 
 interface ImportMetaEnv {
-  readonly PUBLIC_SUPABASE_URL: string;
-  readonly PUBLIC_SUPABASE_ANON_KEY: string;
-  readonly SUPABASE_SERVICE_ROLE_KEY?: string;
+  readonly PUBLIC_POCKETBASE_URL: string;
+  readonly POCKETBASE_ADMIN_EMAIL: string;
+  readonly POCKETBASE_ADMIN_PASSWORD: string;
+  readonly POCKETBASE_SERVICE_ROLE_TOKEN?: string;
+  readonly DATABASE_URL?: string;
 }
 
 interface ImportMeta {
