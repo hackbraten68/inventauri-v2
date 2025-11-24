@@ -88,6 +88,7 @@ export function ItemCreateForm({ warehouses, defaultWarehouseId }: ItemCreateFor
 
       const response = await fetch('/api/items', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
           'content-type': 'application/json',
           authorization: `Bearer ${token}`

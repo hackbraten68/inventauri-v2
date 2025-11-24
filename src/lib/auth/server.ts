@@ -1,50 +1,61 @@
-import { createClient, type User } from '@supabase/supabase-js';
+import PocketBase, { getTokenPayload, type RecordModel } from 'pocketbase';
+import { extractTokensFromRequest } from './pocketbase-session';
 
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+const pocketbaseUrl = import.meta.env.PUBLIC_POCKETBASE_URL;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase URL oder Anon Key fehlen. API Auth wird nicht funktionieren.');
+if (!pocketbaseUrl) {
+  console.warn('PocketBase URL fehlt. API Auth wird nicht funktionieren.');
 }
-
-const supabaseServerClient = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: false
-  }
-});
 
 export interface AuthenticatedUser {
   id: string;
   email?: string;
-  user: User;
+  user: RecordModel;
+}
+
+function decodeUserIdFromToken(token: string): string | null {
+  try {
+    const payload = getTokenPayload(token) as { id?: string } | undefined;
+    return payload?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchPocketBaseUser(accessToken: string): Promise<RecordModel> {
+  if (!pocketbaseUrl) {
+    throw new Error('PocketBase URL nicht konfiguriert.');
+  }
+  const userId = decodeUserIdFromToken(accessToken);
+  if (!userId) {
+    throw Object.assign(new Error('Ungültiges Zugriffstoken'), { status: 401 });
+  }
+  const client = new PocketBase(pocketbaseUrl);
+  client.authStore.save(accessToken, null);
+  return client.collection('users').getOne(userId, {
+    expand: 'profile'
+  });
 }
 
 export async function getUserFromRequest(request: Request): Promise<AuthenticatedUser | null> {
   const authHeader = request.headers.get('authorization');
   const tokenFromHeader = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-
-  const cookie = request.headers.get('cookie');
-  const tokenFromCookie = cookie
-    ?.split(';')
-    .map((part) => part.trim())
-    .find((part) => part.startsWith('sb-access-token='))
-    ?.split('=')[1];
-
-  const accessToken = tokenFromHeader ?? tokenFromCookie;
+  const tokens = extractTokensFromRequest(request);
+  const accessToken = tokenFromHeader ?? tokens.accessToken;
   if (!accessToken) {
     return null;
   }
 
-  const { data, error } = await supabaseServerClient.auth.getUser(accessToken);
-  if (error || !data.user) {
+  try {
+    const userRecord = await fetchPocketBaseUser(accessToken);
+    return {
+      id: userRecord.id,
+      email: userRecord.email ?? undefined,
+      user: userRecord
+    };
+  } catch {
     return null;
   }
-
-  return {
-    id: data.user.id,
-    email: data.user.email ?? undefined,
-    user: data.user
-  };
 }
 
 export async function requireUser(request: Request): Promise<AuthenticatedUser> {

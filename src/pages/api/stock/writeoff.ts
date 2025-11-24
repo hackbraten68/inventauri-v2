@@ -31,7 +31,7 @@ export const POST: APIRoute = async ({ request }) => {
       performedBy: user.email ?? user.id,
       shopId
     });
-    const snapshot = await getInventorySnapshot();
+    const snapshot = await getInventorySnapshot(shopId);
 
     return json({ result, snapshot });
   } catch (error) {

@@ -61,14 +61,14 @@
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Replace Supabase logic inside `src/lib/auth/server.ts` with PocketBase verification using the helpers from `pocketbase-session.ts`, ensuring returned structs include `shopId`/`role`.
-- [ ] T017 [US2] Update `src/lib/tenant.ts` methods to accept PocketBase user IDs, assert membership via Prisma `userShop`, and return `shopId` plus role.
-- [ ] T018 [US2] Enforce tenant scoping in `src/lib/data/inventory.ts` and `src/lib/data/pos.ts` by requiring a `shopId` parameter and filtering Prisma queries accordingly.
-- [ ] T019 [US2] Thread `shopId` through `src/lib/services/stock.ts` so every mutation (inbound, transfer, sale, etc.) and resulting `getInventorySnapshot` operate only on the caller’s tenant data.
-- [ ] T020 [US2] Update all stock-related API handlers in `src/pages/api/stock/*.ts` to require PocketBase auth, pass `shopId` into service functions, and return tenant-scoped snapshots.
-- [ ] T021 [US2] Update `src/pages/api/items/index.ts` and `src/pages/api/items/[id].ts` to enforce PocketBase membership checks and return snapshots filtered by `shopId`.
-- [ ] T022 [US2] Update `src/pages/api/dashboard/index.ts`, `src/pages/api/reports/sales.ts`, and `src/pages/api/products/index.ts` to request the user’s `shopId` before running queries and to scope Prisma calls.
-- [ ] T023 [US2] Secure SSR inventory entry points (`src/pages/inventory/index.astro` and `src/pages/pos/index.astro`) by resolving the PocketBase user server-side and passing the `shopId` into `getInventorySnapshot` / `getPosInventory`.
+- [X] T016 [US2] Replace Supabase logic inside `src/lib/auth/server.ts` with PocketBase verification using the helpers from `pocketbase-session.ts`, ensuring returned structs include `shopId`/`role`.
+- [X] T017 [US2] Update `src/lib/tenant.ts` methods to accept PocketBase user IDs, assert membership via Prisma `userShop`, and return `shopId` plus role.
+- [X] T018 [US2] Enforce tenant scoping in `src/lib/data/inventory.ts` and `src/lib/data/pos.ts` by requiring a `shopId` parameter and filtering Prisma queries accordingly.
+- [X] T019 [US2] Thread `shopId` through `src/lib/services/stock.ts` so every mutation (inbound, transfer, sale, etc.) and resulting `getInventorySnapshot` operate only on the caller’s tenant data.
+- [X] T020 [US2] Update all stock-related API handlers in `src/pages/api/stock/*.ts` to require PocketBase auth, pass `shopId` into service functions, and return tenant-scoped snapshots.
+- [X] T021 [US2] Update `src/pages/api/items/index.ts` and `src/pages/api/items/[id].ts` to enforce PocketBase membership checks and return snapshots filtered by `shopId`.
+- [X] T022 [US2] Update `src/pages/api/dashboard/index.ts`, `src/pages/api/reports/sales.ts`, and `src/pages/api/products/index.ts` to request the user’s `shopId` before running queries and to scope Prisma calls.
+- [X] T023 [US2] Secure SSR inventory entry points (`src/pages/inventory/index.astro` and `src/pages/pos/index.astro`) by resolving the PocketBase user server-side and passing the `shopId` into `getInventorySnapshot` / `getPosInventory`.
 
 **Checkpoint**: All APIs and SSR pages honor PocketBase auth + tenant scoping; cross-tenant access is blocked.
 

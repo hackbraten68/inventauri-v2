@@ -143,15 +143,18 @@ export async function createItemWithStock(input: CreateItemInput) {
   });
 }
 
-export async function deleteItem(itemId: string) {
+export async function deleteItem(itemId: string, shopId: string) {
   return prisma.$transaction(async (tx) => {
-    const item = await tx.item.findUnique({ where: { id: itemId } });
+    const item = await tx.item.findUnique({ where: { id: itemId }, select: { id: true, shopId: true } });
     if (!item) {
       throw new Error('Artikel nicht gefunden.');
     }
+    if (item.shopId !== shopId) {
+      throw new Error('Artikel gehört nicht zu diesem Shop.');
+    }
 
-    await tx.stockTransaction.deleteMany({ where: { itemId } });
-    await tx.itemStockLevel.deleteMany({ where: { itemId } });
+    await tx.stockTransaction.deleteMany({ where: { itemId, shopId } });
+    await tx.itemStockLevel.deleteMany({ where: { itemId, shopId } });
     await tx.item.delete({ where: { id: itemId } });
 
     return { itemId };

@@ -3,10 +3,13 @@ import AppLayout from '../../../layouts/AppLayout.astro';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { getInventorySnapshot } from '../../../lib/data/inventory';
-import { getWarehouseById } from '../../../lib/data/warehouses';
+import { requireUser } from '../../../lib/auth/server';
+import { getUserShopIdOrThrow } from '../../../lib/tenant';
 
 const { id } = Astro.params;
-const snapshot = await getInventorySnapshot();
+const auth = await requireUser(Astro.request);
+const shopId = await getUserShopIdOrThrow(auth.id);
+const snapshot = await getInventorySnapshot(shopId);
 const item = snapshot.items.find((entry) => entry.itemId === id);
 
 if (!item) {
@@ -33,6 +36,7 @@ if (!item) {
                 if (confirm(`Artikel "${item.name}" wirklich löschen?`)) {
                   fetch(`/api/items/${item.itemId}`, {
                     method: 'DELETE',
+                    credentials: 'same-origin',
                     headers: { 'content-type': 'application/json' }
                   })
                     .then(() => {
@@ -98,6 +102,7 @@ if (!item) {
               if (confirm(`Artikel "${item.name}" wirklich löschen?`)) {
                 fetch(`/api/items/${item.itemId}`, {
                   method: 'DELETE',
+                  credentials: 'same-origin',
                   headers: { 'content-type': 'application/json' }
                 })
                   .then(() => {

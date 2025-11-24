@@ -31,6 +31,7 @@ export function ItemList({ items, warehouseTotals }: ItemListProps) {
 
       const response = await fetch(`/api/items/${itemId}`, {
         method: 'DELETE',
+        credentials: 'same-origin',
         headers: {
           authorization: `Bearer ${token}`
         }
