@@ -96,8 +96,8 @@
 
 **Purpose**: Repo-wide cleanup after the migration so documentation, automation, and quality gates reflect the new stack.
 
-- [ ] T029 Scrub remaining Supabase references from `README.md`, `ROADMAP.md`, and `todo.md`, replacing them with PocketBase details and migration guidance.
-- [ ] T030 Add a `verify:pocketbase` npm script in `package.json` that runs lint, tests, and an optional Compose healthcheck, and document the command in `README.md`.
+- [X] T029 Scrub remaining Supabase references from `README.md`, `ROADMAP.md`, and `todo.md`, replacing them with PocketBase details and migration guidance.
+- [X] T030 Add a `verify:pocketbase` npm script in `package.json` that runs lint, tests, and an optional Compose healthcheck, and document the command in `README.md`.
 
 ---
 

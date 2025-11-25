@@ -122,6 +122,7 @@ Row Level Security is currently disabled; once policies are defined you can re-e
 | `npm run docker:up`        | Launch PocketBase + Postgres + Astro via Compose             |
 | `npm run docker:down`      | Stop Compose stack (keeps volumes)                           |
 | `npm run docker:logs`      | Tail logs for `web`, `pocketbase`, and `postgres`            |
+| `npm run verify:pocketbase`| Run lint, tests, and ensure Docker images build successfully |
 
 ## ✅ Next Steps
 
