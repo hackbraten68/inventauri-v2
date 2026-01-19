@@ -4,13 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { PosTerminal } from '../../components/pos/PosTerminal';
 import { getPosInventory, listPosWarehouses } from '../../lib/data/pos';
 import { requireUser } from '../../lib/auth/server';
-import { getUserShopIdOrThrow } from '../../lib/tenant';
 
 const warehouseSlug = Astro.url.searchParams.get('warehouse');
 const auth = await requireUser(Astro.request);
-const shopId = await getUserShopIdOrThrow(auth);
 const [inventory, warehouses] = await Promise.all([
-  getPosInventory(warehouseSlug ?? undefined, shopId),
+  getPosInventory(warehouseSlug ?? undefined),
   listPosWarehouses()
 ]);
 ---

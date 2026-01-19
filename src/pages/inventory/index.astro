@@ -3,11 +3,9 @@ import AppLayout from '../../layouts/AppLayout.astro';
 import { InventoryManager } from '../../components/inventory/InventoryManager';
 import { getInventorySnapshot } from '../../lib/data/inventory';
 import { requireUser } from '../../lib/auth/server';
-import { getUserShopIdOrThrow } from '../../lib/tenant';
 
 const auth = await requireUser(Astro.request);
-const shopId = await getUserShopIdOrThrow(auth);
-const snapshot = await getInventorySnapshot(shopId);
+const snapshot = await getInventorySnapshot();
 ---
 
 <AppLayout title="Gesamt Inventar" description="Aktuelle Bestände pro Lager inkl. Zentrallager & POS">

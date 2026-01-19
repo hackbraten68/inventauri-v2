@@ -126,11 +126,13 @@ async function seedItems() {
 
 
 async function ensureSettingsDefaults(actorId: string, shopName: string) {
+  const settingsId = '00000000-0000-0000-0000-000000000000';
+
   await prisma.businessProfile.upsert({
-    where: { id: 'default' }, // Assume single profile, use fixed id
+    where: { id: settingsId },
     update: {},
     create: {
-      id: 'default',
+      id: settingsId,
       legalName: shopName,
       displayName: shopName,
       taxId: null,
@@ -147,10 +149,10 @@ async function ensureSettingsDefaults(actorId: string, shopName: string) {
   });
 
   await prisma.operationalPreference.upsert({
-    where: { id: 'default' }, // Assume single preference
+    where: { id: settingsId },
     update: {},
     create: {
-      id: 'default',
+      id: settingsId,
       currencyCode: 'EUR',
       timezone: 'Europe/Berlin',
       unitSystem: UnitSystem.metric,

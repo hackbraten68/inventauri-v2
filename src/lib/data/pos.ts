@@ -1,9 +1,6 @@
 import { prisma } from '../prisma';
 
-export async function getPosInventory(warehouseSlug: string | undefined, shopId: string) {
-  if (!shopId) {
-    throw new Error('shopId ist erforderlich, um POS Inventar abzurufen.');
-  }
+export async function getPosInventory(warehouseSlug: string | undefined) {
   const warehouse = warehouseSlug
     ? await prisma.warehouse.findUnique({ where: { slug: warehouseSlug } })
     : await prisma.warehouse.findFirst({ where: { type: 'pos' } });
@@ -13,7 +10,7 @@ export async function getPosInventory(warehouseSlug: string | undefined, shopId:
   }
 
   const stockLevels = await prisma.itemStockLevel.findMany({
-    where: { warehouseId: warehouse.id, shopId },
+    where: { warehouseId: warehouse.id },
     include: { item: true },
     orderBy: { item: { name: 'asc' } }
   });

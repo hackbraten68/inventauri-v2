@@ -4,12 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Button } from '../../../components/ui/button';
 import { getInventorySnapshot } from '../../../lib/data/inventory';
 import { requireUser } from '../../../lib/auth/server';
-import { getUserShopIdOrThrow } from '../../../lib/tenant';
 
 const { id } = Astro.params;
 const auth = await requireUser(Astro.request);
-const shopId = await getUserShopIdOrThrow(auth);
-const snapshot = await getInventorySnapshot(shopId);
+const snapshot = await getInventorySnapshot();
 const item = snapshot.items.find((entry) => entry.itemId === id);
 
 if (!item) {

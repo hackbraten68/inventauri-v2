@@ -17,11 +17,13 @@ export function authHeaders(token?: string) {
 const TEST_ACTOR_ID = process.env.TEST_ACTOR_ID ?? '00000000-0000-0000-0000-000000000000';
 
 export async function primeSettingsFixtures() {
+  const settingsId = '00000000-0000-0000-0000-000000000000';
+
   await prisma.businessProfile.upsert({
-    where: { id: 'default' },
+    where: { id: settingsId },
     update: {},
     create: {
-      id: 'default',
+      id: settingsId,
       legalName: 'Test Shop',
       displayName: 'Test Shop',
       email: 'test@inventauri.app',
@@ -34,10 +36,10 @@ export async function primeSettingsFixtures() {
   });
 
   await prisma.operationalPreference.upsert({
-    where: { id: 'default' },
+    where: { id: settingsId },
     update: {},
     create: {
-      id: 'default',
+      id: settingsId,
       currencyCode: 'EUR',
       timezone: 'Europe/Berlin',
       unitSystem: UnitSystem.metric,

@@ -26,11 +26,20 @@ async function fetchPocketBaseUser(accessToken: string): Promise<RecordModel> {
     throw Object.assign(new Error('Ungültiges Zugriffstoken'), { status: 401 });
   }
 
+  console.log('Fetching profile for userId:', userId);
   const client = new PocketBase(pocketbaseUrl);
   client.authStore.save(accessToken, null);
-  return client.collection('users').getOne(userId, {
-    expand: 'profile'
+  // Fetch profile where user matches, expand user
+  const profiles = await client.collection('profiles').getList(1, 1, {
+    filter: `user = "${userId}"`,
+    expand: 'user'
   });
+  console.log('Profiles response:', profiles);
+  console.log('Profiles found:', profiles.items.length);
+  if (profiles.items.length === 0) {
+    throw Object.assign(new Error('PocketBase-Profil fehlt.'), { status: 403 });
+  }
+  return profiles.items[0]; // Return the profile record
 }
 
 function ensureRole(value: unknown): TenantRole | null {
@@ -42,24 +51,23 @@ function ensureRole(value: unknown): TenantRole | null {
   return null;
 }
 
-function parseProfile(record: RecordModel): PocketBaseProfile {
-  const profile = (record.expand?.profile as RecordModel | undefined) ?? null;
-  if (!profile) {
-    throw Object.assign(new Error('PocketBase-Profil fehlt oder ist ungültig.'), { status: 403 });
-  }
+function parseProfile(profileRecord: RecordModel): { profile: PocketBaseProfile; user: RecordModel } {
+  const role = ensureRole(profileRecord.role);
+  const active = profileRecord.active !== false;
+  const profileId = typeof profileRecord.id === 'string' ? profileRecord.id : null;
+  const user = (profileRecord.expand?.user as RecordModel | undefined) ?? null;
 
-  const role = ensureRole(profile.role);
-  const active = profile.active !== false;
-  const profileId = typeof profile.id === 'string' ? profile.id : null;
-
-  if (!role || !profileId) {
-    throw Object.assign(new Error('PocketBase-Profil ist unvollständig.'), { status: 403 });
+  if (!role || !profileId || !user) {
+    throw Object.assign(new Error('PocketBase-Profil oder Benutzer fehlt.'), { status: 403 });
   }
 
   return {
-    id: profileId,
-    role,
-    active
+    profile: {
+      id: profileId,
+      role,
+      active
+    },
+    user
   };
 }
 
@@ -73,18 +81,18 @@ export async function getUserFromRequest(request: Request): Promise<Authenticate
   }
 
   try {
-    const userRecord = await fetchPocketBaseUser(accessToken);
-    const profile = parseProfile(userRecord);
+    const profileRecord = await fetchPocketBaseUser(accessToken);
+    const { profile, user } = parseProfile(profileRecord);
     if (!profile.active) {
       throw Object.assign(new Error('PocketBase-Profil ist deaktiviert.'), { status: 403 });
     }
     return {
-      id: userRecord.id,
-      email: userRecord.email ?? undefined,
+      id: user.id,
+      email: user.email ?? undefined,
       role: profile.role,
       profileId: profile.id,
       profileActive: profile.active,
-      record: userRecord
+      record: user
     };
   } catch {
     return null;
