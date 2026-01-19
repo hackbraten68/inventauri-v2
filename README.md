@@ -1,47 +1,48 @@
 
-# ♉ Inventauri v2 – Astro + PocketBase + Shadcn UI + Prisma
+# ♉ Inventauri v2 – Single-Tenant Inventory System (Astro + PocketBase + Shadcn UI + Prisma)
 
 ## Specification
 
-Inventauri v2 is a lightweight web-based inventory system for micro-shops, featuring:
+Inventauri v2 is a lightweight web-based inventory system for small businesses, featuring:
 - Item management
 - Stock tracking
 - Simple sales insights
+- Role-based access (owner, manager, staff)
 
 **End project requirement:** The application must be executable via a Docker Compose file, enabling easy deployment and local development with all dependencies (app and database) managed as containers.
 
 ![Inventauri v2 - Landing Page](./src/assets/landing_page.png)
 
-Inventauri v2 is a lightweight web-based inventory system for micro-shops, featuring item management, stock tracking and simple sales insights.
+Inventauri v2 is a lightweight web-based inventory system for small businesses, featuring item management, stock tracking, and simple sales insights with role-based access control.
 
 ## 🔧 Quickstart
 
 1. Configure environments:
-   - `cp .env.example .env.local` → fill in PocketBase + Postgres values for local CLI development.
-   - `cp .env.docker.example .env.docker` → tweak if you want custom passwords/ports for Docker Compose.
+    - `cp .env.example .env.local` → set `PUBLIC_POCKETBASE_URL=http://localhost:8090` and Postgres `DATABASE_URL` for local CLI development.
+    - `cp .env.docker.example .env.docker` → tweak if you want custom passwords/ports for Docker Compose.
 
 2. Install dependencies for local CLI workflows:
-   ```bash
-   npm install
-   ```
+    ```bash
+    npm install
+    ```
 
 3. (Native dev) Run Prisma migrations and seeds:
-   ```bash
-   npm run db:migrate
-   npm run db:seed
-   npm run dev
-   ```
-   Astro serves the app on [http://localhost:4321](http://localhost:4321) using your local PocketBase/Postgres instances.
+    ```bash
+    npm run db:migrate
+    npm run db:seed
+    npm run dev
+    ```
+    Astro serves the app on [http://localhost:4321](http://localhost:4321) using your local PocketBase/Postgres instances.
 
 4. (Docker stack) Build and launch the full environment (PocketBase + Postgres + Astro) via Compose:
-   ```bash
-   npm run docker:build
-   npm run docker:up
-   # CTRL+C or npm run docker:down to stop
-   ```
-   - PocketBase admin UI: [http://localhost:8090/_](http://localhost:8090/_)
-   - Inventauri web app: [http://localhost:4321](http://localhost:4321)
-   - Data persists inside the named volumes `inventauri_pg`, `inventauri_pb_data`, and `inventauri_pb_public`.
+    ```bash
+    npm run docker:build
+    npm run docker:up
+    # CTRL+C or npm run docker:down to stop
+    ```
+    - PocketBase admin UI: [http://localhost:8090/_](http://localhost:8090/_) (create profiles collection for roles)
+    - Inventauri web app: [http://localhost:4321](http://localhost:4321)
+    - Data persists inside the named volumes `inventauri_pg`, `inventauri_pb_data`, and `inventauri_pb_public`.
 
 ## 🗂️ Project Structure
 
@@ -94,11 +95,10 @@ Row Level Security is currently disabled; once policies are defined you can re-e
 ## 🔐 PocketBase Auth & Environment Handling
 
 - `PUBLIC_POCKETBASE_URL` in `.env.local` feeds the browser-side PocketBase SDK.
-- `POCKETBASE_ADMIN_EMAIL` / `POCKETBASE_ADMIN_PASSWORD` (or `POCKETBASE_SERVICE_ROLE_TOKEN`) power server-side admin tasks such as staff invitations.
 - `DATABASE_URL` is consumed by Prisma (all CLI scripts run through `dotenv-cli`).
 - `/login` talks to `/api/auth/login`, which authenticates against PocketBase and issues HttpOnly `pb-access-token`/`pb-refresh-token` cookies.
 - Middleware checks the `pb-access-token` cookie and redirects unauthenticated users to `/login`. The client-side `SessionGuard` polls `/api/auth/session` to keep cookies and redirects aligned.
-- Protected APIs (e.g. `/api/stock/*`, `/api/items`) validate PocketBase tokens server-side and scope every query to the user’s tenant.
+- Protected APIs (e.g. `/api/stock/*`, `/api/items`) validate PocketBase tokens server-side. Roles (owner, manager, staff) are stored in PocketBase profiles and checked for access control.
 
 ## 🔄 Inventory API & UI Interactions
 
@@ -127,13 +127,13 @@ Row Level Security is currently disabled; once policies are defined you can re-e
 ## ✅ Next Steps
 
 - Harden PocketBase collections (verification flows, MFA, profile automation) and version them via migrations.
-- Expand tenant onboarding (self-serve shop creation + invitations).
+- Implement staff invitation and management features.
 - Populate inventory UI with tailored Prisma queries (summaries, filters).
 - Build a POS wizard to create new POS warehouses and trigger transfers.
 
 ## 📝 TODO / Roadmap
 
-See [ROADMAP.md](./ROADMAP.md) for the current backlog.
+See [ROADMAP.md](./ROADMAP.md) for the current backlog (updated for single-tenant).
 
 Happy building with Inventauri! ♉
 
