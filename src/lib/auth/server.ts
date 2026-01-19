@@ -1,16 +1,11 @@
 import PocketBase, { getTokenPayload, type RecordModel } from 'pocketbase';
 import { extractTokensFromRequest } from './pocketbase-session';
+import type { AuthenticatedUser, PocketBaseProfile, TenantRole } from './types';
 
 const pocketbaseUrl = import.meta.env.PUBLIC_POCKETBASE_URL;
 
 if (!pocketbaseUrl) {
   console.warn('PocketBase URL fehlt. API Auth wird nicht funktionieren.');
-}
-
-export interface AuthenticatedUser {
-  id: string;
-  email?: string;
-  user: RecordModel;
 }
 
 function decodeUserIdFromToken(token: string): string | null {
@@ -30,11 +25,42 @@ async function fetchPocketBaseUser(accessToken: string): Promise<RecordModel> {
   if (!userId) {
     throw Object.assign(new Error('Ungültiges Zugriffstoken'), { status: 401 });
   }
+
   const client = new PocketBase(pocketbaseUrl);
   client.authStore.save(accessToken, null);
   return client.collection('users').getOne(userId, {
     expand: 'profile'
   });
+}
+
+function ensureRole(value: unknown): TenantRole | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.toLowerCase();
+  if (normalized === 'owner' || normalized === 'manager' || normalized === 'staff') {
+    return normalized;
+  }
+  return null;
+}
+
+function parseProfile(record: RecordModel): PocketBaseProfile {
+  const profile = (record.expand?.profile as RecordModel | undefined) ?? null;
+  if (!profile) {
+    throw Object.assign(new Error('PocketBase-Profil fehlt oder ist ungültig.'), { status: 403 });
+  }
+
+  const role = ensureRole(profile.role);
+  const active = profile.active !== false;
+  const profileId = typeof profile.id === 'string' ? profile.id : null;
+
+  if (!role || !profileId) {
+    throw Object.assign(new Error('PocketBase-Profil ist unvollständig.'), { status: 403 });
+  }
+
+  return {
+    id: profileId,
+    role,
+    active
+  };
 }
 
 export async function getUserFromRequest(request: Request): Promise<AuthenticatedUser | null> {
@@ -48,10 +74,17 @@ export async function getUserFromRequest(request: Request): Promise<Authenticate
 
   try {
     const userRecord = await fetchPocketBaseUser(accessToken);
+    const profile = parseProfile(userRecord);
+    if (!profile.active) {
+      throw Object.assign(new Error('PocketBase-Profil ist deaktiviert.'), { status: 403 });
+    }
     return {
       id: userRecord.id,
       email: userRecord.email ?? undefined,
-      user: userRecord
+      role: profile.role,
+      profileId: profile.id,
+      profileActive: profile.active,
+      record: userRecord
     };
   } catch {
     return null;

@@ -4,8 +4,9 @@ import { authHeaders } from '../setup';
 import { getAccessToken } from '../auth';
 
 let ACCESS_TOKEN = process.env.ACCESS_TOKEN;
+const skipPocketBaseTests = process.env.SKIP_PB_TESTS === 'true';
 
-describe('Dashboard contracts', () => {
+(skipPocketBaseTests ? describe.skip : describe)('Dashboard contracts', () => {
   beforeAll(async () => {
     if (!ACCESS_TOKEN) {
       const { token } = await getAccessToken();

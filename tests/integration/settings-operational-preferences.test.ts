@@ -2,7 +2,7 @@ import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { getJson } from '../util';
 import { authHeaders, primeSettingsFixtures } from '../setup';
-import { getAccessToken } from '../auth';
+import { getAccessToken, skipPocketBaseTests } from '../auth';
 
 const prisma = new PrismaClient();
 
@@ -19,7 +19,7 @@ let ORIGINAL_PREFERENCES:
     }
   | null = null;
 
-describe('Settings integration - Operational preferences workflow', () => {
+(skipPocketBaseTests ? describe.skip : describe)('Settings integration - Operational preferences workflow', () => {
   beforeAll(async () => {
     const { token } = await getAccessToken();
     ACCESS_TOKEN = token;

@@ -12,20 +12,6 @@ migrate(
       schema: [
         {
           system: false,
-          id: 'shopId',
-          name: 'shopId',
-          type: 'text',
-          required: true
-        },
-        {
-          system: false,
-          id: 'userShopId',
-          name: 'userShopId',
-          type: 'text',
-          required: true
-        },
-        {
-          system: false,
           id: 'role',
           name: 'role',
           type: 'select',
@@ -34,9 +20,25 @@ migrate(
             values: ['owner', 'manager', 'staff']
           },
           required: true
+        },
+        {
+          system: false,
+          id: 'user',
+          name: 'user',
+          type: 'relation',
+          options: {
+            maxSelect: 1,
+            minSelect: 1,
+            cascadeDelete: true,
+            displayFields: [],
+            collectionId: '_pb_users_auth_'
+          },
+          required: true
         }
       ],
-      indexes: ['CREATE UNIQUE INDEX `idx_shop_user` ON `profiles` (`userShopId`)']
+      indexes: [
+        'CREATE UNIQUE INDEX `idx_profiles_user` ON `profiles` (`user`)'
+      ]
     });
 
     dao.saveCollection(collection);

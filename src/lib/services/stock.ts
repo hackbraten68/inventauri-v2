@@ -5,39 +5,10 @@ const DECIMAL_SCALE = 3;
 
 async function ensureVariantId(
   tx: Prisma.TransactionClient,
-  itemId: string,
-  shopId?: string
+  itemId: string
 ): Promise<string | undefined> {
-  // If no shopId, try to derive from item
-  const item = await tx.item.findUnique({
-    where: { id: itemId },
-    select: { id: true, sku: true, name: true, shopId: true }
-  });
-  if (!item) return undefined;
-  const tenantId = shopId || item.shopId;
-  if (!tenantId) return undefined;
-
-  // Try to find existing ProductVariant by (shopId, sku)
-  const anyTx = tx as any;
-  const existing = await anyTx.productVariant.findUnique?.({
-    where: { shopId_sku: { shopId: tenantId, sku: item.sku } }
-  });
-  if (existing?.id) return existing.id as string;
-
-  // If not found, ensure Product and create Variant
-  const product =
-    (await anyTx.product.findFirst({ where: { shopId: tenantId, name: item.name } })) ||
-    (await anyTx.product.create({ data: { name: item.name, shopId: tenantId, description: item.name } }));
-
-  const variant = await anyTx.productVariant.create({
-    data: {
-      productId: product.id,
-      shopId: tenantId,
-      sku: item.sku,
-      unit: 'pcs'
-    }
-  });
-  return variant.id as string;
+  // No longer used in single-tenant setup
+  return undefined;
 }
 
 async function assertItemBelongsToShop(
@@ -59,7 +30,6 @@ interface BaseMutationOptions {
   notes?: string;
   performedBy?: string;
   occurredAt?: Date;
-  shopId: string;
 }
 
 interface InboundOptions extends BaseMutationOptions {
@@ -130,14 +100,10 @@ async function mutateStockLevel(
     warehouseId: string;
     deltaOnHand: number;
     deltaReserved?: number;
-    shopId: string;
     variantId?: string;
   }
 ) {
-  const { itemId, warehouseId, deltaOnHand, deltaReserved = 0, shopId, variantId } = params;
-  if (!shopId) {
-    throw new Error('shopId erforderlich.');
-  }
+  const { itemId, warehouseId, deltaOnHand, deltaReserved = 0, variantId } = params;
 
   const existing = await tx.itemStockLevel.findUnique({
     where: {
@@ -159,16 +125,10 @@ async function mutateStockLevel(
         itemId,
         quantityOnHand: toDecimal(deltaOnHand),
         quantityReserved: toDecimal(deltaReserved),
-        // staged multi-tenant field
-        shopId: shopId || undefined,
         // Phase 3: attach variant
         variantId: variantId || undefined
-      } as any
+      }
     });
-  }
-
-  if (existing.shopId && existing.shopId !== shopId) {
-    throw new Error('Ungenügende Berechtigungen für dieses Lager.');
   }
 
   const nextOnHand = toNumber(existing.quantityOnHand) + deltaOnHand;
@@ -196,17 +156,12 @@ async function buildResult(
   tx: Prisma.TransactionClient,
   itemId: string,
   warehouses: string[],
-  transactionId: string,
-  shopId: string
+  transactionId: string
 ): Promise<MutationResult> {
-  if (!shopId) {
-    throw new Error('shopId erforderlich.');
-  }
   const stockLevels = await tx.itemStockLevel.findMany({
     where: {
       itemId,
-      warehouseId: { in: warehouses },
-      shopId
+      warehouseId: { in: warehouses }
     }
   });
 
@@ -228,17 +183,15 @@ function assertPositive(quantity: number, context: string) {
 }
 
 export async function createInbound(options: InboundOptions): Promise<MutationResult> {
-  const { itemId, warehouseId, quantity, reference, notes, performedBy, occurredAt, shopId } = options;
+  const { itemId, warehouseId, quantity, reference, notes, performedBy, occurredAt } = options;
   assertPositive(quantity, 'Einbuchung');
 
   return prisma.$transaction(async (tx) => {
-    await assertItemBelongsToShop(tx, itemId, shopId);
-    const variantId = await ensureVariantId(tx, itemId, shopId);
+    const variantId = await ensureVariantId(tx, itemId);
     await mutateStockLevel(tx, {
       itemId,
       warehouseId,
       deltaOnHand: quantity,
-      shopId,
       variantId
     });
 
@@ -252,17 +205,16 @@ export async function createInbound(options: InboundOptions): Promise<MutationRe
         notes,
         performedBy,
         occurredAt: occurredAt ?? new Date(),
-        shopId: shopId || undefined,
         variantId: variantId || undefined
-      } as any
+      }
     });
 
-    return buildResult(tx, itemId, [warehouseId], transaction.id, shopId);
+    return buildResult(tx, itemId, [warehouseId], transaction.id);
   });
 }
 
 export async function transferStock(options: TransferOptions): Promise<MutationResult> {
-  const { itemId, sourceWarehouseId, targetWarehouseId, quantity, reference, notes, performedBy, occurredAt, shopId } = options;
+  const { itemId, sourceWarehouseId, targetWarehouseId, quantity, reference, notes, performedBy, occurredAt } = options;
   assertPositive(quantity, 'Umbuchung');
 
   if (sourceWarehouseId === targetWarehouseId) {
@@ -270,13 +222,11 @@ export async function transferStock(options: TransferOptions): Promise<MutationR
   }
 
   return prisma.$transaction(async (tx) => {
-    await assertItemBelongsToShop(tx, itemId, shopId);
-    const variantId = await ensureVariantId(tx, itemId, shopId);
+    const variantId = await ensureVariantId(tx, itemId);
     await mutateStockLevel(tx, {
       itemId,
       warehouseId: sourceWarehouseId,
       deltaOnHand: -quantity,
-      shopId,
       variantId
     });
 
@@ -284,7 +234,6 @@ export async function transferStock(options: TransferOptions): Promise<MutationR
       itemId,
       warehouseId: targetWarehouseId,
       deltaOnHand: quantity,
-      shopId,
       variantId
     });
 
@@ -299,29 +248,26 @@ export async function transferStock(options: TransferOptions): Promise<MutationR
         notes,
         performedBy,
         occurredAt: occurredAt ?? new Date(),
-        shopId: shopId || undefined,
         variantId: variantId || undefined
-      } as any
+      }
     });
 
-    return buildResult(tx, itemId, [sourceWarehouseId, targetWarehouseId], transaction.id, shopId);
+    return buildResult(tx, itemId, [sourceWarehouseId, targetWarehouseId], transaction.id);
   });
 }
 
 export async function adjustStock(options: AdjustmentOptions): Promise<MutationResult> {
-  const { itemId, warehouseId, delta, reference, notes, performedBy, occurredAt, shopId } = options;
+  const { itemId, warehouseId, delta, reference, notes, performedBy, occurredAt } = options;
   if (!Number.isFinite(delta) || delta === 0) {
     throw new Error('Korrekturen benötigen einen Wert ungleich 0.');
   }
 
   return prisma.$transaction(async (tx) => {
-    await assertItemBelongsToShop(tx, itemId, shopId);
-    const variantId = await ensureVariantId(tx, itemId, shopId);
+    const variantId = await ensureVariantId(tx, itemId);
     await mutateStockLevel(tx, {
       itemId,
       warehouseId,
       deltaOnHand: delta,
-      shopId,
       variantId
     });
 
@@ -346,17 +292,15 @@ export async function adjustStock(options: AdjustmentOptions): Promise<MutationR
 }
 
 export async function recordSale(options: SaleOptions): Promise<MutationResult> {
-  const { itemId, warehouseId, quantity, reference, notes, performedBy, occurredAt, shopId } = options;
+  const { itemId, warehouseId, quantity, reference, notes, performedBy, occurredAt } = options;
   assertPositive(quantity, 'Verkauf');
 
   return prisma.$transaction(async (tx) => {
-    await assertItemBelongsToShop(tx, itemId, shopId);
-    const variantId = await ensureVariantId(tx, itemId, shopId);
+    const variantId = await ensureVariantId(tx, itemId);
     await mutateStockLevel(tx, {
       itemId,
       warehouseId,
       deltaOnHand: -quantity,
-      shopId,
       variantId
     });
 
@@ -380,17 +324,15 @@ export async function recordSale(options: SaleOptions): Promise<MutationResult> 
 }
 
 export async function recordWriteOff(options: WriteOffOptions): Promise<MutationResult> {
-  const { itemId, warehouseId, quantity, reference, notes, performedBy, occurredAt, shopId } = options;
+  const { itemId, warehouseId, quantity, reference, notes, performedBy, occurredAt } = options;
   assertPositive(quantity, 'Abschreibung');
 
   return prisma.$transaction(async (tx) => {
-    await assertItemBelongsToShop(tx, itemId, shopId);
-    const variantId = await ensureVariantId(tx, itemId, shopId);
+    const variantId = await ensureVariantId(tx, itemId);
     await mutateStockLevel(tx, {
       itemId,
       warehouseId,
       deltaOnHand: -quantity,
-      shopId,
       variantId
     });
 
@@ -404,27 +346,24 @@ export async function recordWriteOff(options: WriteOffOptions): Promise<Mutation
         notes,
         performedBy,
         occurredAt: occurredAt ?? new Date(),
-        shopId: shopId || undefined,
         variantId: variantId || undefined
-      } as any
+      }
     });
 
-    return buildResult(tx, itemId, [warehouseId], transaction.id, shopId);
+    return buildResult(tx, itemId, [warehouseId], transaction.id);
   });
 }
 
 export async function recordDonation(options: DonationOptions): Promise<MutationResult> {
-  const { itemId, warehouseId, quantity, reference, notes, performedBy, occurredAt, shopId } = options;
+  const { itemId, warehouseId, quantity, reference, notes, performedBy, occurredAt } = options;
   assertPositive(quantity, 'Spende');
 
   return prisma.$transaction(async (tx) => {
-    await assertItemBelongsToShop(tx, itemId, shopId);
-    const variantId = await ensureVariantId(tx, itemId, shopId);
+    const variantId = await ensureVariantId(tx, itemId);
     await mutateStockLevel(tx, {
       itemId,
       warehouseId,
       deltaOnHand: -quantity,
-      shopId,
       variantId
     });
 
@@ -448,17 +387,15 @@ export async function recordDonation(options: DonationOptions): Promise<Mutation
 }
 
 export async function recordReturn(options: ReturnOptions): Promise<MutationResult> {
-  const { itemId, warehouseId, quantity, reference, notes, performedBy, occurredAt, shopId } = options;
+  const { itemId, warehouseId, quantity, reference, notes, performedBy, occurredAt } = options;
   assertPositive(quantity, 'Retoure');
 
   return prisma.$transaction(async (tx) => {
-    await assertItemBelongsToShop(tx, itemId, shopId);
-    const variantId = await ensureVariantId(tx, itemId, shopId);
+    const variantId = await ensureVariantId(tx, itemId);
     await mutateStockLevel(tx, {
       itemId,
       warehouseId,
       deltaOnHand: quantity,
-      shopId,
       variantId
     });
 
@@ -489,11 +426,10 @@ export interface HistoryFilters {
   warehouseId?: string;
   from?: Date;
   to?: Date;
-  shopId: string;
 }
 
 export async function getItemHistory(filters: HistoryFilters) {
-  const { itemId, limit = 50, offset = 0, transactionTypes, warehouseId, from, to, shopId } = filters;
+  const { itemId, limit = 50, offset = 0, transactionTypes, warehouseId, from, to } = filters;
 
   return prisma.stockTransaction.findMany({
     where: {
@@ -505,7 +441,6 @@ export async function getItemHistory(filters: HistoryFilters) {
             { targetWarehouseId: warehouseId }
           ]
         : undefined,
-      shopId,
       occurredAt: {
         gte: from ?? undefined,
         lte: to ?? undefined

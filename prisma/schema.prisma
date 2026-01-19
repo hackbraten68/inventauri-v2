@@ -1,48 +1,222 @@
 generator client {
-  provider = "prisma-client-js"
-}
-
-/// Variant-ready product catalog (backward-compatible scaffold)
-model Product {
-  id        String   @id @default(uuid()) @db.Uuid
-  shopId    String   @db.Uuid
-  name      String
-  description String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  shop      Shop     @relation(fields: [shopId], references: [id])
-  variants  ProductVariant[]
-
-  @@index([shopId])
-}
-
-model ProductVariant {
-  id         String   @id @default(uuid()) @db.Uuid
-  productId  String   @db.Uuid
-  shopId     String   @db.Uuid
-  sku        String
-  unit       String   @default("pcs")
-  price      Decimal? @db.Decimal(16, 2)
-  barcode    String?
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  shop       Shop     @relation(fields: [shopId], references: [id])
-  itemStockLevels ItemStockLevel[]
-  stockTransactions StockTransaction[]
-
-  @@index([productId])
-  @@index([shopId])
-  @@unique([shopId, sku])
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+/// Variant-ready product catalog (backward-compatible scaffold)
+model Product {
+  id          String           @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  variants    ProductVariant[]
+}
+
+model ProductVariant {
+  id                String             @id @default(uuid()) @db.Uuid
+  productId         String             @db.Uuid
+  sku               String             @unique
+  unit              String             @default("pcs")
+  price             Decimal?           @db.Decimal(16, 2)
+  barcode           String?
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  itemStockLevels   ItemStockLevel[]
+  product           Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  stockTransactions StockTransaction[]
+
+  @@index([productId])
+}
+
+model Warehouse {
+  id                   String             @id @default(uuid()) @db.Uuid
+  name                 String
+  slug                 String             @unique
+  type                 WarehouseType      @default(pos)
+  address              String?
+  details              Json?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  stockLevels          ItemStockLevel[]
+  posProfile           PosLocation?
+  outgoingTransactions StockTransaction[] @relation("SourceTransactions")
+  incomingTransactions StockTransaction[] @relation("TargetTransactions")
+
+  @@index([type])
+}
+
+model PosLocation {
+  id           String    @id @default(uuid()) @db.Uuid
+  warehouseId  String    @unique @db.Uuid
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+  metadata     Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  warehouse    Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+}
+
+model Item {
+  id           String             @id @default(uuid()) @db.Uuid
+  sku          String             @unique
+  barcode      String?
+  name         String
+  description  String?
+  unit         String             @default("pcs")
+  isActive     Boolean            @default(true)
+  metadata     Json?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  stockLevels  ItemStockLevel[]
+  transactions StockTransaction[]
+}
+
+model ItemStockLevel {
+  warehouseId      String          @db.Uuid
+  itemId           String          @db.Uuid
+  quantityOnHand   Decimal         @default(0) @db.Decimal(16, 3)
+  quantityReserved Decimal         @default(0) @db.Decimal(16, 3)
+  reorderPoint     Decimal?        @db.Decimal(16, 3)
+  safetyStock      Decimal?        @db.Decimal(16, 3)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  variantId        String?         @db.Uuid
+  item             Item            @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  variant          ProductVariant? @relation(fields: [variantId], references: [id])
+  warehouse        Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  @@id([warehouseId, itemId])
+  @@index([itemId])
+  @@index([warehouseId])
+  @@index([variantId])
+}
+
+model StockTransaction {
+  id                String          @id @default(uuid()) @db.Uuid
+  itemId            String          @db.Uuid
+  sourceWarehouseId String?         @db.Uuid
+  targetWarehouseId String?         @db.Uuid
+  transactionType   TransactionType
+  quantity          Decimal         @db.Decimal(16, 3)
+  reference         String?
+  notes             String?
+  performedBy       String?
+  metadata          Json?
+  occurredAt        DateTime        @default(now())
+  createdAt         DateTime        @default(now())
+  variantId         String?         @db.Uuid
+  item              Item            @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  sourceWarehouse   Warehouse?      @relation("SourceTransactions", fields: [sourceWarehouseId], references: [id])
+  targetWarehouse   Warehouse?      @relation("TargetTransactions", fields: [targetWarehouseId], references: [id])
+  variant           ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@index([itemId])
+  @@index([sourceWarehouseId])
+  @@index([targetWarehouseId])
+  @@index([transactionType])
+  @@index([occurredAt])
+  @@index([variantId])
+}
+
+
+
+model BusinessProfile {
+  id           String   @id @default(uuid()) @db.Uuid
+  legalName    String
+  displayName  String
+  taxId        String?
+  email        String
+  phone        String?
+  website      String?
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  postalCode   String
+  country      String
+  updatedBy    String   @db.Uuid
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  version      Int      @default(1)
+}
+
+model OperationalPreference {
+  id                   String     @id @default(uuid()) @db.Uuid
+  currencyCode         String
+  timezone             String
+  unitSystem           UnitSystem @default(metric)
+  defaultUnitPrecision Int        @default(2)
+  fiscalWeekStart      Int
+  autoApplyTaxes       Boolean    @default(false)
+  updatedBy            String     @db.Uuid
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  version              Int        @default(1)
+}
+
+model NotificationPreference {
+  id              String                  @id @default(uuid()) @db.Uuid
+  category        NotificationCategory
+  channel         NotificationChannel     @default(email)
+  isEnabled       Boolean                 @default(true)
+  throttleMinutes Int?
+  updatedBy       String                  @db.Uuid
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  version         Int                     @default(1)
+  recipients      NotificationRecipient[]
+
+  @@unique([category, channel])
+  @@index([category])
+}
+
+model NotificationRecipient {
+  id           String                 @id @default(uuid()) @db.Uuid
+  preferenceId String                 @db.Uuid
+  email        String?
+  createdAt    DateTime               @default(now())
+  preference   NotificationPreference @relation(fields: [preferenceId], references: [id], onDelete: Cascade)
+
+  @@unique([preferenceId, email])
+  @@index([preferenceId])
+}
+
+model StaffInvitation {
+  id                   String                @id @default(uuid()) @db.Uuid
+  email                String
+  role                 String
+  status               StaffInvitationStatus @default(pending)
+  supabaseInvitationId String
+  invitedBy            String                @db.Uuid
+  expiresAt            DateTime
+  acceptedAt           DateTime?
+  revokedAt            DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  @@unique([email, status])
+  @@index([status])
+}
+
+model SettingsAuditLog {
+  id         String             @id @default(uuid()) @db.Uuid
+  section    SettingsSection
+  changeType SettingsChangeType
+  actorId    String             @db.Uuid
+  actorEmail String
+  diff       Json
+  createdAt  DateTime           @default(now())
+
+  @@index([section])
+  @@index([createdAt])
 }
 
 enum WarehouseType {
@@ -57,8 +231,8 @@ enum TransactionType {
   sale
   adjustment
   writeoff
-  donation
   return
+  donation
 }
 
 enum UnitSystem {
@@ -98,274 +272,4 @@ enum SettingsChangeType {
   deactivate
 }
 
-enum UserMembershipStatus {
-  active
-  deactivated
-}
 
-model Warehouse {
-  id            String             @id @default(uuid()) @db.Uuid
-  name          String
-  slug          String             @unique
-  type          WarehouseType      @default(pos)
-  address       String?
-  details       Json?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-
-  stockLevels          ItemStockLevel[]
-  outgoingTransactions StockTransaction[] @relation("SourceTransactions")
-  incomingTransactions StockTransaction[] @relation("TargetTransactions")
-  posProfile           PosLocation?
-
-  @@index([type])
-}
-
-model PosLocation {
-  id          String    @id @default(uuid()) @db.Uuid
-  warehouseId String    @unique @db.Uuid
-  contactName String?
-  contactEmail String?
-  contactPhone String?
-  metadata    Json?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-}
-
-model Item {
-  id           String             @id @default(uuid()) @db.Uuid
-  sku          String
-  barcode      String?            @unique
-  name         String
-  description  String?
-  unit         String             @default("pcs")
-  isActive     Boolean            @default(true)
-  metadata     Json?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  // Multi-tenant (enforced)
-  shopId       String             @db.Uuid
-
-  shop         Shop               @relation(fields: [shopId], references: [id])
-
-  stockLevels          ItemStockLevel[]
-  transactions StockTransaction[]
-
-  @@index([shopId])
-  @@unique([shopId, sku])
-}
-
-model ItemStockLevel {
-  warehouseId      String   @db.Uuid
-  itemId           String   @db.Uuid
-  // Multi-tenant (enforced)
-  shopId           String   @db.Uuid
-  // Phase 3: link to ProductVariant (nullable during migration)
-  variantId        String?  @db.Uuid
-  quantityOnHand   Decimal  @default(0) @db.Decimal(16, 3)
-  quantityReserved Decimal  @default(0) @db.Decimal(16, 3)
-  reorderPoint     Decimal? @db.Decimal(16, 3)
-  safetyStock      Decimal? @db.Decimal(16, 3)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-  item      Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  shop      Shop      @relation(fields: [shopId], references: [id])
-  variant   ProductVariant? @relation(fields: [variantId], references: [id])
-
-  @@id([warehouseId, itemId])
-  @@index([itemId])
-  @@index([warehouseId])
-  @@index([shopId])
-  @@index([variantId])
-}
-
-model StockTransaction {
-  id                 String           @id @default(uuid()) @db.Uuid
-  itemId             String           @db.Uuid
-  sourceWarehouseId  String?          @db.Uuid
-  targetWarehouseId  String?          @db.Uuid
-  transactionType    TransactionType
-  quantity           Decimal          @db.Decimal(16, 3)
-  reference          String?
-  notes              String?
-  performedBy        String?
-  metadata           Json?
-  occurredAt         DateTime         @default(now())
-  createdAt          DateTime         @default(now())
-  // Multi-tenant (enforced)
-  shopId             String           @db.Uuid
-  // Phase 3: link to ProductVariant (nullable during migration)
-  variantId          String?          @db.Uuid
-
-  item             Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  sourceWarehouse  Warehouse? @relation("SourceTransactions", fields: [sourceWarehouseId], references: [id])
-  targetWarehouse  Warehouse? @relation("TargetTransactions", fields: [targetWarehouseId], references: [id])
-  shop             Shop      @relation(fields: [shopId], references: [id])
-  variant          ProductVariant? @relation(fields: [variantId], references: [id])
-
-  @@index([itemId])
-  @@index([sourceWarehouseId])
-  @@index([targetWarehouseId])
-  @@index([transactionType])
-  @@index([occurredAt])
-  @@index([shopId])
-  @@index([variantId])
-}
-
-/// Multi-tenant scaffolding (Step 1 partial):
-/// Introduce Shop (tenant) and UserShop mapping without altering existing models yet.
-/// Follow-up will add shopId to tenant-scoped tables and constraints.
-
-model Shop {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  users                 UserShop[]
-  items                 Item[]
-  itemStockLevels       ItemStockLevel[]
-  stockTransactions     StockTransaction[]
-  products              Product[]
-  productVariants       ProductVariant[]
-  businessProfile       BusinessProfile?
-  operationalPreference OperationalPreference?
-  notificationPreferences NotificationPreference[]
-  staffInvitations      StaffInvitation[]
-  settingsAuditLogs     SettingsAuditLog[]
-}
-
-model UserShop {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
-  shopId    String   @db.Uuid
-  role      String   // owner | manager | staff (mirrors app roles)
-  createdAt DateTime @default(now())
-  status    UserMembershipStatus @default(active)
-  deactivatedAt DateTime?
-  deactivatedBy String? @db.Uuid
-
-  shop    Shop                        @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  notificationRecipients NotificationRecipient[]
-
-  @@unique([userId, shopId])
-  @@index([shopId])
-  @@index([status])
-}
-
-model BusinessProfile {
-  id           String   @id @default(uuid()) @db.Uuid
-  shopId       String   @unique @db.Uuid
-  legalName    String
-  displayName  String
-  taxId        String?
-  email        String
-  phone        String?
-  website      String?
-  addressLine1 String
-  addressLine2 String?
-  city         String
-  postalCode   String
-  country      String
-  updatedBy    String   @db.Uuid
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  version      Int      @default(1)
-
-  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
-}
-
-model OperationalPreference {
-  id                   String      @id @default(uuid()) @db.Uuid
-  shopId               String      @unique @db.Uuid
-  currencyCode         String
-  timezone             String
-  unitSystem           UnitSystem  @default(metric)
-  defaultUnitPrecision Int         @default(2)
-  fiscalWeekStart      Int
-  autoApplyTaxes       Boolean     @default(false)
-  updatedBy            String      @db.Uuid
-  createdAt            DateTime    @default(now())
-  updatedAt            DateTime    @updatedAt
-  version              Int         @default(1)
-
-  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
-}
-
-model NotificationPreference {
-  id              String               @id @default(uuid()) @db.Uuid
-  shopId          String               @db.Uuid
-  category        NotificationCategory
-  channel         NotificationChannel  @default(email)
-  isEnabled       Boolean              @default(true)
-  throttleMinutes Int?
-  updatedBy       String               @db.Uuid
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
-  version         Int                  @default(1)
-
-  shop        Shop                    @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  recipients  NotificationRecipient[]
-
-  @@unique([shopId, category, channel])
-  @@index([shopId])
-  @@index([category])
-}
-
-model NotificationRecipient {
-  id            String   @id @default(uuid()) @db.Uuid
-  preferenceId  String   @db.Uuid
-  userShopId    String?  @db.Uuid
-  email         String?
-  createdAt     DateTime @default(now())
-
-  preference NotificationPreference @relation(fields: [preferenceId], references: [id], onDelete: Cascade)
-  userShop   UserShop?              @relation(fields: [userShopId], references: [id], onDelete: SetNull)
-
-  @@index([preferenceId])
-  @@index([userShopId])
-  @@unique([preferenceId, userShopId])
-  @@unique([preferenceId, email])
-}
-
-model StaffInvitation {
-  id                    String                @id @default(uuid()) @db.Uuid
-  shopId                String                @db.Uuid
-  email                 String
-  role                  String
-  status                StaffInvitationStatus @default(pending)
-  supabaseInvitationId  String
-  invitedBy             String                @db.Uuid
-  expiresAt             DateTime
-  acceptedAt            DateTime?
-  revokedAt             DateTime?
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-
-  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  @@index([shopId])
-  @@index([status])
-  @@unique([shopId, email, status])
-}
-
-model SettingsAuditLog {
-  id         String            @id @default(uuid()) @db.Uuid
-  shopId     String            @db.Uuid
-  section    SettingsSection
-  changeType SettingsChangeType
-  actorId    String            @db.Uuid
-  actorEmail String
-  diff       Json
-  createdAt  DateTime          @default(now())
-
-  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  @@index([shopId, section])
-  @@index([createdAt])
-}

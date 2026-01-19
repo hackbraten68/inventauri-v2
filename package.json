@@ -7,6 +7,7 @@
     "build": "dotenv -e .env.local -- astro build",
     "preview": "dotenv -e .env.local -- astro preview",
     "astro": "astro",
+    "lint": "dotenv -e .env.local -- prisma validate",
     "db:generate": "dotenv -e .env.local -- prisma generate",
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "db:migrate:deploy": "dotenv -e .env.local -- prisma migrate deploy",
@@ -18,7 +19,10 @@
     "docker:up": "docker compose up",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f web pocketbase postgres",
-    "verify:pocketbase": "npm run lint && npm test && npm run docker:build"
+    "docker:migrate": "docker compose run --rm web npm run db:migrate",
+    "docker:seed": "docker compose run --rm web npm run db:seed",
+    "verify:pocketbase": "npm run lint && npm test && npm run docker:build",
+    "migrate:pocketbase": "dotenv -e .env.local -- tsx scripts/migrate-pocketbase.ts"
   },
   "dependencies": {
     "@astrojs/node": "^9.4.4",

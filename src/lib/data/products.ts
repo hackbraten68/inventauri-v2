@@ -1,8 +1,8 @@
 import { prisma } from '../prisma';
 
-export async function listProducts(shopId: string) {
+export async function listProducts() {
   return prisma.product.findMany({
-    where: { shopId, isActive: true },
+    where: { isActive: true },
     include: {
       variants: {
         where: { isActive: true },

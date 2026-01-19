@@ -4,12 +4,10 @@ import { requireUser } from '../../../lib/auth/server';
 import { json, errorResponse } from '../../../lib/api/response';
 import { createInbound } from '../../../lib/services/stock';
 import { getInventorySnapshot } from '../../../lib/data/inventory';
-import { getUserShopIdOrThrow } from '../../../lib/tenant';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const user = await requireUser(request);
-    const shopId = await getUserShopIdOrThrow(user.id);
     const payload = await request.json();
     const { itemId, warehouseId, quantity, reference, notes, occurredAt } = payload ?? {};
 
@@ -28,10 +26,9 @@ export const POST: APIRoute = async ({ request }) => {
       reference,
       notes,
       occurredAt: occurredAt ? new Date(occurredAt) : undefined,
-      performedBy: user.email ?? user.id,
-      shopId
+      performedBy: user.email ?? user.id
     });
-    const snapshot = await getInventorySnapshot(shopId);
+    const snapshot = await getInventorySnapshot();
 
     return json({ result, snapshot });
   } catch (error) {

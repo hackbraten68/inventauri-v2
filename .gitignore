@@ -5,6 +5,7 @@ dist/
 out/
 .astro/
 .next/
+build/
 storybook-static/
 
 # ============================================
@@ -56,6 +57,8 @@ pnpm-debug.log*
 # ============================================
 .DS_Store
 Thumbs.db
+*.tmp
+*.swp
 
 # ============================================
 # Generated code
@@ -71,10 +74,10 @@ tmp/
 # AI / Codex / Specify local data
 # ============================================
 .codex/
-.specify/cache/
-.specify/tmp/
-.specify/logs/
-.specify/*.json
+.specify/
+specs/
+docs/
+scripts/
 
 # Keep important spec & retrospec files (documentation only)
 !.specify/specify.md
@@ -89,4 +92,3 @@ tmp/
 *.tar.gz
 *.zip
 /backups/
-

@@ -8,7 +8,7 @@ import { getUserShopIdOrThrow } from '../../lib/tenant';
 
 const warehouseSlug = Astro.url.searchParams.get('warehouse');
 const auth = await requireUser(Astro.request);
-const shopId = await getUserShopIdOrThrow(auth.id);
+const shopId = await getUserShopIdOrThrow(auth);
 const [inventory, warehouses] = await Promise.all([
   getPosInventory(warehouseSlug ?? undefined, shopId),
   listPosWarehouses()

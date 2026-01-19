@@ -38,15 +38,11 @@ export async function listPosWarehouses() {
   });
 }
 
-export async function getSalesByReference(reference: string, shopId: string) {
-  if (!shopId) {
-    throw new Error('shopId ist erforderlich, um Verkäufe abzurufen.');
-  }
+export async function getSalesByReference(reference: string) {
   return prisma.stockTransaction.findMany({
     where: {
       transactionType: 'sale',
-      reference,
-      shopId
+      reference
     },
     include: {
       item: true,

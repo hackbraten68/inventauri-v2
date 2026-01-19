@@ -8,7 +8,6 @@ const SALE_TYPE: TransactionType = 'sale';
 
 export interface DashboardOptions {
   rangeDays?: number;
-  shopId?: string;
 }
 
 export interface DashboardSnapshot {
@@ -64,15 +63,13 @@ function parsePrice(metadata: unknown): number {
 
 export async function getDashboardSnapshot(options: DashboardOptions = {}): Promise<DashboardSnapshot> {
   const rangeDays = options.rangeDays ?? 7;
-  const shopId = options.shopId;
   const since = subDays(new Date(), rangeDays);
 
   const [items, salesGroup, recentTransactions] = await Promise.all([
     prisma.item.findMany({
-      where: { isActive: true, ...(shopId ? { shopId } : {}) },
+      where: { isActive: true },
       include: {
         stockLevels: {
-          where: shopId ? { shopId } : undefined,
           include: {
             warehouse: true
           }
@@ -83,15 +80,13 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
       by: ['itemId'],
       where: {
         transactionType: SALE_TYPE,
-        ...(shopId ? { shopId } : {}),
         occurredAt: { gte: since }
       },
       _sum: { quantity: true }
     }),
     prisma.stockTransaction.findMany({
       where: {
-        occurredAt: { gte: since },
-        ...(shopId ? { shopId } : {})
+        occurredAt: { gte: since }
       },
       orderBy: { occurredAt: 'desc' },
       take: 15,
@@ -141,23 +136,21 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
     (() => {
       const inboundCache = new Map<string, InboundCoverageResult>();
       return warningsBase.map(async (warning) => {
-        const cover: DaysOfCoverResult = await calculateDaysOfCover({
-          shopId,
-          itemId: warning.itemId,
-          warehouseId: warning.warehouseId,
-          onHandQuantity: warning.quantityOnHand,
-          rangeDays
-        });
+         const cover: DaysOfCoverResult = await calculateDaysOfCover({
+           itemId: warning.itemId,
+           warehouseId: warning.warehouseId,
+           onHandQuantity: warning.quantityOnHand,
+           rangeDays
+         });
 
-        let inbound = inboundCache.get(warning.itemId);
-        if (!inbound) {
-          inbound = await computeInboundCoverage({
-            shopId,
-            itemId: warning.itemId,
-            rangeDays
-          });
-          inboundCache.set(warning.itemId, inbound);
-        }
+         let inbound = inboundCache.get(warning.itemId);
+         if (!inbound) {
+           inbound = await computeInboundCoverage({
+             itemId: warning.itemId,
+             rangeDays
+           });
+           inboundCache.set(warning.itemId, inbound);
+         }
 
         const hasInbound = inbound.totalInboundUnits > 0;
 
@@ -190,7 +183,7 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
   }, 0);
 
   const salesMetric: SalesMetric = totalSalesRevenue > 0 ? 'revenue' : 'units';
-  const salesDelta = await computeSalesDelta({ shopId, rangeDays, metric: salesMetric });
+  const salesDelta = await computeSalesDelta({ rangeDays, metric: salesMetric });
 
   const recent = recentTransactions.map((transaction) => {
     const warehouse = transaction.targetWarehouse ?? transaction.sourceWarehouse;

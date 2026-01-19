@@ -2,14 +2,14 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { authHeaders, primeSettingsFixtures } from '../setup';
-import { getAccessToken } from '../auth';
+import { getAccessToken, skipPocketBaseTests } from '../auth';
 import { getJson } from '../util';
 
 const prisma = new PrismaClient();
 
 let ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 
-describe('Settings integration - Staff lifecycle', () => {
+(skipPocketBaseTests ? describe.skip : describe)('Settings integration - Staff lifecycle', () => {
   beforeAll(async () => {
     const { token } = await getAccessToken();
     ACCESS_TOKEN = token;

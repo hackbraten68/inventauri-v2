@@ -6,7 +6,7 @@ import { requireUser } from '../../lib/auth/server';
 import { getUserShopIdOrThrow } from '../../lib/tenant';
 
 const auth = await requireUser(Astro.request);
-const shopId = await getUserShopIdOrThrow(auth.id);
+const shopId = await getUserShopIdOrThrow(auth);
 const snapshot = await getInventorySnapshot(shopId);
 ---
 

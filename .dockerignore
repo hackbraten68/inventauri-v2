@@ -4,12 +4,13 @@ dist/
 out/
 .astro/
 .next/
+Dockerfile*
 
 # Build artifacts & coverage
 build/
 coverage/
 *.tsbuildinfo
-*.log
+*.log*
 
 # Local env & secrets
 .env
@@ -24,6 +25,7 @@ coverage/
 .idea/
 .specify/
 .codex/
+.dockerignore
 
 # OS junk
 .DS_Store

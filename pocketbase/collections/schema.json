@@ -11,7 +11,23 @@
           "type": "select",
           "required": true,
           "options": { "maxSelect": 1, "values": ["owner", "manager", "staff"] }
+        },
+        {
+          "name": "user",
+          "type": "relation",
+          "required": true,
+          "options": {
+            "collectionId": "_pb_users_auth_",
+            "cascadeDelete": true,
+            "minSelect": 1,
+            "maxSelect": 1,
+            "displayFields": []
+          }
         }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_shop_user` ON `profiles` (`userShopId`)",
+        "CREATE UNIQUE INDEX `idx_profiles_user` ON `profiles` (`user`)"
       ]
     }
   ]

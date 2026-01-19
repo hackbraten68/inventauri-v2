@@ -4,7 +4,6 @@ import { prisma } from '../prisma';
 export type Interval = 'day' | 'week' | 'month';
 
 export interface SalesTotalsParams {
-  shopId: string;
   from?: Date;
   to?: Date;
   interval?: Interval;
@@ -50,12 +49,11 @@ function addInterval(date: Date, interval: Interval): Date {
 }
 
 export async function getSalesTotals(params: SalesTotalsParams): Promise<SalesBucket[]> {
-  const { shopId, from, to, interval = 'day' } = params;
+  const { from, to, interval = 'day' } = params;
 
-  // fetch sales transactions for shop within range
+  // fetch sales transactions within range
   const transactions = await prisma.stockTransaction.findMany({
     where: {
-      shopId,
       transactionType: TransactionType.sale,
       occurredAt: {
         gte: from ?? undefined,
