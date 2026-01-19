@@ -13,7 +13,6 @@ export interface CreateItemInput {
   reference?: string | null;
   notes?: string | null;
   performedBy?: string | null;
-  shopId?: string | null;
 }
 
 export async function createItemWithStock(input: CreateItemInput) {
@@ -39,8 +38,8 @@ export async function createItemWithStock(input: CreateItemInput) {
   }
 
   return prisma.$transaction(async (tx) => {
-    // Enforce tenant-scoped SKU uniqueness
-    const existing = await tx.item.findFirst({ where: { sku, shopId: input.shopId || undefined } });
+    // Enforce global SKU uniqueness
+    const existing = await tx.item.findUnique({ where: { sku } });
     if (existing) {
       throw new Error('SKU existiert bereits.');
     }
@@ -52,53 +51,9 @@ export async function createItemWithStock(input: CreateItemInput) {
         unit,
         barcode: barcode || undefined,
         description: description || undefined,
-        metadata,
-        // staged multi-tenant field
-        shopId: input.shopId || undefined
+        metadata
       }
     });
-
-    // Phase 2 dual-write: mirror to Product + ProductVariant (backward-compatible)
-    // Only if we have a shopId to scope under
-    if (input.shopId) {
-      const anyTx = tx as any;
-      // Reuse product by name within shop if it exists, else create
-      const product =
-        (await anyTx.product.findFirst({ where: { shopId: input.shopId, name } })) ||
-        (await anyTx.product.create({
-          data: {
-            name,
-            description: description || undefined,
-            shopId: input.shopId
-          }
-        }));
-
-      // Ensure a variant exists for this SKU within the tenant
-      await anyTx.productVariant.upsert({
-        where: {
-          shopId_sku: {
-            shopId: input.shopId,
-            sku
-          }
-        },
-        update: {
-          unit,
-          barcode: barcode || undefined,
-          // Keep price in metadata for now; pricing model will move to variant later
-          // price: undefined
-          isActive: true
-        },
-        create: {
-          productId: product.id,
-          shopId: input.shopId,
-          sku,
-          unit,
-          barcode: barcode || undefined,
-          // price: undefined
-          isActive: true
-        }
-      });
-    }
 
     let stockLevel = null;
     if (warehouseId && initialStock > 0) {
@@ -115,9 +70,7 @@ export async function createItemWithStock(input: CreateItemInput) {
         create: {
           warehouseId,
           itemId: item.id,
-          quantityOnHand: new Prisma.Decimal(initialStock),
-          // staged multi-tenant field
-          shopId: input.shopId || undefined
+          quantityOnHand: new Prisma.Decimal(initialStock)
         }
       });
 
@@ -129,9 +82,7 @@ export async function createItemWithStock(input: CreateItemInput) {
           targetWarehouseId: warehouseId,
           reference: reference ?? 'ITEM_INIT',
           notes: notes ?? 'Initiale Bestandsanlage',
-          performedBy: performedBy || undefined,
-          // staged multi-tenant field
-          shopId: input.shopId || undefined
+          performedBy: performedBy || undefined
         }
       });
     }
@@ -145,7 +96,7 @@ export async function createItemWithStock(input: CreateItemInput) {
 
 export async function deleteItem(itemId: string) {
   return prisma.$transaction(async (tx) => {
-    const item = await tx.item.findUnique({ where: { id: itemId } });
+    const item = await tx.item.findUnique({ where: { id: itemId }, select: { id: true } });
     if (!item) {
       throw new Error('Artikel nicht gefunden.');
     }

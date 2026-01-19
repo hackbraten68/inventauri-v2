@@ -1,50 +1,71 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+Version: 0.0.0 -> 1.0.0
+Principles: placeholders -> I. Test-First Delivery (TFD), II. Single CLI Surface, III. Full Containerization, IV. Tenant-Safe Access, V. Observable Operations
+Added Sections: Operational Constraints, Development Workflow & Quality Gates
+Removed Sections: None
+Templates:
+  - .specify/templates/plan-template.md ✅ still compatible; reiterates Constitution Check
+  - .specify/templates/spec-template.md ✅ already enforces prioritized stories/tests
+  - .specify/templates/tasks-template.md ✅ mandates story grouping and optional tests
+  - .specify/templates/commands/ ⚠ directory missing; create command docs referencing CLI/container workflow when available
+Runtime Guidance:
+  - README.md ✅ already instructs Docker Compose + npm scripts; no edits needed
+Follow-ups:
+  - TODO(COMMAND_TEMPLATES): Populate `.specify/templates/commands/*.md` so command docs can cite Constitution gates.
+-->
+
+# Inventauri v2 Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Test-First Delivery (TFD)
+- All work follows `spec → plan → tasks → tests → implementation`. Skipping a stage or blending outputs is prohibited.
+- Each user story requires at least one failing automated test (unit, contract, or integration) before writing production code; regression must pass via `npm test && npm run lint`.
+- Code reviewers MUST reject changes without evidence of failing-then-passing tests or an approved rationale for test deferral (documented in tasks.md).
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Single CLI Surface
+- Every workflow is exposed through `npm` scripts or `/speckit.*` commands. Manual shell snippets in docs are forbidden unless wrapped in a script.
+- Scripts MUST provide text I/O (stdout for results, stderr for errors) so they can be chained in CI and the Codex CLI.
+- README, quickstart, and tasks must reference the exact CLI commands; undocumented flags or hidden steps violate this principle.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Full Containerization
+- The entire stack (PocketBase, Astro app, Postgres, supporting services) MUST run via Docker Compose; contributions that only work locally are rejected.
+- Compose files MUST declare health checks, named volumes, and `.env.docker` support so environments survive restarts.
+- Any new dependency requires an accompanying container/service definition or explicit justification recorded in plan.md under Constraints.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Tenant-Safe Access
+- Auth, middleware, and APIs MUST prove tenant isolation via automated tests or contract checks before merging.
+- Shared utilities (`src/lib/*`) must accept tenant context explicitly; implicit globals are disallowed.
+- Data migrations or imports MUST include rollback notes covering tenant-specific failures.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Observable Operations
+- Features MUST emit structured logs for auth, inventory actions, and container health transitions; `console.log` debugging is insufficient.
+- Monitoring hooks (health endpoints, Docker health checks, `verify:*` scripts) MUST fail fast when services degrade.
+- Success criteria in spec.md require measurable metrics (latency, error rates) with tasks tied to each measurement.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Operational Constraints
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- Minimum toolchain: Node.js 20, npm 10, Docker 24+, docker-compose v2, PostgreSQL 15 client.
+- Required verification command: `npm test && npm run lint` (native) or `npm run verify:pocketbase` (Docker) before opening a PR.
+- Secrets live only in `.env.local`/`.env.docker`; never hard-code or commit credentials. Rotate by updating `.env.*` templates plus Compose files.
+- Documentation MUST specify both native CLI and Docker invocation if the workflow differs.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Development Workflow & Quality Gates
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+1. **Specify** via `/speckit.specify` to refresh `spec.md`. Constitution gate: reject drafts missing prioritized stories, requirements, or success criteria.
+2. **Plan** via `/speckit.plan`. Constitution gate: confirm Full Containerization and Single CLI Surface decisions are reflected in the architecture/stack sections.
+3. **Tasks** via `/speckit.tasks`. Constitution gate: trace each requirement to at least one task and flag missing test coverage.
+4. **Analyze** via `/speckit.analyze` prior to implementation; blockers (constitution, coverage, ambiguity) MUST be resolved before `/speckit.implement`.
+5. **Implement** only after failing tests exist. Every PR MUST include proof of `npm test && npm run lint` (or `npm run verify:pocketbase`) and Compose health checks.
+6. **Review**: reviewers verify adherence to all principles plus Operational Constraints; violations require rework or a documented constitution amendment.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- The constitution supersedes other guidance. Breaking a principle requires a temporary exemption recorded in plan.md’s Complexity Tracking plus a follow-up amendment.
+- Amendments follow semantic versioning: MAJOR for redefining/removing principles, MINOR for adding principles/sections, PATCH for wording clarifications. Current change: new constitution → v1.0.0.
+- Ratification requires approval from feature owner(s) and lead maintainer; record ratification and amendment dates in this document.
+- Compliance reviews occur before `/speckit.plan`, before `/speckit.tasks`, and during PR review. Any skipped gate halts delivery until resolved.
+- Store past versions in git history; reopening the constitution demands documenting rationale in the PR/commit message.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2025-12-08 | **Last Amended**: 2025-12-08

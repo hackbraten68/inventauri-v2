@@ -2,12 +2,12 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { getJson } from '../util';
 import { authHeaders } from '../setup';
 import { PrismaClient } from '@prisma/client';
-import { getAccessToken } from '../auth';
+import { getAccessToken, skipPocketBaseTests } from '../auth';
 
 const prisma = new PrismaClient();
 let ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 
-describe('POS sale reference (tenant-scoped)', () => {
+(skipPocketBaseTests ? describe.skip : describe)('POS sale reference', () => {
   let warehouseId: string;
   let itemId: string;
   let reference: string;
@@ -47,7 +47,7 @@ describe('POS sale reference (tenant-scoped)', () => {
     reference = saleRes.body.reference;
   });
 
-  it('GET /api/stock/sale?reference=... returns only tenant data', async () => {
+  it('GET /api/stock/sale?reference=... returns sale data', async () => {
     const res = await getJson<{ reference: string; transactions: any[] }>(`/api/stock/sale?reference=${encodeURIComponent(reference)}`, {
       headers: { ...authHeaders(ACCESS_TOKEN) }
     });

@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { supabase } from '../../lib/supabase-client';
 import { Button } from '../ui/button';
 
 interface LogoutButtonProps {
@@ -14,10 +13,13 @@ export function LogoutButton({ redirectTo = '/login' }: LogoutButtonProps) {
     setLoading(true);
     setError(null);
     try {
-      const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
-      if (signOutError) {
-        setError(signOutError.message);
-        return;
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'same-origin'
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error ?? 'Abmeldung fehlgeschlagen.');
       }
       window.location.href = redirectTo;
     } catch (cause) {

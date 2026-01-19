@@ -52,19 +52,17 @@ function safePercentage(current: number, prior: number) {
 }
 
 export async function computeSalesDelta(params: {
-  shopId?: string;
   rangeDays: number;
   metric: SalesMetric;
 }): Promise<SalesDeltaResult> {
-  const { shopId, rangeDays, metric } = params;
+  const { rangeDays, metric } = params;
   const now = new Date();
   const currentStart = subDays(now, rangeDays);
   const priorStart = subDays(currentStart, rangeDays);
 
   const whereBase = {
     occurredAt: { gte: priorStart },
-    transactionType: 'sale' as const,
-    ...(shopId ? { shopId } : {})
+    transactionType: 'sale' as const
   };
 
   const transactions = await prisma.stockTransaction.findMany({
@@ -110,19 +108,17 @@ function parsePrice(metadata: unknown) {
 }
 
 export async function computeSalesVelocity(params: {
-  shopId?: string;
   itemId: string;
   warehouseId?: string;
   rangeDays: number;
 }): Promise<SalesVelocityResult> {
-  const { shopId, itemId, rangeDays, warehouseId } = params;
+  const { itemId, rangeDays, warehouseId } = params;
   const since = subDays(new Date(), rangeDays);
 
   const where: Prisma.StockTransactionWhereInput = {
     itemId,
     transactionType: 'sale',
     occurredAt: { gte: since },
-    ...(shopId ? { shopId } : {}),
     ...(warehouseId ? { targetWarehouseId: warehouseId } : {})
   };
 
@@ -155,19 +151,17 @@ export async function computeSalesVelocity(params: {
 }
 
 export async function computeInboundCoverage(params: {
-  shopId?: string;
   itemId: string;
   rangeDays: number;
 }): Promise<InboundCoverageResult> {
-  const { shopId, itemId, rangeDays } = params;
+  const { itemId, rangeDays } = params;
   const since = subDays(new Date(), rangeDays);
 
   const transactions = await prisma.stockTransaction.findMany({
     where: {
       itemId,
       transactionType: 'inbound',
-      occurredAt: { gte: since },
-      ...(shopId ? { shopId } : {})
+      occurredAt: { gte: since }
     },
     select: {
       quantity: true,
@@ -203,15 +197,14 @@ export async function computeInboundCoverage(params: {
 }
 
 export async function calculateDaysOfCover(params: {
-  shopId?: string;
   itemId: string;
   warehouseId: string;
   onHandQuantity: number;
   rangeDays: number;
   riskDaysThreshold?: number;
 }): Promise<DaysOfCoverResult> {
-  const { shopId, itemId, warehouseId, onHandQuantity, rangeDays, riskDaysThreshold = 3 } = params;
-  const velocity = await computeSalesVelocity({ shopId, itemId, warehouseId, rangeDays });
+  const { itemId, warehouseId, onHandQuantity, rangeDays, riskDaysThreshold = 3 } = params;
+  const velocity = await computeSalesVelocity({ itemId, warehouseId, rangeDays });
 
   if (!velocity.averageDaily || velocity.averageDaily <= 0) {
     return {

@@ -4,12 +4,10 @@ import { requireUser } from '../../../lib/auth/server';
 import { json, errorResponse } from '../../../lib/api/response';
 import { createItemWithStock } from '../../../lib/data/items';
 import { getInventorySnapshot } from '../../../lib/data/inventory';
-import { getUserShopIdOrThrow } from '../../../lib/tenant';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const user = await requireUser(request);
-    const shopId = await getUserShopIdOrThrow(user.id);
     const payload = await request.json();
     const {
       name,
@@ -44,11 +42,10 @@ export const POST: APIRoute = async ({ request }) => {
       warehouseId,
       reference,
       notes,
-      performedBy: user.email ?? user.id,
-      shopId
+      performedBy: user.email ?? user.id
     });
 
-    const snapshot = await getInventorySnapshot(shopId);
+    const snapshot = await getInventorySnapshot();
 
     return json({ item: result.item, stockLevel: result.stockLevel, snapshot }, { status: 201 });
   } catch (error) {

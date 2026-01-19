@@ -4,13 +4,13 @@
 - [x] Dashboard-Badges für Sales-Trend-Delta, Days-of-Cover und eingehende Bestellungen (Feature 003-add-dashboard-metrics).
 - [ ] Konfigurierbare Bestandswarnungen (zentral & POS) inkl. Eingabefelder und Speicherung.
 - [ ] Dashboard erweitern: echte Umsatzberechnung, Diagramme (Verlauf, Verteilung), Deep-Links.
-- [ ] Echtzeit-Updates via Supabase Realtime für Dashboard, Inventar und POS.
+- [ ] Echtzeit-Updates via PocketBase Realtime (or WebSocket bridge) für Dashboard, Inventar und POS.
 
 ## Einstellungen & Administration
 - [x] Version-zero Einstellungen für Erstkonfiguration (Feature 005-allow-version-zero).
 - [ ] Sidebar-Footer mit Settings (Theme ✅, Sprache/i18n, Profil, Logout, Admin-Switch).
-- [ ] Admin-Bereich: Organisationsdaten, Benutzer-/Rollenverwaltung, Supabase-Anbindung.
-- [ ] Rollen- & Policy-System (Supabase RLS) plus UI-Zugriffsbeschränkungen.
+- [ ] Admin-Bereich: Organisationsdaten, Benutzer-/Rollenverwaltung, PocketBase-Anbindung.
+- [ ] Rollen- & Policy-System (PocketBase policies or Prisma guards) plus UI-Zugriffsbeschränkungen.
 
 ## Artikel & POS
 - [ ] Artikel bearbeiten (inkl. Warnschwellen) + erweiterte Detailansichten.
@@ -26,4 +26,7 @@
 - [ ] Es muss sichergestellt werden, das der Bestand der zurueckgegeben Waren auf die referenznummer abgespeichert wird. Wenn die ich selbe nummer nochmal eingebe, erscheint der gleiche Bestand wie zu beginn. -. Shadow Bestand
 - [ ] POS Verwaltung fehlt komplett
 - [ ] Scan Code quagga einbinden
-- [ ] Wenn Artikel angelgt wurde und ich will ueber das Zentrallager auf POS umbuchen, kann ich keine anwaehlen. Tauchen jedoch ueberall sonst (POS Lager) und Artikel anlegen (Startbestand Lager) auf. 
+- [ ] Wenn Artikel angelgt wurde und ich will ueber das Zentrallager auf POS umbuchen, kann ich keine anwaehlen. Tauchen jedoch ueberall sonst (POS Lager) und Artikel anlegen (Startbestand Lager) auf.
+
+## SaaS & Multi-Tenancy
+- [ ] Re-implement multi-tenancy for SaaS version (multiple shops per instance, tenant isolation, user-shop mappings). 

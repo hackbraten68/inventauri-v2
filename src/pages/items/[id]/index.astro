@@ -3,9 +3,10 @@ import AppLayout from '../../../layouts/AppLayout.astro';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { getInventorySnapshot } from '../../../lib/data/inventory';
-import { getWarehouseById } from '../../../lib/data/warehouses';
+import { requireUser } from '../../../lib/auth/server';
 
 const { id } = Astro.params;
+const auth = await requireUser(Astro.request);
 const snapshot = await getInventorySnapshot();
 const item = snapshot.items.find((entry) => entry.itemId === id);
 
@@ -33,6 +34,7 @@ if (!item) {
                 if (confirm(`Artikel "${item.name}" wirklich löschen?`)) {
                   fetch(`/api/items/${item.itemId}`, {
                     method: 'DELETE',
+                    credentials: 'same-origin',
                     headers: { 'content-type': 'application/json' }
                   })
                     .then(() => {
@@ -98,6 +100,7 @@ if (!item) {
               if (confirm(`Artikel "${item.name}" wirklich löschen?`)) {
                 fetch(`/api/items/${item.itemId}`, {
                   method: 'DELETE',
+                  credentials: 'same-origin',
                   headers: { 'content-type': 'application/json' }
                 })
                   .then(() => {

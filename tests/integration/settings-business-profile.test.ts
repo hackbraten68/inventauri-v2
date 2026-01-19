@@ -2,7 +2,7 @@ import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { getJson } from '../util';
 import { authHeaders, primeSettingsFixtures } from '../setup';
-import { getAccessToken } from '../auth';
+import { getAccessToken, skipPocketBaseTests } from '../auth';
 
 const prisma = new PrismaClient();
 
@@ -11,8 +11,12 @@ let ORIGINAL_PROFILE:
   | {
       legalName: string;
       displayName: string;
+      taxId?: string | null;
       email: string;
+      phone?: string | null;
+      website?: string | null;
       addressLine1: string;
+      addressLine2?: string | null;
       city: string;
       postalCode: string;
       country: string;
@@ -20,25 +24,25 @@ let ORIGINAL_PROFILE:
     }
   | null = null;
 
-describe('Settings integration - Business profile workflow', () => {
+(skipPocketBaseTests ? describe.skip : describe)('Settings integration - Business profile workflow', () => {
   beforeAll(async () => {
     const { token } = await getAccessToken();
     ACCESS_TOKEN = token;
     await primeSettingsFixtures();
 
-    const shop = await prisma.shop.findFirst({ select: { id: true } });
-    if (!shop) {
-      throw new Error('Kein Shop in der Datenbank gefunden. Seed ausführen.');
-    }
-    const profile = await prisma.businessProfile.findUnique({ where: { shopId: shop.id } });
+    const profile = await prisma.businessProfile.findUnique({ where: { id: 'default' } });
     if (!profile) {
       throw new Error('Kein Geschäftsprofil vorhanden. Seed ausführen.');
     }
     ORIGINAL_PROFILE = {
       legalName: profile.legalName,
       displayName: profile.displayName,
+      taxId: profile.taxId,
       email: profile.email,
+      phone: profile.phone,
+      website: profile.website,
       addressLine1: profile.addressLine1,
+      addressLine2: profile.addressLine2,
       city: profile.city,
       postalCode: profile.postalCode,
       country: profile.country,
@@ -51,7 +55,7 @@ describe('Settings integration - Business profile workflow', () => {
       const shop = await prisma.shop.findFirst({ select: { id: true } });
       if (shop) {
         await prisma.businessProfile.update({
-          where: { shopId: shop.id },
+          where: { id: 'default' },
           data: {
             legalName: ORIGINAL_PROFILE.legalName,
             displayName: ORIGINAL_PROFILE.displayName,
@@ -69,13 +73,9 @@ describe('Settings integration - Business profile workflow', () => {
 
   it('creates the business profile when version 0 is submitted and no record exists', async () => {
     const shop = await prisma.shop.findFirst({ select: { id: true } });
-    if (!shop) {
-      throw new Error('Kein Shop in der Datenbank gefunden. Seed ausführen.');
-    }
-
-    const existing = await prisma.businessProfile.findUnique({ where: { shopId: shop.id } });
+    const existing = await prisma.businessProfile.findUnique({ where: { id: 'default' } });
     if (existing) {
-      await prisma.businessProfile.delete({ where: { shopId: shop.id } });
+      await prisma.businessProfile.delete({ where: { id: 'default' } });
     }
 
     const createPayload = {
@@ -138,9 +138,9 @@ describe('Settings integration - Business profile workflow', () => {
       throw new Error('Kein Shop in der Datenbank gefunden. Seed ausführen.');
     }
 
-    const existing = await prisma.businessProfile.findUnique({ where: { shopId: shop.id } });
+    const existing = await prisma.businessProfile.findUnique({ where: { id: 'default' } });
     if (existing) {
-      await prisma.businessProfile.delete({ where: { shopId: shop.id } });
+      await prisma.businessProfile.delete({ where: { id: 'default' } });
     }
 
     const concurrentPayload = {
@@ -193,7 +193,7 @@ describe('Settings integration - Business profile workflow', () => {
 
     if (ORIGINAL_PROFILE) {
       await prisma.businessProfile.update({
-        where: { shopId: shop.id },
+        where: { id: 'default' },
         data: {
           legalName: ORIGINAL_PROFILE.legalName,
           displayName: ORIGINAL_PROFILE.displayName,

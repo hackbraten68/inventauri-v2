@@ -1,46 +1,17 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { baseUrl, getJson } from '../util';
-import { getAccessToken } from '../auth';
+import { getAccessToken, skipPocketBaseTests } from '../auth';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-describe('Products API', () => {
+(skipPocketBaseTests ? describe.skip : describe)('Products API', () => {
   let authHeaders: Record<string, string>;
-  let shopId: string;
-
   beforeAll(async () => {
     // Get auth token and create headers
-    const { token, userId } = await getAccessToken();
+    const { token } = await getAccessToken();
     authHeaders = { 'Authorization': `Bearer ${token}` };
-    
-    // Get the demo shop
-    let shop = await prisma.shop.findFirst({ where: { slug: 'demo-shop' } });
-    if (!shop) {
-      shop = await prisma.shop.create({
-        data: {
-          name: 'Demo Shop',
-          slug: 'demo-shop',
-        }
-      });
-    }
-    shopId = shop.id;
-    
-    // Ensure user has access to the shop
-    const userShop = await prisma.userShop.findFirst({
-      where: { userId, shopId }
-    });
-    
-    if (!userShop) {
-      await prisma.userShop.create({
-        data: {
-          userId,
-          shopId,
-          role: 'owner'
-        }
-      });
-    }
-    
+
     // Ensure we have at least one warehouse for testing
     const warehouse = await prisma.warehouse.findFirst();
     
@@ -74,8 +45,7 @@ describe('Products API', () => {
       description: 'Test product with variants',
       unit: 'pcs',
       initialStock: 10,
-      warehouseId: warehouse.id,
-      shopId
+      warehouseId: warehouse.id
     };
     
     console.log('Creating product with data:', JSON.stringify(productData, null, 2));
@@ -114,8 +84,7 @@ describe('Products API', () => {
       id: expect.any(String),
       name: testProductName,
       description: 'Test product with variants',
-      isActive: true,
-      shopId
+      isActive: true
     });
     
     // Verify variants

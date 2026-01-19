@@ -1,6 +1,9 @@
-import { supabaseAdmin } from '../../supabase-admin';
+import { randomUUID } from 'node:crypto';
+import { ensurePocketBaseAdminAuth } from '../../pocketbase-admin';
 
-export const hasServiceRole = Boolean(import.meta.env.SUPABASE_SERVICE_ROLE_KEY);
+export const hasServiceRole =
+  Boolean(import.meta.env.POCKETBASE_SERVICE_ROLE_TOKEN) ||
+  (Boolean(import.meta.env.POCKETBASE_ADMIN_EMAIL) && Boolean(import.meta.env.POCKETBASE_ADMIN_PASSWORD));
 
 export interface InviteUserResult {
   userId: string | null;
@@ -12,20 +15,24 @@ export async function inviteUser(email: string, role: string): Promise<InviteUse
     return { userId: null, email };
   }
 
-  const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-    data: { role }
-  });
-
-  if (error) {
-    const err = new Error(error.message);
+  const adminClient = await ensurePocketBaseAdminAuth();
+  const password = randomUUID().replace(/-/g, '').slice(0, 16);
+  try {
+    const record = await adminClient.collection('users').create({
+      email,
+      password,
+      passwordConfirm: password,
+      verified: false
+    });
+    return {
+      userId: record?.id ?? null,
+      email: record?.email ?? email
+    };
+  } catch (error) {
+    const err = new Error(error instanceof Error ? error.message : 'PocketBase Einladung fehlgeschlagen.');
     (err as Error & { status?: number }).status = 502;
     throw err;
   }
-
-  return {
-    userId: data?.user?.id ?? null,
-    email: data?.user?.email ?? email
-  };
 }
 
 export async function disableUser(userId: string): Promise<void> {
@@ -33,13 +40,13 @@ export async function disableUser(userId: string): Promise<void> {
     return;
   }
 
-  const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-    user_metadata: { status: 'deactivated' },
-    ban_duration: 'permanent'
-  });
-
-  if (error) {
-    const err = new Error(error.message);
+  const adminClient = await ensurePocketBaseAdminAuth();
+  try {
+    await adminClient.collection('users').update(userId, {
+      banned: true
+    });
+  } catch (error) {
+    const err = new Error(error instanceof Error ? error.message : 'PocketBase Update fehlgeschlagen.');
     (err as Error & { status?: number }).status = 502;
     throw err;
   }
@@ -49,10 +56,12 @@ export async function fetchUserEmail(userId: string): Promise<string | null> {
   if (!hasServiceRole) {
     return null;
   }
-  const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
-  if (error) {
-    console.warn('Failed to fetch Supabase user email', error);
+  const adminClient = await ensurePocketBaseAdminAuth();
+  try {
+    const record = await adminClient.collection('users').getOne(userId);
+    return record?.email ?? null;
+  } catch (error) {
+    console.warn('Failed to fetch PocketBase user email', error);
     return null;
   }
-  return data.user?.email ?? null;
 }

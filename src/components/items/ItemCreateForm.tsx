@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import { supabase } from '../../lib/supabase-client';
-import { setAccessTokenCookie } from '../../lib/auth/cookies';
+import { getAccessToken } from '../../lib/api/client';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -81,15 +80,7 @@ export function ItemCreateForm({ warehouses, defaultWarehouseId }: ItemCreateFor
         throw new Error('Für einen Startbestand muss ein Lager ausgewählt werden.');
       }
 
-      const { data, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        throw sessionError;
-      }
-      const token = data.session?.access_token;
-      if (!token) {
-        throw new Error('Keine aktive Supabase Session gefunden.');
-      }
-      setAccessTokenCookie(token, data.session?.expires_in ?? undefined);
+      const token = await getAccessToken();
 
       const metadata: Record<string, unknown> = {};
       if (form.price) metadata.price = Number(form.price);
@@ -97,6 +88,7 @@ export function ItemCreateForm({ warehouses, defaultWarehouseId }: ItemCreateFor
 
       const response = await fetch('/api/items', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
           'content-type': 'application/json',
           authorization: `Bearer ${token}`

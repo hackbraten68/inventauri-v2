@@ -2,7 +2,9 @@
 import AppLayout from '../../layouts/AppLayout.astro';
 import { InventoryManager } from '../../components/inventory/InventoryManager';
 import { getInventorySnapshot } from '../../lib/data/inventory';
+import { requireUser } from '../../lib/auth/server';
 
+const auth = await requireUser(Astro.request);
 const snapshot = await getInventorySnapshot();
 ---
 

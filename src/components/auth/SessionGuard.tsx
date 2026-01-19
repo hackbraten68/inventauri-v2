@@ -1,6 +1,4 @@
 import { useEffect } from 'react';
-import { supabase } from '../../lib/supabase-client';
-import { setAccessTokenCookie } from '../../lib/auth/cookies';
 
 interface SessionGuardProps {
   redirectTo?: string;
@@ -8,16 +6,21 @@ interface SessionGuardProps {
 
 export function SessionGuard({ redirectTo = '/login' }: SessionGuardProps) {
   useEffect(() => {
-    let active = true;
+    let cancelled = false;
+    let interval: ReturnType<typeof setInterval> | undefined;
 
     async function ensureSession() {
-      const { data } = await supabase.auth.getSession();
-      if (!active) return;
+      try {
+        const response = await fetch('/api/auth/session', {
+          method: 'GET',
+          credentials: 'same-origin'
+        });
 
-      if (data.session) {
-        setAccessTokenCookie(data.session.access_token, data.session.expires_in ?? undefined);
-      } else {
-        setAccessTokenCookie(null);
+        if (!response.ok) {
+          throw new Error('session invalid');
+        }
+      } catch {
+        if (cancelled) return;
         if (window.location.pathname !== redirectTo) {
           window.location.href = `${redirectTo}?redirectTo=${encodeURIComponent(window.location.pathname)}`;
         }
@@ -26,20 +29,27 @@ export function SessionGuard({ redirectTo = '/login' }: SessionGuardProps) {
 
     void ensureSession();
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        setAccessTokenCookie(session.access_token, session.expires_in ?? undefined);
-      } else {
-        setAccessTokenCookie(null);
-        if (window.location.pathname !== redirectTo) {
-          window.location.href = `${redirectTo}?redirectTo=${encodeURIComponent(window.location.pathname)}`;
-        }
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        void ensureSession();
       }
-    });
+    };
+
+    const handleFocus = () => {
+      void ensureSession();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleFocus);
+    interval = setInterval(() => {
+      void ensureSession();
+    }, 5 * 60 * 1000);
 
     return () => {
-      active = false;
-      subscription.subscription?.unsubscribe();
+      cancelled = true;
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleFocus);
+      if (interval) clearInterval(interval);
     };
   }, [redirectTo]);
 

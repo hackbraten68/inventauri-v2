@@ -38,15 +38,13 @@ export interface InventorySnapshot {
   warehouseTotals: InventoryWarehouseBreakdown[];
 }
 
-export async function getInventorySnapshot(shopId?: string): Promise<InventorySnapshot> {
+export async function getInventorySnapshot(): Promise<InventorySnapshot> {
   const items = await prisma.item.findMany({
     where: {
-      isActive: true,
-      ...(shopId ? { shopId } : {})
+      isActive: true
     },
     include: {
       stockLevels: {
-        where: shopId ? { shopId } : undefined,
         include: {
           warehouse: {
             select: {

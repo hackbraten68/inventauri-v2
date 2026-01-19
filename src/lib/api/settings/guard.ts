@@ -1,10 +1,9 @@
 import { requireUser } from '../../auth/server';
-import { getUserShopIdOrThrow, getUserTenantRoleOrThrow, type TenantRole } from '../../tenant';
+import type { TenantRole } from '../../auth/types';
 
 export interface SettingsAdminContext {
   userId: string;
   userEmail?: string;
-  shopId: string;
   role: TenantRole;
 }
 
@@ -16,8 +15,7 @@ function forbidden(message: string) {
 
 export async function requireSettingsAdmin(request: Request): Promise<SettingsAdminContext> {
   const auth = await requireUser(request);
-  const shopId = await getUserShopIdOrThrow(auth.id);
-  const role = await getUserTenantRoleOrThrow(auth.id);
+  const role = auth.role;
 
   if (role !== 'owner' && role !== 'manager') {
     throw forbidden('Unzureichende Berechtigungen für Einstellungen.');
@@ -26,7 +24,6 @@ export async function requireSettingsAdmin(request: Request): Promise<SettingsAd
   return {
     userId: auth.id,
     userEmail: auth.email,
-    shopId,
     role
   };
 }

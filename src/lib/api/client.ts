@@ -1,13 +1,15 @@
-import { supabase } from '../supabase-client';
-
-async function getAccessToken() {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) {
-    throw error;
+export async function getAccessToken() {
+  const response = await fetch('/api/auth/session', {
+    method: 'GET',
+    credentials: 'same-origin'
+  });
+  if (!response.ok) {
+    throw new Error('Keine aktive Session gefunden. Melde dich erneut an.');
   }
-  const token = data.session?.access_token;
+  const data = await response.json();
+  const token = data.tokens?.accessToken;
   if (!token) {
-    throw new Error('Keine aktive Supabase Session gefunden. Melde dich erneut an.');
+    throw new Error('PocketBase Token fehlt. Melde dich erneut an.');
   }
   return token;
 }

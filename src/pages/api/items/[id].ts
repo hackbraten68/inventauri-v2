@@ -7,7 +7,7 @@ import { getInventorySnapshot } from '../../../lib/data/inventory';
 
 export const DELETE: APIRoute = async ({ params, request }) => {
   try {
-    await requireUser(request);
+    const user = await requireUser(request);
     const itemId = params.id;
 
     if (!itemId) {

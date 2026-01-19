@@ -2,12 +2,12 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { getJson } from '../util';
 import { authHeaders } from '../setup';
 import { PrismaClient } from '@prisma/client';
-import { getAccessToken } from '../auth';
+import { getAccessToken, skipPocketBaseTests } from '../auth';
 
 const prisma = new PrismaClient();
 let ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 
-describe('Inventory contracts', () => {
+(skipPocketBaseTests ? describe.skip : describe)('Inventory contracts', () => {
   let warehouseId: string;
   let itemId: string;
 

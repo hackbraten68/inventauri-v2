@@ -17,18 +17,15 @@ export function authHeaders(token?: string) {
 const TEST_ACTOR_ID = process.env.TEST_ACTOR_ID ?? '00000000-0000-0000-0000-000000000000';
 
 export async function primeSettingsFixtures() {
-  const shop = await prisma.shop.findFirst({ select: { id: true, name: true } });
-  if (!shop) {
-    return;
-  }
+  const settingsId = '00000000-0000-0000-0000-000000000000';
 
   await prisma.businessProfile.upsert({
-    where: { shopId: shop.id },
+    where: { id: settingsId },
     update: {},
     create: {
-      shopId: shop.id,
-      legalName: shop.name,
-      displayName: shop.name,
+      id: settingsId,
+      legalName: 'Test Shop',
+      displayName: 'Test Shop',
       email: 'test@inventauri.app',
       addressLine1: 'Teststraße 1',
       city: 'Berlin',
@@ -39,10 +36,10 @@ export async function primeSettingsFixtures() {
   });
 
   await prisma.operationalPreference.upsert({
-    where: { shopId: shop.id },
+    where: { id: settingsId },
     update: {},
     create: {
-      shopId: shop.id,
+      id: settingsId,
       currencyCode: 'EUR',
       timezone: 'Europe/Berlin',
       unitSystem: UnitSystem.metric,
@@ -63,15 +60,13 @@ export async function primeSettingsFixtures() {
   for (const category of categories) {
     await prisma.notificationPreference.upsert({
       where: {
-        shopId_category_channel: {
-          shopId: shop.id,
+        category_channel: {
           category,
           channel: NotificationChannel.email
         }
       },
       update: {},
       create: {
-        shopId: shop.id,
         category,
         channel: NotificationChannel.email,
         isEnabled: true,

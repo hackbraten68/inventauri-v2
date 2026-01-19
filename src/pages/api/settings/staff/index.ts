@@ -8,8 +8,8 @@ import { ValidationError } from '../../../../lib/settings/validation';
 
 export const GET: APIRoute = async ({ request }) => {
   try {
-    const { shopId } = await requireSettingsAdmin(request);
-    const staff = await listStaff(shopId);
+    await requireSettingsAdmin(request);
+    const staff = await listStaff();
     return json(staff);
   } catch (cause) {
     if (cause instanceof ValidationError) {

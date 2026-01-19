@@ -17,7 +17,7 @@ const redirectTo = Astro.url.searchParams.get('redirectTo') ?? '/dashboard';
       <div class="space-y-2 text-center">
         <h1 class="text-2xl font-bold">Willkommen zurück</h1>
         <p class="text-sm text-muted-foreground">
-          Melde dich mit deinen Supabase Zugangsdaten an. Bei Erfolg leiten wir dich automatisch zum Dashboard weiter.
+          Melde dich bei Inventauri an. Bei Erfolg leiten wir dich automatisch zum Dashboard weiter.
         </p>
       </div>
       <LoginForm client:load redirectTo={redirectTo} />

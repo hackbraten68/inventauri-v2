@@ -1,143 +1,38 @@
-import {
-  SettingsChangeType,
-  SettingsSection,
-  StaffInvitationStatus,
-  UserMembershipStatus
-} from '@prisma/client';
-import { prisma } from '../../prisma';
-import { recordSettingsChange, buildSettingsDiff } from './audit';
+import PocketBase from 'pocketbase';
 import { ValidationError } from '../../settings/validation';
-import { inviteUser, disableUser, fetchUserEmail, hasServiceRole } from '../../services/settings/staff-admin';
 
 export interface StaffMember {
   userShopId: string;
   userId: string;
   email: string;
   role: string;
-  status: UserMembershipStatus;
+  status: 'active' | 'deactivated';
   deactivatedAt: Date | null;
 }
 
 const EMAIL_REGEX = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const roles = ['owner', 'manager', 'staff'];
 
-export async function listStaff(shopId: string): Promise<StaffMember[]> {
-  const members = await prisma.userShop.findMany({
-    where: { shopId },
-    orderBy: { createdAt: 'asc' }
-  });
-  const emailCache = new Map<string, string>();
-
-  if (hasServiceRole) {
-    await Promise.all(
-      members.map(async (member) => {
-        if (!emailCache.has(member.userId)) {
-          const email = await fetchUserEmail(member.userId);
-          if (email) {
-            emailCache.set(member.userId, email);
-          }
-        }
-      })
-    );
+export async function listStaff(): Promise<StaffMember[]> {
+  const pocketbaseUrl = import.meta.env.PUBLIC_POCKETBASE_URL;
+  if (!pocketbaseUrl) {
+    throw new Error('PocketBase URL nicht konfiguriert.');
   }
-
-  return members.map((member) => ({
-    userShopId: member.id,
-    userId: member.userId,
-    email: emailCache.get(member.userId) ?? member.userId,
-    role: member.role,
-    status: member.status,
-    deactivatedAt: member.deactivatedAt
-  }));
-}
-
-export interface InviteStaffArgs {
-  shopId: string;
-  email: string;
-  role: string;
-  invitedBy: string;
-}
-
-export async function createStaffInvitation(args: InviteStaffArgs) {
-  const email = args.email.trim().toLowerCase();
-  if (!EMAIL_REGEX.test(email)) {
-    throw new ValidationError('E-Mail-Adresse ist ungültig.', 422);
-  }
-  if (!roles.includes(args.role)) {
-    throw new ValidationError('Rolle wird nicht unterstützt.', 422);
-  }
-  const supabaseInvitation = await inviteUser(email, args.role);
-
-  const invitation = await prisma.staffInvitation.create({
-    data: {
-      shopId: args.shopId,
-      email,
-      role: args.role,
-      invitedBy: args.invitedBy,
-      status: StaffInvitationStatus.pending,
-      supabaseInvitationId: supabaseInvitation.userId ?? supabaseInvitation.email ?? 'pending',
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-    }
+  const client = new PocketBase(pocketbaseUrl);
+  // Fetch all profiles, assuming admin has access
+  const profiles = await client.collection('profiles').getList(1, 1000, {
+    expand: 'user'
   });
 
-  await recordSettingsChange({
-    shopId: args.shopId,
-    section: SettingsSection.staff,
-    changeType: SettingsChangeType.create,
-    actorId: args.invitedBy,
-    actorEmail: 'system@inventauri.app',
-    diff: buildSettingsDiff(null, invitation)
+  return profiles.items.map((profile: any) => {
+    const user = profile.expand?.user;
+    return {
+      userShopId: profile.id,
+      userId: user?.id ?? profile.user,
+      email: user?.email ?? 'unknown',
+      role: profile.role,
+      status: profile.active ? 'active' : 'deactivated',
+      deactivatedAt: profile.active ? null : new Date() // dummy
+    };
   });
-
-  return invitation;
-}
-
-export interface StaffUpdateArgs {
-  shopId: string;
-  userShopId: string;
-  role?: string;
-  status?: UserMembershipStatus;
-  actorId: string;
-}
-
-export async function updateStaffMember(args: StaffUpdateArgs) {
-  const existing = await prisma.userShop.findUnique({ where: { id: args.userShopId } });
-  if (!existing || existing.shopId !== args.shopId) {
-    throw new ValidationError('Mitarbeiter konnte nicht gefunden werden.', 404);
-  }
-
-  if (args.role && !roles.includes(args.role)) {
-    throw new ValidationError('Rolle wird nicht unterstützt.', 422);
-  }
-  if (args.status && !Object.values(UserMembershipStatus).includes(args.status)) {
-    throw new ValidationError('Status ist ungültig.', 422);
-  }
-
-  if (args.status === 'deactivated' && existing.status !== 'deactivated') {
-    try {
-      await disableUser(existing.userId);
-    } catch (error) {
-      console.error('Failed to disable Supabase user', error);
-    }
-  }
-
-  const updated = await prisma.userShop.update({
-    where: { id: args.userShopId },
-    data: {
-      role: args.role ?? existing.role,
-      status: args.status ?? existing.status,
-      deactivatedAt: args.status === 'deactivated' ? new Date() : existing.deactivatedAt
-    }
-  });
-
-  await recordSettingsChange({
-    shopId: args.shopId,
-    section: SettingsSection.staff,
-    changeType: SettingsChangeType.update,
-    actorId: args.actorId,
-    actorEmail: 'system@inventauri.app',
-    diff: buildSettingsDiff(existing, updated)
-  });
-
-  return updated;
 }

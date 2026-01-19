@@ -12,8 +12,6 @@ const prisma = new PrismaClient();
 const DEFAULT_WAREHOUSE_SLUG = process.env.SEED_CENTRAL_SLUG ?? 'central-hq';
 const DEFAULT_WAREHOUSE_NAME = process.env.SEED_CENTRAL_NAME ?? 'Hauptlager HQ';
 const DEFAULT_SHOP_NAME = process.env.SEED_SHOP_NAME ?? 'Demo Shop';
-const DEFAULT_SHOP_SLUG = process.env.SEED_SHOP_SLUG ?? 'demo-shop';
-const SEED_OWNER_USER_ID = process.env.SEED_OWNER_USER_ID; // optional UUID from Supabase auth
 const SYSTEM_ACTOR_ID = '00000000-0000-0000-0000-000000000000';
 
 const POS_PRESETS = [
@@ -97,16 +95,13 @@ async function ensurePosWarehouses() {
   return results;
 }
 
-async function seedItems(shopId: string) {
+async function seedItems() {
   const items = [];
 
   for (const preset of ITEM_PRESETS) {
     let item = await prisma.item.findUnique({
       where: {
-        shopId_sku: {
-          shopId,
-          sku: preset.sku
-        }
+        sku: preset.sku
       }
     });
 
@@ -116,8 +111,7 @@ async function seedItems(shopId: string) {
           sku: preset.sku,
           name: preset.name,
           description: preset.description,
-          unit: preset.unit,
-          shopId
+          unit: preset.unit
         }
       });
       console.info(`Artikel '${item.name}' angelegt.`);
@@ -129,37 +123,16 @@ async function seedItems(shopId: string) {
   return items;
 }
 
-async function ensureDefaultShop() {
-  let shop = await prisma.shop.findUnique({ where: { slug: DEFAULT_SHOP_SLUG } });
-  if (!shop) {
-    shop = await prisma.shop.create({
-      data: {
-        name: DEFAULT_SHOP_NAME,
-        slug: DEFAULT_SHOP_SLUG
-      }
-    });
-    console.info(`Shop '${shop.name}' angelegt.`);
-  }
 
-  if (SEED_OWNER_USER_ID) {
-    const existing = await prisma.userShop.findFirst({ where: { userId: SEED_OWNER_USER_ID, shopId: shop.id } });
-    if (!existing) {
-      await prisma.userShop.create({ data: { userId: SEED_OWNER_USER_ID, shopId: shop.id, role: 'owner' } });
-      console.info(`UserShop Mapping für User ${SEED_OWNER_USER_ID} -> Shop '${shop.slug}' angelegt.`);
-    }
-  } else {
-    console.info('SEED_OWNER_USER_ID nicht gesetzt; kein UserShop Mapping erzeugt.');
-  }
 
-  return shop;
-}
+async function ensureSettingsDefaults(actorId: string, shopName: string) {
+  const settingsId = '00000000-0000-0000-0000-000000000000';
 
-async function ensureSettingsDefaults(shopId: string, actorId: string, shopName: string) {
   await prisma.businessProfile.upsert({
-    where: { shopId },
+    where: { id: settingsId },
     update: {},
     create: {
-      shopId,
+      id: settingsId,
       legalName: shopName,
       displayName: shopName,
       taxId: null,
@@ -176,10 +149,10 @@ async function ensureSettingsDefaults(shopId: string, actorId: string, shopName:
   });
 
   await prisma.operationalPreference.upsert({
-    where: { shopId },
+    where: { id: settingsId },
     update: {},
     create: {
-      shopId,
+      id: settingsId,
       currencyCode: 'EUR',
       timezone: 'Europe/Berlin',
       unitSystem: UnitSystem.metric,
@@ -200,15 +173,13 @@ async function ensureSettingsDefaults(shopId: string, actorId: string, shopName:
   for (const category of categories) {
     await prisma.notificationPreference.upsert({
       where: {
-        shopId_category_channel: {
-          shopId,
+        category_channel: {
           category,
           channel: NotificationChannel.email
         }
       },
       update: {},
       create: {
-        shopId,
         category,
         channel: NotificationChannel.email,
         isEnabled: true,
@@ -221,8 +192,7 @@ async function ensureSettingsDefaults(shopId: string, actorId: string, shopName:
 async function seedStock(
   centralWarehouseId: string,
   posWarehouses: { id: string }[],
-  items: { id: string; sku: string }[],
-  shopId: string
+  items: { id: string; sku: string }[]
 ) {
   for (const item of items) {
     // Initialbestand im Zentrallager
@@ -239,7 +209,6 @@ async function seedStock(
       create: {
         warehouseId: centralWarehouseId,
         itemId: item.id,
-        shopId,
         quantityOnHand: 100,
         reorderPoint: 20
       }
@@ -250,7 +219,6 @@ async function seedStock(
         itemId: item.id,
         transactionType: TransactionType.inbound,
         quantity: 100,
-        shopId,
         reference: 'SEED-INBOUND',
         notes: 'Initialer Seed-Bestand Zentrallager'
       }
@@ -263,41 +231,37 @@ async function seedStock(
             warehouseId: pos.id,
             itemId: item.id
           }
-      },
-      update: {
-        quantityOnHand: { increment: 15 }
-      },
-      create: {
-        warehouseId: pos.id,
-        itemId: item.id,
-        shopId,
-        quantityOnHand: 15,
-        reorderPoint: 5
-      }
-    });
+        },
+        update: {
+          quantityOnHand: { increment: 15 }
+        },
+        create: {
+          warehouseId: pos.id,
+          itemId: item.id,
+          quantityOnHand: 15,
+          reorderPoint: 5
+        }
+      });
 
-    await prisma.stockTransaction.create({
-      data: {
-        itemId: item.id,
-        transactionType: TransactionType.transfer,
-        quantity: 15,
-        sourceWarehouseId: centralWarehouseId,
-        targetWarehouseId: pos.id,
-        shopId,
-        reference: 'SEED-TRANSFER',
-        notes: 'Initiale POS-Bestückung'
-      }
-    });
-  }
+      await prisma.stockTransaction.create({
+        data: {
+          itemId: item.id,
+          transactionType: TransactionType.transfer,
+          quantity: 15,
+          sourceWarehouseId: centralWarehouseId,
+          targetWarehouseId: pos.id,
+          reference: 'SEED-TRANSFER',
+          notes: 'Initiale POS-Bestückung'
+        }
+      });
+    }
   }
 }
 
 async function main() {
   console.info('Seed gestartet…');
 
-  // Ensure a default Shop exists (optional UserShop mapping if SEED_OWNER_USER_ID provided)
-  const shop = await ensureDefaultShop();
-  const actorId = SEED_OWNER_USER_ID ?? SYSTEM_ACTOR_ID;
+  const actorId = SYSTEM_ACTOR_ID;
 
   const centralWarehouse = await ensureCentralWarehouse();
   if (!centralWarehouse) {
@@ -305,14 +269,11 @@ async function main() {
   }
 
   const posWarehouses = await ensurePosWarehouses();
-  const items = await seedItems(shop.id);
+  const items = await seedItems();
 
-  await seedStock(centralWarehouse.id, posWarehouses, items, shop.id);
+  await seedStock(centralWarehouse.id, posWarehouses, items);
 
-  const shops = await prisma.shop.findMany({ select: { id: true, name: true } });
-  for (const entry of shops) {
-    await ensureSettingsDefaults(entry.id, actorId, entry.name ?? DEFAULT_SHOP_NAME);
-  }
+  await ensureSettingsDefaults(actorId, DEFAULT_SHOP_NAME);
 
   console.info('Seed abgeschlossen.');
 }

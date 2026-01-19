@@ -1,11 +1,11 @@
 import { describe, it, beforeAll, expect } from 'vitest';
 import { getJson } from '../util';
 import { authHeaders, primeSettingsFixtures } from '../setup';
-import { getAccessToken } from '../auth';
+import { getAccessToken, skipPocketBaseTests } from '../auth';
 
 let ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 
-describe('Settings contracts - Business Profile', () => {
+(skipPocketBaseTests ? describe.skip : describe)('Settings contracts - Business Profile', () => {
   beforeAll(async () => {
     const { token } = await getAccessToken();
     ACCESS_TOKEN = token;

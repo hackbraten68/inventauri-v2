@@ -1,6 +1,6 @@
 import { prisma } from '../prisma';
 
-export async function getPosInventory(warehouseSlug?: string, shopId?: string) {
+export async function getPosInventory(warehouseSlug: string | undefined) {
   const warehouse = warehouseSlug
     ? await prisma.warehouse.findUnique({ where: { slug: warehouseSlug } })
     : await prisma.warehouse.findFirst({ where: { type: 'pos' } });
@@ -10,7 +10,7 @@ export async function getPosInventory(warehouseSlug?: string, shopId?: string) {
   }
 
   const stockLevels = await prisma.itemStockLevel.findMany({
-    where: { warehouseId: warehouse.id, ...(shopId ? { shopId } : {}) },
+    where: { warehouseId: warehouse.id },
     include: { item: true },
     orderBy: { item: { name: 'asc' } }
   });
@@ -35,12 +35,11 @@ export async function listPosWarehouses() {
   });
 }
 
-export async function getSalesByReference(reference: string, shopId?: string) {
+export async function getSalesByReference(reference: string) {
   return prisma.stockTransaction.findMany({
     where: {
       transactionType: 'sale',
-      reference,
-      ...(shopId ? { shopId } : {})
+      reference
     },
     include: {
       item: true,
