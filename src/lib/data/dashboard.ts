@@ -1,13 +1,26 @@
 import { subDays } from 'date-fns';
 import { prisma } from '../prisma';
 import type { TransactionType } from '@prisma/client';
-import type { SalesDeltaResult, InboundCoverageResult, SalesMetric, DaysOfCoverResult } from './dashboard-metrics';
-import { calculateDaysOfCover, computeInboundCoverage, computeSalesDelta } from './dashboard-metrics';
+import type {
+  SalesDeltaResult,
+  InboundCoverageResult,
+  SalesMetric,
+  DaysOfCoverResult,
+  TimeSeriesPoint
+} from './dashboard-metrics';
+import {
+  calculateDaysOfCover,
+  computeInboundCoverage,
+  computeSalesDelta,
+  computeSalesTimeSeries
+} from './dashboard-metrics';
 
 const SALE_TYPE: TransactionType = 'sale';
 
 export interface DashboardOptions {
   rangeDays?: number;
+  fromDate?: Date;
+  toDate?: Date;
 }
 
 export interface DashboardSnapshot {
@@ -17,8 +30,10 @@ export interface DashboardSnapshot {
     totalValue: number;
     salesQuantity: number;
     salesRevenue: number;
+    totalOrders: number;
     salesDelta?: SalesDeltaResult;
   };
+  salesHistory: TimeSeriesPoint[];
   warnings: Array<{
     itemId: string;
     itemName: string;
@@ -62,8 +77,10 @@ function parsePrice(metadata: unknown): number {
 }
 
 export async function getDashboardSnapshot(options: DashboardOptions = {}): Promise<DashboardSnapshot> {
+  const { fromDate, toDate } = options;
   const rangeDays = options.rangeDays ?? 7;
-  const since = subDays(new Date(), rangeDays);
+  const now = toDate || new Date();
+  const since = fromDate || subDays(now, rangeDays);
 
   const [items, salesGroup, recentTransactions] = await Promise.all([
     prisma.item.findMany({
@@ -136,21 +153,21 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
     (() => {
       const inboundCache = new Map<string, InboundCoverageResult>();
       return warningsBase.map(async (warning) => {
-         const cover: DaysOfCoverResult = await calculateDaysOfCover({
-           itemId: warning.itemId,
-           warehouseId: warning.warehouseId,
-           onHandQuantity: warning.quantityOnHand,
-           rangeDays
-         });
+        const cover: DaysOfCoverResult = await calculateDaysOfCover({
+          itemId: warning.itemId,
+          warehouseId: warning.warehouseId,
+          onHandQuantity: warning.quantityOnHand,
+          rangeDays
+        });
 
-         let inbound = inboundCache.get(warning.itemId);
-         if (!inbound) {
-           inbound = await computeInboundCoverage({
-             itemId: warning.itemId,
-             rangeDays
-           });
-           inboundCache.set(warning.itemId, inbound);
-         }
+        let inbound = inboundCache.get(warning.itemId);
+        if (!inbound) {
+          inbound = await computeInboundCoverage({
+            itemId: warning.itemId,
+            rangeDays
+          });
+          inboundCache.set(warning.itemId, inbound);
+        }
 
         const hasInbound = inbound.totalInboundUnits > 0;
 
@@ -183,7 +200,12 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
   }, 0);
 
   const salesMetric: SalesMetric = totalSalesRevenue > 0 ? 'revenue' : 'units';
-  const salesDelta = await computeSalesDelta({ rangeDays, metric: salesMetric });
+  const [salesDelta, salesHistory] = await Promise.all([
+    computeSalesDelta({ rangeDays, fromDate, toDate, metric: salesMetric }),
+    computeSalesTimeSeries({ rangeDays, fromDate, toDate })
+  ]);
+
+  const totalOrders = salesHistory.reduce((sum, p) => sum + p.orders, 0);
 
   const recent = recentTransactions.map((transaction) => {
     const warehouse = transaction.targetWarehouse ?? transaction.sourceWarehouse;
@@ -207,8 +229,10 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
       totalValue,
       salesQuantity: totalSalesQuantity,
       salesRevenue: totalSalesRevenue,
+      totalOrders,
       salesDelta
     },
+    salesHistory,
     warnings,
     mostSold,
     recentTransactions: recent

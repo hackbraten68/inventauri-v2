@@ -1,7 +1,8 @@
 import type { MiddlewareHandler } from 'astro';
+import { getSetupStatus } from './lib/data/setup';
 
 const PROTECTED_PREFIXES = ['/dashboard', '/inventory', '/pos', '/items'];
-const NON_PROTECTED_PREFIXES = ['/api', '/_astro', '/@fs', '/@id', '/node_modules', '/src', '/favicon', '/public'];
+const NON_PROTECTED_PREFIXES = ['/api', '/setup', '/_astro', '/@fs', '/@id', '/node_modules', '/src', '/favicon', '/public'];
 const AUTH_COOKIE_NAME = 'pb-access-token';
 
 function requiresAuth(pathname: string) {
@@ -21,6 +22,14 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
   if (NON_PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return next();
+  }
+
+  // Setup check (cached or only for relevant routes)
+  if (pathname !== '/setup' && !pathname.startsWith('/api/setup')) {
+    const status = await getSetupStatus();
+    if (!status.isInitialized) {
+      return redirect('/setup');
+    }
   }
 
   if (requiresAuth(pathname) && !hasAccessCookie(request)) {

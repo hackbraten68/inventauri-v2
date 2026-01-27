@@ -282,12 +282,11 @@ export async function adjustStock(options: AdjustmentOptions): Promise<MutationR
         notes,
         performedBy,
         occurredAt: occurredAt ?? new Date(),
-        shopId: shopId || undefined,
         variantId: variantId || undefined
       } as any
     });
 
-    return buildResult(tx, itemId, [warehouseId], transaction.id, shopId);
+    return buildResult(tx, itemId, [warehouseId], transaction.id);
   });
 }
 
@@ -314,12 +313,11 @@ export async function recordSale(options: SaleOptions): Promise<MutationResult> 
         notes,
         performedBy,
         occurredAt: occurredAt ?? new Date(),
-        shopId: shopId || undefined,
         variantId: variantId || undefined
       } as any
     });
 
-    return buildResult(tx, itemId, [warehouseId], transaction.id, shopId);
+    return buildResult(tx, itemId, [warehouseId], transaction.id);
   });
 }
 
@@ -377,12 +375,11 @@ export async function recordDonation(options: DonationOptions): Promise<Mutation
         notes,
         performedBy,
         occurredAt: occurredAt ?? new Date(),
-        shopId: shopId || undefined,
         variantId: variantId || undefined
       } as any
     });
 
-    return buildResult(tx, itemId, [warehouseId], transaction.id, shopId);
+    return buildResult(tx, itemId, [warehouseId], transaction.id);
   });
 }
 
@@ -409,12 +406,11 @@ export async function recordReturn(options: ReturnOptions): Promise<MutationResu
         notes,
         performedBy,
         occurredAt: occurredAt ?? new Date(),
-        shopId: shopId || undefined,
         variantId: variantId || undefined
       } as any
     });
 
-    return buildResult(tx, itemId, [warehouseId], transaction.id, shopId);
+    return buildResult(tx, itemId, [warehouseId], transaction.id);
   });
 }
 
@@ -437,9 +433,9 @@ export async function getItemHistory(filters: HistoryFilters) {
       transactionType: transactionTypes ? { in: transactionTypes } : undefined,
       OR: warehouseId
         ? [
-            { sourceWarehouseId: warehouseId },
-            { targetWarehouseId: warehouseId }
-          ]
+          { sourceWarehouseId: warehouseId },
+          { targetWarehouseId: warehouseId }
+        ]
         : undefined,
       occurredAt: {
         gte: from ?? undefined,

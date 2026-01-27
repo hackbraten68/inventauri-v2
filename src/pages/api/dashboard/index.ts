@@ -9,9 +9,14 @@ export const GET: APIRoute = async ({ request }) => {
     const user = await requireUser(request);
     const url = new URL(request.url);
     const rangeParam = url.searchParams.get('range');
-    const rangeDays = rangeParam ? Number(rangeParam) : undefined;
+    const fromParam = url.searchParams.get('from');
+    const toParam = url.searchParams.get('to');
 
-    const snapshot = await getDashboardSnapshot({ rangeDays });
+    const rangeDays = rangeParam ? Number(rangeParam) : undefined;
+    const fromDate = fromParam ? new Date(fromParam) : undefined;
+    const toDate = toParam ? new Date(toParam) : undefined;
+
+    const snapshot = await getDashboardSnapshot({ rangeDays, fromDate, toDate });
     return json(snapshot);
   } catch (error) {
     const status = typeof (error as { status?: number }).status === 'number' ? (error as { status?: number }).status : 500;

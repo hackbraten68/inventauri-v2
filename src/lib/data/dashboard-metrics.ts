@@ -52,13 +52,18 @@ function safePercentage(current: number, prior: number) {
 }
 
 export async function computeSalesDelta(params: {
-  rangeDays: number;
+  rangeDays?: number;
+  fromDate?: Date;
+  toDate?: Date;
   metric: SalesMetric;
 }): Promise<SalesDeltaResult> {
-  const { rangeDays, metric } = params;
-  const now = new Date();
-  const currentStart = subDays(now, rangeDays);
-  const priorStart = subDays(currentStart, rangeDays);
+  const { rangeDays = 7, fromDate, toDate, metric } = params;
+  const now = toDate || new Date();
+  const currentStart = fromDate || subDays(now, rangeDays);
+
+  // For comparison, we take the same duration before currentStart
+  const diffMs = now.getTime() - currentStart.getTime();
+  const priorStart = new Date(currentStart.getTime() - diffMs);
 
   const whereBase = {
     occurredAt: { gte: priorStart },
@@ -234,4 +239,75 @@ export async function calculateDaysOfCover(params: {
     averageDaily: Number(velocity.averageDaily.toFixed(2)),
     observedDays: velocity.observedDays
   };
+}
+
+export interface TimeSeriesPoint {
+  date: string;
+  revenue: number;
+  units: number;
+  orders: number;
+}
+
+export async function computeSalesTimeSeries(params: {
+  rangeDays?: number;
+  fromDate?: Date;
+  toDate?: Date;
+}): Promise<TimeSeriesPoint[]> {
+  const { rangeDays = 7, fromDate, toDate } = params;
+  const now = toDate || new Date();
+  const start = fromDate || subDays(now, rangeDays - 1);
+  start.setHours(0, 0, 0, 0);
+
+  const transactions = await prisma.stockTransaction.findMany({
+    where: {
+      transactionType: 'sale',
+      occurredAt: { gte: start, lte: now }
+    },
+    select: {
+      quantity: true,
+      occurredAt: true,
+      reference: true,
+      item: { select: { metadata: true } }
+    }
+  });
+
+  const dailyMap = new Map<string, TimeSeriesPoint>();
+
+  // Calculate days between start and now
+  const daysDiff = Math.ceil((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  const totalDays = Math.max(1, daysDiff);
+
+  // Initialize map with all days in range
+  for (let i = 0; i <= totalDays; i++) {
+    const d = subDays(now, i);
+    if (d < start) continue;
+    const key = d.toISOString().split('T')[0];
+    dailyMap.set(key, { date: key, revenue: 0, units: 0, orders: 0 });
+  }
+
+  const orderMap = new Map<string, Set<string>>();
+
+  for (const tx of transactions) {
+    const key = tx.occurredAt.toISOString().split('T')[0];
+    const point = dailyMap.get(key);
+    if (point) {
+      const quantity = toNumber(tx.quantity);
+      const revenue = quantity * parsePrice(tx.item?.metadata);
+      point.revenue += revenue;
+      point.units += quantity;
+
+      if (tx.reference) {
+        if (!orderMap.has(key)) orderMap.set(key, new Set());
+        orderMap.get(key)!.add(tx.reference);
+      }
+    }
+  }
+
+  // Finalize order counts
+  for (const [key, orders] of orderMap.entries()) {
+    const point = dailyMap.get(key);
+    if (point) point.orders = orders.size;
+  }
+
+  return Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
 }

@@ -3,9 +3,13 @@ import { Button } from '../ui/button';
 
 interface LogoutButtonProps {
   redirectTo?: string;
+  variant?: 'default' | 'dropdown-item';
 }
 
-export function LogoutButton({ redirectTo = '/login' }: LogoutButtonProps) {
+import { LogOut } from 'lucide-react';
+import { DropdownMenuItem } from '../ui/dropdown-menu';
+
+export function LogoutButton({ redirectTo = '/login', variant = 'default' }: LogoutButtonProps) {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -30,9 +34,23 @@ export function LogoutButton({ redirectTo = '/login' }: LogoutButtonProps) {
     }
   };
 
+  if (variant === 'dropdown-item') {
+    return (
+      <DropdownMenuItem
+        onClick={handleSignOut}
+        disabled={loading}
+        className="text-destructive focus:text-destructive gap-2 cursor-pointer"
+      >
+        <LogOut size={14} />
+        <span>{loading ? 'Wird abgemeldet …' : 'Abmelden'}</span>
+      </DropdownMenuItem>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-2">
-      <Button variant="ghost" className="justify-start" onClick={handleSignOut} disabled={loading}>
+      <Button variant="ghost" className="justify-start gap-2" onClick={handleSignOut} disabled={loading}>
+        <LogOut size={16} />
         {loading ? 'Wird abgemeldet …' : 'Abmelden'}
       </Button>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}

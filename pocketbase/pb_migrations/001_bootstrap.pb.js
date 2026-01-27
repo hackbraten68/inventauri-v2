@@ -17,7 +17,7 @@ migrate(
           type: 'select',
           options: {
             maxSelect: 1,
-            values: ['owner', 'manager', 'staff']
+            values: ['superadmin', 'owner', 'manager', 'staff']
           },
           required: true
         },

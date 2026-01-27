@@ -15,15 +15,28 @@ export function authHeaders(token?: string) {
 }
 
 const TEST_ACTOR_ID = process.env.TEST_ACTOR_ID ?? '00000000-0000-0000-0000-000000000000';
+const SHOP_SLUG = process.env.SEED_SHOP_SLUG ?? 'demo-shop';
+const SHOP_OWNER_ID = process.env.SEED_SHOP_OWNER_ID ?? TEST_ACTOR_ID;
 
 export async function primeSettingsFixtures() {
   const settingsId = '00000000-0000-0000-0000-000000000000';
 
+  // Ensure a shop exists
+  const shop = await prisma.shop.upsert({
+    where: { slug: SHOP_SLUG },
+    update: {},
+    create: {
+      name: 'Test Shop',
+      slug: SHOP_SLUG
+    }
+  });
+
   await prisma.businessProfile.upsert({
-    where: { id: settingsId },
+    where: { shopId: shop.id },
     update: {},
     create: {
       id: settingsId,
+      shopId: shop.id,
       legalName: 'Test Shop',
       displayName: 'Test Shop',
       email: 'test@inventauri.app',
@@ -36,10 +49,11 @@ export async function primeSettingsFixtures() {
   });
 
   await prisma.operationalPreference.upsert({
-    where: { id: settingsId },
+    where: { shopId: shop.id },
     update: {},
     create: {
       id: settingsId,
+      shopId: shop.id,
       currencyCode: 'EUR',
       timezone: 'Europe/Berlin',
       unitSystem: UnitSystem.metric,
@@ -60,13 +74,15 @@ export async function primeSettingsFixtures() {
   for (const category of categories) {
     await prisma.notificationPreference.upsert({
       where: {
-        category_channel: {
+        shopId_category_channel: {
+          shopId: shop.id,
           category,
           channel: NotificationChannel.email
         }
       },
       update: {},
       create: {
+        shopId: shop.id,
         category,
         channel: NotificationChannel.email,
         isEnabled: true,
@@ -74,6 +90,22 @@ export async function primeSettingsFixtures() {
       }
     });
   }
+
+  await prisma.userShop.upsert({
+    where: {
+      userId_shopId: {
+        userId: SHOP_OWNER_ID,
+        shopId: shop.id
+      }
+    },
+    update: {},
+    create: {
+      userId: SHOP_OWNER_ID,
+      shopId: shop.id,
+      role: 'owner',
+      status: 'active'
+    }
+  });
 }
 
 void primeSettingsFixtures().catch((error) => {

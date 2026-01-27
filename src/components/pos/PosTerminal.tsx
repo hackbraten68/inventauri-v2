@@ -1,9 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { fetchSaleByReference, postStockAction } from '../../lib/api/client';
 import type { InventorySnapshot } from '../../lib/data/inventory';
 import { generateSaleReference } from '../../lib/utils';
+import {
+  LayoutDashboard,
+  Search,
+  ShoppingCart,
+  Trash2,
+  Plus,
+  Minus,
+  Package,
+  Star,
+  ScanLine
+} from 'lucide-react';
 
 const numberFormatter = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
 
@@ -16,6 +28,7 @@ interface StockItem {
   unit: string;
   quantityOnHand: number;
   quantityReserved: number;
+  isQuickAdd?: boolean; // New property for quick selection
 }
 
 interface SaleLookupItem {
@@ -95,10 +108,32 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
     setCart((prev) =>
       prev.map((line) =>
         line.itemId === itemId
-          ? { ...line, quantity: Math.max(quantity, 1) }
+          ? { ...line, quantity: Math.max(quantity, 0) } // Allow 0 to potentially let it be empty/removed
           : line
-      )
+      ).filter(line => line.quantity > 0) // Auto-remove if quantity set to 0
     );
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && search.trim()) {
+      // Find exact match by SKU or Barcode (simulated)
+      const exactMatch = stock.find(item =>
+        item.sku.toLowerCase() === search.trim().toLowerCase()
+      );
+
+      if (exactMatch) {
+        addToCart(exactMatch);
+        setSearch('');
+        setSuccess(`"${exactMatch.name}" hinzugefügt`);
+        setTimeout(() => setSuccess(null), 2000);
+      } else if (filteredItems.length === 1) {
+        // If only one partial match, add it
+        addToCart(filteredItems[0]);
+        setSearch('');
+        setSuccess(`"${filteredItems[0].name}" hinzugefügt`);
+        setTimeout(() => setSuccess(null), 2000);
+      }
+    }
   };
 
   const removeFromCart = (itemId: string) => {
@@ -130,13 +165,13 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
       const breakdown = item.breakdown.find((entry) => entry.warehouseId === warehouseId);
       return breakdown
         ? {
-            itemId: item.itemId,
-            name: item.name,
-            sku: item.sku,
-            unit: item.unit,
-            quantityOnHand: breakdown.quantityOnHand,
-            quantityReserved: breakdown.quantityReserved
-          }
+          itemId: item.itemId,
+          name: item.name,
+          sku: item.sku,
+          unit: item.unit,
+          quantityOnHand: breakdown.quantityOnHand,
+          quantityReserved: breakdown.quantityReserved
+        }
         : null;
     });
 
@@ -299,84 +334,165 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
       </div>
 
       {mode === 'sale' ? (
-        <>
-          <div className="flex gap-3">
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Artikel, SKU, Barcode"
-            />
-            <Button type="button" variant="outline" onClick={() => setSearch('')}>
-              Löschen
-            </Button>
-          </div>
+        <div className="grid gap-6 lg:grid-cols-12">
+          {/* Left Column: Product Selection & Search */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="SKU scannen oder Artikel suchen (Enter zum Hinzufügen)"
+                className="pl-10 h-12 text-base ring-offset-background transition-all focus:ring-2 focus:ring-primary"
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                <ScanLine size={16} className="text-muted-foreground opacity-50" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-xs"
+                  onClick={() => setSearch('')}
+                >
+                  Löschen
+                </Button>
+              </div>
+            </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+            {/* Quick Select Section */}
             <div className="space-y-3">
-              <h3 className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                Artikel ({filteredItems.length})
-              </h3>
-              <div className="h-[360px] space-y-2 overflow-y-auto rounded-lg border border-border p-2">
+              <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                <Star size={14} className="text-primary fill-primary/20" />
+                <span>Schnellauswahl</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {stock.slice(0, 6).map((item) => (
+                  <button
+                    key={`quick-${item.itemId}`}
+                    onClick={() => addToCart(item)}
+                    className="flex flex-col items-center justify-center gap-1 rounded-xl border border-border bg-card p-3 text-center transition-all hover:border-primary/50 hover:bg-primary/5 hover:shadow-sm active:scale-95"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/5 text-primary">
+                      <Plus size={20} />
+                    </div>
+                    <span className="text-xs font-bold truncate w-full">{item.name}</span>
+                    <span className="text-[10px] text-muted-foreground">Standard</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                <Package size={14} />
+                <span>Alle Artikel ({filteredItems.length})</span>
+              </div>
+              <div className="grid gap-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 {filteredItems.length === 0 ? (
-                  <p className="px-2 py-3 text-sm text-muted-foreground">Keine Artikel gefunden.</p>
+                  <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-dashed border-border bg-muted/20">
+                    <Search className="h-8 w-8 text-muted-foreground/30 mb-2" />
+                    <p className="text-sm text-muted-foreground">Keine Artikel gefunden.</p>
+                  </div>
                 ) : (
                   filteredItems.map((item) => (
                     <button
                       key={item.itemId}
                       type="button"
                       onClick={() => addToCart(item)}
-                      className="flex w-full items-center justify-between rounded-md border border-border bg-card/70 px-3 py-2 text-left transition hover:border-primary hover:bg-primary/5"
+                      className="group flex w-full items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-left transition-all hover:border-primary/50 hover:bg-primary/5 active:bg-primary/10"
                     >
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-foreground">{item.name}</span>
-                        <span className="text-xs text-muted-foreground">{item.sku}</span>
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                          <Package size={20} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-foreground">{item.name}</span>
+                          <span className="text-xs text-muted-foreground font-mono">{item.sku}</span>
+                        </div>
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        Bestand: {numberFormatter.format(item.quantityOnHand)} {item.unit}
-                      </span>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Bestand</span>
+                        <div className={`text-xs font-bold rounded-full px-2 py-0.5 ${item.quantityOnHand > 5 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                          {numberFormatter.format(item.quantityOnHand)} {item.unit}
+                        </div>
+                      </div>
                     </button>
                   ))
                 )}
               </div>
             </div>
+          </div>
 
-            <div className="space-y-3">
-              <header className="flex items-center justify-between">
-                <h3 className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">Warenkorb</h3>
-                <Button type="button" variant="ghost" size="sm" onClick={clearCart} disabled={cart.length === 0}>
-                  Leeren
-                </Button>
+          {/* Right Column: Checkout / Cart */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="flex flex-col rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+              <header className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <ShoppingCart size={16} />
+                  </div>
+                  <h3 className="font-bold text-foreground">Warenkorb</h3>
+                </div>
+                {cart.length > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearCart} className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 size={14} className="mr-1" />
+                    Leeren
+                  </Button>
+                )}
               </header>
 
-              <div className="space-y-3 rounded-lg border border-border p-3">
-                {error ? <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p> : null}
-                {success ? <p className="rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-primary">{success}</p> : null}
+              <div className="flex-1 p-6 space-y-4 min-h-[300px]">
+                {error && (
+                  <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                    <span className="font-bold">Error:</span> {error}
+                  </div>
+                )}
+                {success && (
+                  <div className="animate-in fade-in slide-in-from-top-1 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
+                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    {success}
+                  </div>
+                )}
 
                 {cart.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Füge Artikel hinzu, indem du sie links auswählst.</p>
+                  <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
+                    <ShoppingCart size={48} strokeWidth={1} />
+                    <p className="mt-4 text-sm font-medium">Dein Warenkorb ist aktuell leer</p>
+                    <p className="text-xs">Scanne einen Artikel oder wähle einen aus der Liste</p>
+                  </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {cart.map((line) => (
-                      <div key={line.itemId} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{line.name}</p>
-                          <p className="text-xs text-muted-foreground">{line.sku}</p>
+                      <div key={line.itemId} className="flex items-center justify-between gap-4 p-3 rounded-xl bg-muted/30 border border-border transition-all hover:border-primary/20">
+                        <div className="flex flex-col gap-0.5 overflow-hidden">
+                          <p className="text-sm font-bold text-foreground truncate">{line.name}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono">{line.sku}</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs text-muted-foreground" htmlFor={`qty-${line.itemId}`}>
-                            Menge
-                          </label>
-                          <input
-                            id={`qty-${line.itemId}`}
-                            type="number"
-                            className="h-9 w-20 rounded-md border border-input bg-background px-2 text-sm"
-                            value={line.quantity}
-                            min={1}
-                            onChange={(event) => updateQuantity(line.itemId, Number(event.target.value))}
-                          />
-                          <Button type="button" variant="ghost" size="sm" onClick={() => removeFromCart(line.itemId)}>
-                            Entfernen
-                          </Button>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <div className="flex items-center bg-background rounded-lg border border-border overflow-hidden">
+                            <button
+                              onClick={() => updateQuantity(line.itemId, line.quantity - 1)}
+                              className="h-8 w-8 flex items-center justify-center hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span className="w-10 text-center text-sm font-bold border-x border-border">
+                              {line.quantity}
+                            </span>
+                            <button
+                              onClick={() => updateQuantity(line.itemId, line.quantity + 1)}
+                              className="h-8 w-8 flex items-center justify-center hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => removeFromCart(line.itemId)}
+                            className="text-muted-foreground hover:text-destructive transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -384,19 +500,34 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
                 )}
               </div>
 
-              <div className="flex items-center justify-between rounded-lg bg-muted/40 p-4 text-sm">
-                <span>Summe Positionen</span>
-                <span className="text-lg font-semibold text-foreground">
-                  {numberFormatter.format(subtotal)}
-                </span>
+              <div className="mt-auto border-t border-border bg-muted/20 p-6 space-y-4">
+                <div className="flex items-center justify-between font-medium">
+                  <span className="text-muted-foreground">Zwischensumme ({cart.length} Pos.)</span>
+                  <span className="text-foreground">{numberFormatter.format(subtotal)} {cart.length > 0 ? cart[0].unit : ''}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-bold text-foreground">Gesamtbetrag</span>
+                  <span className="text-3xl font-black text-primary tabular-nums tracking-tighter">
+                    {numberFormatter.format(subtotal)}
+                  </span>
+                </div>
+                <Button
+                  className="w-full h-14 text-lg font-bold shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                  size="lg"
+                  onClick={handleCheckout}
+                  disabled={loading || cart.length === 0}
+                >
+                  {loading ? 'Verarbeitung...' : (
+                    <div className="flex items-center gap-2">
+                      <ShoppingCart size={20} />
+                      <span>Verkauf abschließen</span>
+                    </div>
+                  )}
+                </Button>
               </div>
-
-              <Button type="button" className="w-full" size="lg" onClick={handleCheckout} disabled={loading || cart.length === 0}>
-                {loading ? 'Buchen …' : 'Verkauf abschließen'}
-              </Button>
             </div>
           </div>
-        </>
+        </div>
       ) : (
         <div className="space-y-4">
           <div className="flex flex-col gap-3 rounded-lg border border-border p-4">

@@ -1,47 +1,92 @@
 ---
-import '../styles/global.css';
-import { SessionGuard } from '../components/auth/SessionGuard';
-import { SidebarSettings } from '../components/layout/SidebarSettings';
+import "../styles/global.css";
+import { SessionGuard } from "../components/auth/SessionGuard";
+import { SidebarSettings } from "../components/layout/SidebarSettings";
 
 interface NavItem {
   href: string;
   label: string;
   description: string;
+  icon?: any;
 }
 
-const themePreferenceCookie = Astro.cookies.get('inventauri-theme')?.value;
-const initialThemePreference = ['light', 'dark', 'catppuccin'].includes(themePreferenceCookie ?? '')
+const themePreferenceCookie = Astro.cookies.get("inventauri-theme")?.value;
+const initialThemePreference = ["light", "dark", "catppuccin"].includes(
+  themePreferenceCookie ?? "",
+)
   ? themePreferenceCookie
-  : 'dark';
-const initialThemeClass = initialThemePreference === 'catppuccin'
-  ? 'catppuccin dark'
-  : initialThemePreference === 'dark'
-    ? 'dark'
-    : '';
+  : "dark";
+const initialThemeClass =
+  initialThemePreference === "catppuccin"
+    ? "catppuccin dark"
+    : initialThemePreference === "dark"
+      ? "dark"
+      : "";
+
+import {
+  LayoutDashboard,
+  Box,
+  ShoppingCart,
+  Package,
+  PackagePlus,
+} from "lucide-react";
 
 const {
-  title = 'Inventauri',
-  description = 'Lightweight inventory for micro-shops',
+  title = "Inventauri",
+  description = "Lightweight inventory for micro-shops",
   navItems = [
-    { href: '/dashboard', label: 'Dashboard', description: 'Kennzahlen & Trends' },
-    { href: '/inventory', label: 'Gesamt Inventar', description: 'Artikelübersicht & Lagerbestände' },
-    { href: '/pos', label: 'POS / Warehouse', description: 'Schnelle Buchungen & Warenausgang' },
-    { href: '/items', label: 'Artikelverwaltung', description: 'Produkte, Varianten & Lieferanten' },
-    { href: '/items/new', label: 'Artikel anlegen', description: 'Neue Produkte erfassen' }
+    {
+      href: "/dashboard",
+      label: "Dashboard",
+      description: "Kennzahlen & Trends",
+      icon: LayoutDashboard,
+    },
+    {
+      href: "/inventory",
+      label: "Gesamt Inventar",
+      description: "Artikelübersicht & Lagerbestände",
+      icon: Box,
+    },
+    {
+      href: "/pos",
+      label: "POS / Warehouse",
+      description: "Schnelle Buchungen & Warenausgang",
+      icon: ShoppingCart,
+    },
+    {
+      href: "/items",
+      label: "Artikelverwaltung",
+      description: "Produkte, Varianten & Lieferanten",
+      icon: Package,
+    },
+    {
+      href: "/items/new",
+      label: "Artikel anlegen",
+      description: "Neue Produkte erfassen",
+      icon: PackagePlus,
+    },
   ] satisfies NavItem[],
-  className = ''
+  className = "",
 } = Astro.props;
 ---
 
-<html lang="de" class={`h-full ${initialThemeClass}`} data-theme-preference={initialThemePreference} data-theme={initialThemePreference === 'catppuccin' ? 'catppuccin' : initialThemePreference}>
+<html
+  lang="de"
+  class={`h-full ${initialThemeClass}`}
+  data-theme-preference={initialThemePreference}
+  data-theme={initialThemePreference === "catppuccin"
+    ? "catppuccin"
+    : initialThemePreference}
+>
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <title>{title}</title>  
+    <title>{title}</title>
     <script>
-      {`
+      {
+        `
         (function() {
           try {
             const storageKey = 'inventauri-theme';
@@ -69,52 +114,134 @@ const {
             console.warn('Failed to apply stored theme preference.', err);
           }
         })();
-      `}
+      `;
+      }
     </script>
   </head>
-  <body class={`min-h-full bg-background text-foreground` + (className ? ` ${className}` : '')}>
+  <body
+    class={`min-h-full bg-background text-foreground` +
+      (className ? ` ${className}` : "")}
+  >
     <SessionGuard client:load />
     <div class="flex min-h-screen flex-col md:flex-row">
-      <aside class="flex flex-col border-b border-r border-border bg-card/60 backdrop-blur supports-[backdrop-filter]:bg-card/70 md:sticky md:top-0 md:h-screen md:w-64">
-        <div class="flex items-center justify-between border-b border-border px-6 py-4">
-          <div>
-            <p class="text-sm font-semibold text-muted-foreground">Inventauri</p>
-            <p class="text-lg font-bold text-foreground">Control Center</p>
+      <aside
+        class="flex flex-col border-b border-r border-border bg-card/60 backdrop-blur supports-[backdrop-filter]:bg-card/70 md:sticky md:top-0 md:h-screen md:w-64"
+      >
+        <div
+          class="flex h-[100px] items-center gap-4 border-b border-border px-6"
+        >
+          <div
+            class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg ring-1 ring-primary/20"
+          >
+            <Box size={22} strokeWidth={2.5} />
           </div>
-          <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">IA</span>
+          <div class="flex flex-col gap-0">
+            <span class="text-sm font-bold tracking-tight text-foreground">
+              Inventauri
+            </span>
+            <span
+              class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80"
+            >
+              Control Center
+            </span>
+          </div>
         </div>
         <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {navItems.map((item: NavItem) => (
-            <a
-              href={item.href}
-              class="group block rounded-lg px-3 py-2 transition-colors hover:bg-accent hover:text-accent-foreground"
-            >
-              <p class="text-sm font-medium">{item.label}</p>
-              <p class="text-xs text-muted-foreground group-hover:text-accent-foreground/80">
-                {item.description}
-              </p>
-            </a>
-          ))}
+          {
+            navItems.map((item: NavItem) => {
+              const Icon = item.icon;
+              const isActive = Astro.url.pathname === item.href;
+
+              return (
+                <a
+                  href={item.href}
+                  class={`group flex items-start gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 ${
+                    isActive
+                      ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  {Icon && (
+                    <div
+                      className={`mt-0.5 flex shrink-0 items-center justify-center rounded-md transition-colors ${
+                        isActive
+                          ? "text-primary"
+                          : "text-muted-foreground group-hover:text-accent-foreground"
+                      }`}
+                    >
+                      <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                    </div>
+                  )}
+                  <div class="flex flex-col gap-0.5 overflow-hidden">
+                    <p
+                      class={`text-sm font-semibold transition-colors ${
+                        isActive ? "text-primary" : "text-foreground"
+                      }`}
+                    >
+                      {item.label}
+                    </p>
+                    <p
+                      class={`text-xs leading-relaxed transition-colors ${
+                        isActive
+                          ? "text-primary/70"
+                          : "text-muted-foreground group-hover:text-accent-foreground/80"
+                      }`}
+                    >
+                      {item.description}
+                    </p>
+                  </div>
+                </a>
+              );
+            })
+          }
         </nav>
         <div class="border-t border-border px-3 py-4">
           <SidebarSettings client:load />
         </div>
       </aside>
       <main class="flex-1 bg-background">
-        <header class="flex flex-col gap-4 border-b border-border bg-card/40 px-6 py-6 backdrop-blur supports-[backdrop-filter]:bg-card/60 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 class="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
-            <p class="text-sm text-muted-foreground">{description}</p>
+        <header
+          class="flex h-[100px] items-center gap-8 border-b border-border bg-card/40 px-8 backdrop-blur supports-[backdrop-filter]:bg-card/60"
+        >
+          <div class="flex flex-col gap-0.5 shrink-0">
+            <h1
+              class="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
+            >
+              {title}
+            </h1>
+            <p class="text-xs font-medium text-muted-foreground/80 sm:text-sm">
+              {description}
+            </p>
           </div>
-          <div class="flex items-center gap-3">
-            <div class="hidden flex-col text-right text-sm text-muted-foreground sm:flex">
-              <span class="font-medium text-foreground">Demo Benutzer</span>
-              <span>demo@inventauri.app</span>
+          <div class="flex flex-1 items-center justify-end">
+            <div class="hidden w-full max-w-[320px] md:block">
+              <button
+                class="inline-flex w-full items-center justify-between gap-2 rounded-md border border-input bg-background/50 px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <div class="flex items-center gap-2">
+                  <LayoutDashboard size={14} className="opacity-50" />
+                  <span>Schnellsuche...</span>
+                </div>
+                <kbd
+                  class="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex"
+                >
+                  <span class="text-xs">⌘</span>K
+                </kbd>
+              </button>
             </div>
-            <div class="h-10 w-10 rounded-full bg-secondary" />
+
+            <div class="flex items-center gap-2">
+              <div
+                class="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground"
+              >
+                <LayoutDashboard size={16} />
+              </div>
+            </div>
           </div>
         </header>
-        <div class="container mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-6">
+        <div
+          class="container mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-6"
+        >
           <slot />
         </div>
       </main>

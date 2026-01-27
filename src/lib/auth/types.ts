@@ -1,6 +1,6 @@
 import type { RecordModel } from 'pocketbase';
 
-export type TenantRole = 'owner' | 'manager' | 'staff';
+export type TenantRole = 'superadmin' | 'owner' | 'manager' | 'staff';
 
 export interface PocketBaseProfile {
   id: string;
