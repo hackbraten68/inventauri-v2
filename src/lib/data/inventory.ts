@@ -39,6 +39,16 @@ export interface InventorySnapshot {
 }
 
 export async function getInventorySnapshot(): Promise<InventorySnapshot> {
+  // Fetch all active warehouses first to ensure they appear even with 0 stock
+  const allWarehouses = await prisma.warehouse.findMany({
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      type: true
+    }
+  });
+
   const items = await prisma.item.findMany({
     where: {
       isActive: true
@@ -61,6 +71,19 @@ export async function getInventorySnapshot(): Promise<InventorySnapshot> {
   });
 
   const warehouseTotalsMap = new Map<string, InventoryWarehouseBreakdown>();
+
+  // Initialize map with all warehouses
+  for (const w of allWarehouses) {
+    warehouseTotalsMap.set(w.id, {
+      warehouseId: w.id,
+      warehouseSlug: w.slug,
+      warehouseName: w.name,
+      warehouseType: w.type,
+      quantityOnHand: 0,
+      quantityReserved: 0
+    });
+  }
+
   let globalOnHand = 0;
   let globalReserved = 0;
 

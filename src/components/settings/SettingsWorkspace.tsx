@@ -1,10 +1,11 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type ReactNode, useEffect } from 'react';
 import { cn } from '../../lib/utils';
 import { BusinessProfileForm } from './BusinessProfileForm';
 import { OperationalPreferencesForm } from './OperationalPreferencesForm';
 import { NotificationPreferencesPanel } from './NotificationPreferencesPanel';
 import { StaffManagementPanel } from './StaffManagementPanel';
 import { AuditLogPanel } from './AuditLogPanel';
+import { WarehouseManagementPanel } from './WarehouseManagementPanel';
 
 interface TabConfig {
   id: string;
@@ -55,11 +56,28 @@ const tabs: TabConfig[] = [
     heading: 'Audit Log',
     description: 'Überwache Änderungen an Einstellungen für volle Nachvollziehbarkeit.',
     render: () => <AuditLogPanel />
+  },
+  {
+    id: 'locations',
+    label: 'Standorte & Lager',
+    caption: 'POS & Zentrallager',
+    heading: 'Standorte & Lagerverwaltung',
+    description: 'Erstelle und verwalte Verkaufsstellen (POS) und Lagerorte.',
+    render: () => <WarehouseManagementPanel />
   }
 ];
 
 export function SettingsWorkspace() {
   const [activeTab, setActiveTab] = useState<string>(tabs[0]?.id ?? 'business-profile');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabId = params.get('tab');
+    if (tabId && tabs.some(t => t.id === tabId)) {
+      setActiveTab(tabId);
+    }
+  }, []);
+
   const active = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
 
   return (

@@ -3,7 +3,10 @@ import { prisma } from '../prisma';
 export async function getPosInventory(warehouseSlug: string | undefined) {
   const warehouse = warehouseSlug
     ? await prisma.warehouse.findUnique({ where: { slug: warehouseSlug } })
-    : await prisma.warehouse.findFirst({ where: { type: 'pos' } });
+    : await prisma.warehouse.findFirst({
+      where: { type: { in: ['pos', 'virtual'] } },
+      orderBy: { createdAt: 'asc' }
+    });
 
   if (!warehouse) {
     return { warehouse: null, items: [] };
@@ -30,7 +33,7 @@ export async function getPosInventory(warehouseSlug: string | undefined) {
 
 export async function listPosWarehouses() {
   return prisma.warehouse.findMany({
-    where: { type: 'pos' },
+    where: { type: { in: ['pos', 'virtual'] } },
     orderBy: { name: 'asc' }
   });
 }

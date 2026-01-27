@@ -21,32 +21,53 @@ async function fetchPocketBaseUser(accessToken: string): Promise<RecordModel> {
   if (!pocketbaseUrl) {
     throw new Error('PocketBase URL nicht konfiguriert.');
   }
-  const userId = decodeUserIdFromToken(accessToken);
+
+  const payload = getTokenPayload(accessToken) as { id?: string; collectionId?: string } | undefined;
+  const userId = payload?.id;
+  const isCollectionToken = !!payload?.collectionId;
+
   if (!userId) {
     throw Object.assign(new Error('Ungültiges Zugriffstoken'), { status: 401 });
+  }
+
+  // If it's NOT a collection token, it's a system admin token
+  if (!isCollectionToken) {
+    console.log('Detected system admin token for ID:', userId);
+    const PB_ADMIN_EMAIL = process.env.POCKETBASE_ADMIN_EMAIL;
+    // We return a synthetic profile for the admin
+    return {
+      id: 'admin_profile',
+      role: 'superadmin',
+      active: true,
+      expand: {
+        user: {
+          id: userId,
+          email: PB_ADMIN_EMAIL || 'admin@system.local'
+        }
+      }
+    } as unknown as RecordModel;
   }
 
   console.log('Fetching profile for userId:', userId);
   const client = new PocketBase(pocketbaseUrl);
   client.authStore.save(accessToken, null);
-  // Fetch profile where user matches, expand user
+
   const profiles = await client.collection('profiles').getList(1, 1, {
     filter: `user = "${userId}"`,
     expand: 'user'
   });
-  console.log('Profiles response:', profiles);
-  console.log('Profiles found:', profiles.items.length);
+
   if (profiles.items.length === 0) {
     throw Object.assign(new Error('PocketBase-Profil fehlt.'), { status: 403 });
   }
-  return profiles.items[0]; // Return the profile record
+  return profiles.items[0];
 }
 
 function ensureRole(value: unknown): TenantRole | null {
   if (typeof value !== 'string') return null;
   const normalized = value.toLowerCase();
-  if (normalized === 'owner' || normalized === 'manager' || normalized === 'staff') {
-    return normalized;
+  if (normalized === 'superadmin' || normalized === 'owner' || normalized === 'manager' || normalized === 'staff') {
+    return normalized as TenantRole;
   }
   return null;
 }

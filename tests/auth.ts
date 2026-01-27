@@ -12,6 +12,8 @@ const getAdminEmail = () => process.env.POCKETBASE_ADMIN_EMAIL;
 const getAdminPassword = () => process.env.POCKETBASE_ADMIN_PASSWORD;
 const serviceToken = process.env.POCKETBASE_SERVICE_ROLE_TOKEN;
 const TEST_ACTOR_ID = process.env.TEST_ACTOR_ID ?? '00000000-0000-0000-0000-000000000000';
+const SHOP_SLUG = process.env.SEED_SHOP_SLUG ?? 'demo-shop';
+const SHOP_NAME = process.env.SEED_SHOP_NAME ?? 'Demo Shop';
 
 const DEFAULT_EMAIL = process.env.ACCESS_EMAIL || 'test+contracts@inventauri.app';
 const DEFAULT_PASSWORD = process.env.ACCESS_PASSWORD || 'PocketBase!123';
@@ -103,7 +105,36 @@ async function ensurePocketBaseUser() {
     await adminClient.collection('profiles').create(profilePayload);
   }
 
+  await ensureUserShop(user.id);
+
   return user;
+}
+
+async function ensureUserShop(userId: string) {
+  const shop = await prisma.shop.upsert({
+    where: { slug: SHOP_SLUG },
+    update: {},
+    create: {
+      name: SHOP_NAME,
+      slug: SHOP_SLUG
+    }
+  });
+
+  await prisma.userShop.upsert({
+    where: {
+      userId_shopId: {
+        userId,
+        shopId: shop.id
+      }
+    },
+    update: {},
+    create: {
+      userId,
+      shopId: shop.id,
+      role: 'owner',
+      status: 'active'
+    }
+  });
 }
 
 export async function getAccessToken(): Promise<{ token: string; userId: string }> {

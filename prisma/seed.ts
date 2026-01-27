@@ -12,6 +12,8 @@ const prisma = new PrismaClient();
 const DEFAULT_WAREHOUSE_SLUG = process.env.SEED_CENTRAL_SLUG ?? 'central-hq';
 const DEFAULT_WAREHOUSE_NAME = process.env.SEED_CENTRAL_NAME ?? 'Hauptlager HQ';
 const DEFAULT_SHOP_NAME = process.env.SEED_SHOP_NAME ?? 'Demo Shop';
+const DEFAULT_SHOP_SLUG = process.env.SEED_SHOP_SLUG ?? 'demo-shop';
+const DEFAULT_SHOP_OWNER_ID = process.env.SEED_SHOP_OWNER_ID ?? '00000000-0000-0000-0000-000000000000';
 const SYSTEM_ACTOR_ID = '00000000-0000-0000-0000-000000000000';
 
 const POS_PRESETS = [
@@ -125,14 +127,15 @@ async function seedItems() {
 
 
 
-async function ensureSettingsDefaults(actorId: string, shopName: string) {
+async function ensureSettingsDefaults(actorId: string, shopId: string, shopName: string) {
   const settingsId = '00000000-0000-0000-0000-000000000000';
 
   await prisma.businessProfile.upsert({
-    where: { id: settingsId },
+    where: { shopId },
     update: {},
     create: {
       id: settingsId,
+      shopId,
       legalName: shopName,
       displayName: shopName,
       taxId: null,
@@ -149,10 +152,11 @@ async function ensureSettingsDefaults(actorId: string, shopName: string) {
   });
 
   await prisma.operationalPreference.upsert({
-    where: { id: settingsId },
+    where: { shopId },
     update: {},
     create: {
       id: settingsId,
+      shopId,
       currencyCode: 'EUR',
       timezone: 'Europe/Berlin',
       unitSystem: UnitSystem.metric,
@@ -173,13 +177,15 @@ async function ensureSettingsDefaults(actorId: string, shopName: string) {
   for (const category of categories) {
     await prisma.notificationPreference.upsert({
       where: {
-        category_channel: {
+        shopId_category_channel: {
+          shopId,
           category,
           channel: NotificationChannel.email
         }
       },
       update: {},
       create: {
+        shopId,
         category,
         channel: NotificationChannel.email,
         isEnabled: true,
@@ -258,6 +264,35 @@ async function seedStock(
   }
 }
 
+async function ensureDefaultShop(name: string) {
+  return prisma.shop.upsert({
+    where: { slug: DEFAULT_SHOP_SLUG },
+    update: { name },
+    create: {
+      name,
+      slug: DEFAULT_SHOP_SLUG
+    }
+  });
+}
+
+async function ensureShopOwner(shopId: string, ownerId: string) {
+  await prisma.userShop.upsert({
+    where: {
+      userId_shopId: {
+        userId: ownerId,
+        shopId
+      }
+    },
+    update: {},
+    create: {
+      userId: ownerId,
+      shopId,
+      role: 'owner',
+      status: 'active'
+    }
+  });
+}
+
 async function main() {
   console.info('Seed gestartet…');
 
@@ -273,7 +308,9 @@ async function main() {
 
   await seedStock(centralWarehouse.id, posWarehouses, items);
 
-  await ensureSettingsDefaults(actorId, DEFAULT_SHOP_NAME);
+  const shop = await ensureDefaultShop(DEFAULT_SHOP_NAME);
+  await ensureSettingsDefaults(actorId, shop.id, shop.name);
+  await ensureShopOwner(shop.id, DEFAULT_SHOP_OWNER_ID);
 
   console.info('Seed abgeschlossen.');
 }

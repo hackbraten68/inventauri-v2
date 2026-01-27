@@ -282,12 +282,11 @@ export async function adjustStock(options: AdjustmentOptions): Promise<MutationR
         notes,
         performedBy,
         occurredAt: occurredAt ?? new Date(),
-        shopId: shopId || undefined,
         variantId: variantId || undefined
       } as any
     });
 
-    return buildResult(tx, itemId, [warehouseId], transaction.id, shopId);
+    return buildResult(tx, itemId, [warehouseId], transaction.id);
   });
 }
 
@@ -314,12 +313,11 @@ export async function recordSale(options: SaleOptions): Promise<MutationResult> 
         notes,
         performedBy,
         occurredAt: occurredAt ?? new Date(),
-        shopId: shopId || undefined,
         variantId: variantId || undefined
       } as any
     });
 
-    return buildResult(tx, itemId, [warehouseId], transaction.id, shopId);
+    return buildResult(tx, itemId, [warehouseId], transaction.id);
   });
 }
 
@@ -377,12 +375,11 @@ export async function recordDonation(options: DonationOptions): Promise<Mutation
         notes,
         performedBy,
         occurredAt: occurredAt ?? new Date(),
-        shopId: shopId || undefined,
         variantId: variantId || undefined
       } as any
     });
 
-    return buildResult(tx, itemId, [warehouseId], transaction.id, shopId);
+    return buildResult(tx, itemId, [warehouseId], transaction.id);
   });
 }
 
@@ -391,6 +388,33 @@ export async function recordReturn(options: ReturnOptions): Promise<MutationResu
   assertPositive(quantity, 'Retoure');
 
   return prisma.$transaction(async (tx) => {
+    if (reference) {
+      const sales = await tx.stockTransaction.findMany({
+        where: {
+          reference,
+          itemId,
+          transactionType: TransactionType.sale
+        }
+      });
+      const totalSold = sales.reduce((acc, tx) => acc + toNumber(tx.quantity), 0);
+
+      if (sales.length > 0) {
+        const returns = await tx.stockTransaction.findMany({
+          where: {
+            reference,
+            itemId,
+            transactionType: TransactionType.return
+          }
+        });
+        const totalReturned = returns.reduce((acc, tx) => acc + toNumber(tx.quantity), 0);
+        const remaining = totalSold - totalReturned;
+
+        if (quantity > remaining) {
+          throw new Error(`Rückgabemenge (${quantity}) überschreitet die verbleibende Menge aus dem Verkauf (${remaining}).`);
+        }
+      }
+    }
+
     const variantId = await ensureVariantId(tx, itemId);
     await mutateStockLevel(tx, {
       itemId,
@@ -409,12 +433,11 @@ export async function recordReturn(options: ReturnOptions): Promise<MutationResu
         notes,
         performedBy,
         occurredAt: occurredAt ?? new Date(),
-        shopId: shopId || undefined,
         variantId: variantId || undefined
       } as any
     });
 
-    return buildResult(tx, itemId, [warehouseId], transaction.id, shopId);
+    return buildResult(tx, itemId, [warehouseId], transaction.id);
   });
 }
 
@@ -437,9 +460,9 @@ export async function getItemHistory(filters: HistoryFilters) {
       transactionType: transactionTypes ? { in: transactionTypes } : undefined,
       OR: warehouseId
         ? [
-            { sourceWarehouseId: warehouseId },
-            { targetWarehouseId: warehouseId }
-          ]
+          { sourceWarehouseId: warehouseId },
+          { targetWarehouseId: warehouseId }
+        ]
         : undefined,
       occurredAt: {
         gte: from ?? undefined,
