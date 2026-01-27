@@ -1,0 +1,40 @@
+{
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "add": "Hinzufügen",
+    "search": "Suchen",
+    "filter": "Filter",
+    "loading": "Laden...",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "confirm": "Bestätigen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Vorherige",
+    "close": "Schließen"
+  },
+  "auth": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "loginFailed": "Login fehlgeschlagen",
+    "loginInProgress": "Anmeldung läuft",
+    "loginSuccess": "Login erfolgreich",
+    "logoutInProgress": "Wird abgemeldet",
+    "logoutFailed": "Abmeldung fehlgeschlagen",
+    "welcomeBack": "Willkommen zurück",
+    "loginToInventauri": "Melde dich bei Inventauri an"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "totalInventory": "Gesamt Inventar",
+    "posWarehouse": "POS / Warehouse",
+    "itemManagement": "Artikelverwaltung",
+    "addItem": "Artikel anlegen",
+    "settings": "Einstellungen"
+  }
+}

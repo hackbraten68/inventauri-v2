@@ -1,0 +1,40 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "loginFailed": "Login failed",
+    "loginInProgress": "Logging in...",
+    "loginSuccess": "Login successful",
+    "logoutInProgress": "Logging out...",
+    "logoutFailed": "Logout failed",
+    "welcomeBack": "Welcome back",
+    "loginToInventauri": "Login to Inventauri"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "totalInventory": "Total Inventory",
+    "posWarehouse": "POS / Warehouse",
+    "itemManagement": "Item Management",
+    "addItem": "Add Item",
+    "settings": "Settings"
+  }
+}
