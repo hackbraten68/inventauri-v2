@@ -2,6 +2,8 @@
 import "../styles/global.css";
 import { SessionGuard } from "../components/auth/SessionGuard";
 import { SidebarSettings } from "../components/layout/SidebarSettings";
+import { LanguageSwitcher } from "../components/LanguageSwitcher";
+import { getCurrentLocale, getTranslationFunction, getLocaleAttributes } from "../i18n/astro";
 
 interface NavItem {
   href: string;
@@ -9,6 +11,10 @@ interface NavItem {
   description: string;
   icon?: any;
 }
+
+const locale = getCurrentLocale(Astro);
+const t = getTranslationFunction(Astro);
+const localeAttrs = getLocaleAttributes(locale);
 
 const themePreferenceCookie = Astro.cookies.get("inventauri-theme")?.value;
 const initialThemePreference = ["light", "dark", "catppuccin"].includes(
@@ -34,44 +40,45 @@ import {
 const {
   title = "Inventauri",
   description = "Lightweight inventory for micro-shops",
-  navItems = [
-    {
-      href: "/dashboard",
-      label: "Dashboard",
-      description: "Kennzahlen & Trends",
-      icon: LayoutDashboard,
-    },
-    {
-      href: "/inventory",
-      label: "Gesamt Inventar",
-      description: "Artikelübersicht & Lagerbestände",
-      icon: Box,
-    },
-    {
-      href: "/pos",
-      label: "POS / Warehouse",
-      description: "Schnelle Buchungen & Warenausgang",
-      icon: ShoppingCart,
-    },
-    {
-      href: "/items",
-      label: "Artikelverwaltung",
-      description: "Produkte, Varianten & Lieferanten",
-      icon: Package,
-    },
-    {
-      href: "/items/new",
-      label: "Artikel anlegen",
-      description: "Neue Produkte erfassen",
-      icon: PackagePlus,
-    },
-  ] satisfies NavItem[],
   className = "",
 } = Astro.props;
+
+const navItems = [
+  {
+    href: `/${locale}/dashboard`,
+    label: t('navigation.dashboard'),
+    description: "Kennzahlen & Trends",
+    icon: LayoutDashboard,
+  },
+  {
+    href: `/${locale}/inventory`,
+    label: t('navigation.totalInventory'),
+    description: "Artikelübersicht & Lagerbestände",
+    icon: Box,
+  },
+  {
+    href: `/${locale}/pos`,
+    label: t('navigation.posWarehouse'),
+    description: "Schnelle Buchungen & Warenausgang",
+    icon: ShoppingCart,
+  },
+  {
+    href: `/${locale}/items`,
+    label: t('navigation.itemManagement'),
+    description: "Produkte, Varianten & Lieferanten",
+    icon: Package,
+  },
+  {
+    href: `/${locale}/items/new`,
+    label: t('navigation.addItem'),
+    description: "Neue Produkte erfassen",
+    icon: PackagePlus,
+  },
+] satisfies NavItem[];
 ---
 
 <html
-  lang="de"
+  {...localeAttrs}
   class={`h-full ${initialThemeClass}`}
   data-theme-preference={initialThemePreference}
   data-theme={initialThemePreference === "catppuccin"
@@ -218,10 +225,10 @@ const {
               <button
                 class="inline-flex w-full items-center justify-between gap-2 rounded-md border border-input bg-background/50 px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <div class="flex items-center gap-2">
-                  <LayoutDashboard size={14} className="opacity-50" />
-                  <span>Schnellsuche...</span>
-                </div>
+                 <div class="flex items-center gap-2">
+                   <LayoutDashboard size={14} className="opacity-50" />
+                   <span>{t('layout.quickSearch')}...</span>
+                 </div>
                 <kbd
                   class="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex"
                 >
@@ -231,6 +238,7 @@ const {
             </div>
 
             <div class="flex items-center gap-2">
+              <LanguageSwitcher client:load />
               <div
                 class="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground"
               >

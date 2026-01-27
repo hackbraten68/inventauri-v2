@@ -36,5 +36,11 @@
     "itemManagement": "Item Management",
     "addItem": "Add Item",
     "settings": "Settings"
+  },
+  "layout": {
+    "quickSearch": "Quick search",
+    "myAccount": "My Account",
+    "profile": "Profile",
+    "appearance": "Appearance"
   }
 }

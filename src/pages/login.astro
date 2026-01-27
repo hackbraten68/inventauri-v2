@@ -2,22 +2,27 @@
 import '../styles/global.css';
 import { LoginForm } from '../components/auth/LoginForm';
 import { ThemeToggle } from '../components/ui/theme-toggle';
+import { getTranslationFunction, getLocaleAttributes } from '../i18n/astro';
 
 const redirectTo = Astro.url.searchParams.get('redirectTo') ?? '/dashboard';
+// For now, we'll determine locale from browser or default to English
+const locale = 'en'; // TODO: Get from browser preference or URL
+const t = getTranslationFunction(Astro);
+const localeAttrs = getLocaleAttributes(locale);
 ---
 
-<html lang="de">
+<html {...localeAttrs}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Login • Inventauri</title>
+    <title>{t('auth.login')} • Inventauri</title>
   </head>
   <body class="flex min-h-screen items-center justify-center bg-background text-foreground">
     <div class="w-full max-w-md space-y-8 rounded-2xl border border-border bg-card/80 p-8 shadow-lg">
       <div class="space-y-2 text-center">
-        <h1 class="text-2xl font-bold">Willkommen zurück</h1>
+        <h1 class="text-2xl font-bold">{t('auth.welcomeBack')}</h1>
         <p class="text-sm text-muted-foreground">
-          Melde dich bei Inventauri an. Bei Erfolg leiten wir dich automatisch zum Dashboard weiter.
+          {t('auth.loginToInventauri')}
         </p>
       </div>
       <LoginForm client:load redirectTo={redirectTo} />
@@ -33,8 +38,8 @@ const redirectTo = Astro.url.searchParams.get('redirectTo') ?? '/dashboard';
 
       <div class="space-y-3 text-xs text-muted-foreground">
         <p>
-          Tipp: Ergänze Magic Links oder OAuth Provider, indem du die Logik in
-          <code>src/components/auth/LoginForm.tsx</code> erweiterst.
+          Tip: Add Magic Links or OAuth providers by extending the logic in
+          <code>src/components/auth/LoginForm.tsx</code>.
         </p>
       </div>
     </div>

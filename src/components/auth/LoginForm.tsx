@@ -3,6 +3,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { cn } from '../../lib/utils';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface LoginFormProps {
   className?: string;
@@ -10,6 +11,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ className, redirectTo = '/dashboard' }: LoginFormProps) {
+  const { t } = useTranslation();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
@@ -32,17 +34,17 @@ export function LoginForm({ className, redirectTo = '/dashboard' }: LoginFormPro
 
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        setError(payload.error ?? 'PocketBase Login fehlgeschlagen.');
+        setError(payload.error ?? t('auth.loginFailed'));
         return;
       }
 
       await response.json();
-      setSuccess('Login erfolgreich. Du wirst weitergeleitet …');
+      setSuccess(t('auth.loginSuccess'));
       setTimeout(() => {
         window.location.href = redirectTo;
       }, 300);
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : 'Unbekannter Fehler beim Login.';
+      const message = cause instanceof Error ? cause.message : t('auth.loginFailed');
       setError(message);
     } finally {
       setLoading(false);
@@ -52,7 +54,7 @@ export function LoginForm({ className, redirectTo = '/dashboard' }: LoginFormPro
   return (
     <form onSubmit={handleSubmit} className={cn('space-y-4', className)}>
       <div className="space-y-2">
-        <Label htmlFor="email">E-Mail</Label>
+        <Label htmlFor="email">{t('auth.email')}</Label>
         <Input
           id="email"
           name="email"
@@ -65,12 +67,12 @@ export function LoginForm({ className, redirectTo = '/dashboard' }: LoginFormPro
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Passwort</Label>
+        <Label htmlFor="password">{t('auth.password')}</Label>
         <Input
           id="password"
           name="password"
           type="password"
-          placeholder="••••••••"
+          placeholder="•••••••"
           autoComplete="current-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
@@ -90,7 +92,7 @@ export function LoginForm({ className, redirectTo = '/dashboard' }: LoginFormPro
         ) : null}
       </div>
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? 'Anmeldung läuft …' : 'Anmelden'}
+        {loading ? t('auth.loginInProgress') : t('auth.login')}
       </Button>
     </form>
   );

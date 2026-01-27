@@ -36,5 +36,11 @@
     "itemManagement": "Artikelverwaltung",
     "addItem": "Artikel anlegen",
     "settings": "Einstellungen"
+  },
+  "layout": {
+    "quickSearch": "Schnellsuche",
+    "myAccount": "Mein Konto",
+    "profile": "Profil",
+    "appearance": "Erscheinungsbild"
   }
 }

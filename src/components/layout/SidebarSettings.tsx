@@ -11,8 +11,10 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Settings, LogOut, User, Palette } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 export function SidebarSettings() {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-2">
       <DropdownMenu>
@@ -28,19 +30,19 @@ export function SidebarSettings() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" side="right" align="end" sideOffset={12}>
-          <DropdownMenuLabel>Mein Account</DropdownMenuLabel>
+          <DropdownMenuLabel>{t('layout.myAccount')}</DropdownMenuLabel>
           <DropdownMenuSeparator />
 
           <DropdownMenuItem asChild>
             <a href="/settings" className="flex w-full items-center gap-2 cursor-pointer">
               <Settings size={14} />
-              <span>Admin Einstellungen</span>
+              <span>{t('navigation.settings')}</span>
             </a>
           </DropdownMenuItem>
 
           <DropdownMenuItem disabled className="gap-2">
             <User size={14} />
-            <span>Profil (bald)</span>
+            <span>{t('layout.profile')} (coming soon)</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -48,7 +50,7 @@ export function SidebarSettings() {
           <div className="px-2 py-1.5 flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <Palette size={14} />
-              <span>Erscheinungsbild</span>
+              <span>{t('layout.appearance')}</span>
             </div>
             <ThemeToggle variant="button" className="h-7 w-7" />
           </div>
