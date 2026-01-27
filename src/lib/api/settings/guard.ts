@@ -19,23 +19,33 @@ export async function requireSettingsAdmin(request: Request): Promise<SettingsAd
   const auth = await requireUser(request);
   const role = auth.role;
 
-  if (role !== 'owner' && role !== 'manager') {
+  if (role !== 'superadmin' && role !== 'owner' && role !== 'manager') {
     throw forbidden('Unzureichende Berechtigungen für Einstellungen.');
   }
 
-  // Resolve the user's shop - for now we'll take the first shop they have access to
-  // In a multi-shop scenario, this might need to be enhanced to handle shop selection
+  // Resolve the user's shop
+  let shopId: string | null = null;
+
+  // 1. Try to find a direct assignment
   const userShop = await prisma.userShop.findFirst({
     where: {
       userId: auth.id,
       status: 'active'
-    },
-    include: {
-      shop: true
     }
   });
 
-  if (!userShop) {
+  if (userShop) {
+    shopId = userShop.shopId;
+  } else if (role === 'superadmin') {
+    // 2. SuperAdmins (IT Support) can manage any shop. 
+    // For now, we auto-resolve to the first shop in the system.
+    const firstShop = await prisma.shop.findFirst();
+    if (firstShop) {
+      shopId = firstShop.id;
+    }
+  }
+
+  if (!shopId) {
     throw forbidden('Kein Geschäft gefunden. Benutzer ist keinem Geschäft zugeordnet.');
   }
 
@@ -43,12 +53,12 @@ export async function requireSettingsAdmin(request: Request): Promise<SettingsAd
     userId: auth.id,
     userEmail: auth.email,
     role,
-    shopId: userShop.shopId
+    shopId
   };
 }
 
 export function assertOwnerRole(role: TenantRole) {
-  if (role !== 'owner') {
+  if (role !== 'superadmin' && role !== 'owner') {
     throw forbidden('Aktion erfordert Owner-Rechte.');
   }
 }

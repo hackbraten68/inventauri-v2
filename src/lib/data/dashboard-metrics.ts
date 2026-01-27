@@ -67,7 +67,7 @@ export async function computeSalesDelta(params: {
 
   const whereBase = {
     occurredAt: { gte: priorStart },
-    transactionType: 'sale' as const
+    transactionType: { in: ['sale', 'return'] as any[] }
   };
 
   const transactions = await prisma.stockTransaction.findMany({
@@ -75,6 +75,7 @@ export async function computeSalesDelta(params: {
     select: {
       quantity: true,
       occurredAt: true,
+      transactionType: true,
       item: metric === 'revenue' ? { select: { metadata: true } } : undefined
     }
   });
@@ -83,8 +84,13 @@ export async function computeSalesDelta(params: {
   let priorTotal = 0;
 
   for (const entry of transactions) {
-    const quantity = toNumber(entry.quantity);
-    const value = metric === 'revenue' ? quantity * parsePrice(entry.item?.metadata) : quantity;
+    const isReturn = entry.transactionType === 'return';
+    const quantity = toNumber(entry.quantity) * (isReturn ? -1 : 1);
+
+    // Type-safe metadata access because TS doesn't know 'item' is on every result in findMany with select
+    const itemData = (entry as any).item;
+    const value = metric === 'revenue' ? quantity * parsePrice(itemData?.metadata) : quantity;
+
     if (entry.occurredAt >= currentStart) {
       currentTotal += value;
     } else {
@@ -122,25 +128,37 @@ export async function computeSalesVelocity(params: {
 
   const where: Prisma.StockTransactionWhereInput = {
     itemId,
-    transactionType: 'sale',
+    transactionType: { in: ['sale', 'return'] },
     occurredAt: { gte: since },
     ...(warehouseId ? { targetWarehouseId: warehouseId } : {})
   };
 
-  const aggregate = await prisma.stockTransaction.aggregate({
+  const transactions = await prisma.stockTransaction.findMany({
     where,
-    _sum: { quantity: true },
-    _min: { occurredAt: true }
+    select: { quantity: true, transactionType: true, occurredAt: true }
   });
 
-  if (!aggregate._min.occurredAt) {
+  if (!transactions.length) {
     return { averageDaily: null, observedDays: 0 };
   }
 
-  const totalSold = toNumber(aggregate._sum.quantity);
+  let totalSold = 0;
+  let firstOccurred: Date | null = null;
+
+  for (const tx of transactions) {
+    const qty = toNumber(tx.quantity) * (tx.transactionType === 'return' ? -1 : 1);
+    totalSold += qty;
+    if (!firstOccurred || tx.occurredAt < firstOccurred) {
+      firstOccurred = tx.occurredAt;
+    }
+  }
+
+  if (!firstOccurred) {
+    return { averageDaily: null, observedDays: 0 };
+  }
   const observedDays = Math.max(
     1,
-    Math.min(rangeDays, Math.ceil((Date.now() - aggregate._min.occurredAt.getTime()) / (1000 * 60 * 60 * 24)))
+    Math.min(rangeDays, Math.ceil((Date.now() - firstOccurred.getTime()) / (1000 * 60 * 60 * 24)))
   );
 
   if (totalSold <= 0 || observedDays < 3) {
@@ -260,11 +278,12 @@ export async function computeSalesTimeSeries(params: {
 
   const transactions = await prisma.stockTransaction.findMany({
     where: {
-      transactionType: 'sale',
+      transactionType: { in: ['sale', 'return'] as any[] },
       occurredAt: { gte: start, lte: now }
     },
     select: {
       quantity: true,
+      transactionType: true,
       occurredAt: true,
       reference: true,
       item: { select: { metadata: true } }
@@ -291,13 +310,16 @@ export async function computeSalesTimeSeries(params: {
     const key = tx.occurredAt.toISOString().split('T')[0];
     const point = dailyMap.get(key);
     if (point) {
-      const quantity = toNumber(tx.quantity);
+      const isReturn = tx.transactionType === 'return';
+      const quantity = toNumber(tx.quantity) * (isReturn ? -1 : 1);
       const revenue = quantity * parsePrice(tx.item?.metadata);
       point.revenue += revenue;
       point.units += quantity;
 
       if (tx.reference) {
         if (!orderMap.has(key)) orderMap.set(key, new Set());
+        // Note: Returns use the same reference, so we don't count them as new orders if already sold
+        // and we don't subtract from order count (yet, as an order happened)
         orderMap.get(key)!.add(tx.reference);
       }
     }

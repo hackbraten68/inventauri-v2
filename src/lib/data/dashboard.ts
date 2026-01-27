@@ -82,7 +82,7 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
   const now = toDate || new Date();
   const since = fromDate || subDays(now, rangeDays);
 
-  const [items, salesGroup, recentTransactions] = await Promise.all([
+  const [items, rawTransactions, recentTransactions] = await Promise.all([
     prisma.item.findMany({
       where: { isActive: true },
       include: {
@@ -93,13 +93,16 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
         }
       }
     }),
-    prisma.stockTransaction.groupBy({
-      by: ['itemId'],
+    prisma.stockTransaction.findMany({
       where: {
-        transactionType: SALE_TYPE,
+        transactionType: { in: ['sale', 'return'] },
         occurredAt: { gte: since }
       },
-      _sum: { quantity: true }
+      select: {
+        itemId: true,
+        quantity: true,
+        transactionType: true
+      }
     }),
     prisma.stockTransaction.findMany({
       where: {
@@ -116,8 +119,10 @@ export async function getDashboardSnapshot(options: DashboardOptions = {}): Prom
   ]);
 
   const saleMap = new Map<string, number>();
-  salesGroup.forEach((entry) => {
-    saleMap.set(entry.itemId, Number(entry._sum.quantity ?? 0));
+  rawTransactions.forEach((tx) => {
+    const qty = Number(tx.quantity) * (tx.transactionType === 'return' ? -1 : 1);
+    const current = saleMap.get(tx.itemId) ?? 0;
+    saleMap.set(tx.itemId, current + qty);
   });
 
   let totalOnHand = 0;

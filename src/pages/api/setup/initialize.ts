@@ -8,8 +8,9 @@ import { WarehouseType } from '@prisma/client';
 export const prerender = false;
 
 const pocketbaseUrl = import.meta.env.PUBLIC_POCKETBASE_URL;
-const pbAdminEmail = process.env.POCKETBASE_ADMIN_EMAIL;
-const pbAdminPass = process.env.POCKETBASE_ADMIN_PASSWORD;
+// Use process.env as primary for private server-side vars in Astro
+const pbAdminEmail = process.env.POCKETBASE_ADMIN_EMAIL || import.meta.env.POCKETBASE_ADMIN_EMAIL;
+const pbAdminPass = process.env.POCKETBASE_ADMIN_PASSWORD || import.meta.env.POCKETBASE_ADMIN_PASSWORD;
 
 export const POST: APIRoute = async ({ request }) => {
     try {
@@ -23,58 +24,60 @@ export const POST: APIRoute = async ({ request }) => {
         }
 
         const payload = await request.json();
-        const { admin, shop, config } = payload;
+        const { admin: owner, shop, config } = payload; // admin in payload is the business owner
 
-        if (!admin.email || !admin.password || !shop.name) {
-            return errorResponse('Unvollständige Daten.', 400);
+        if (!owner.email || !owner.password || !shop.name) {
+            return errorResponse('Unvollständige Daten (E-Mail, Passwort oder Shopname fehlt).', 400);
         }
 
-        // 2. PocketBase Admin Auth
+        // 2. PocketBase Admin Auth (used for configuration)
         if (!pocketbaseUrl || !pbAdminEmail || !pbAdminPass) {
             console.error('Missing environment variables for PocketBase setup.');
-            return errorResponse('Server-Konfiguration fehlt (PB Admin).', 500);
+            return errorResponse('Server-Konfiguration fehlt (PB_ADMIN_EMAIL/PASSWORD).', 500);
         }
 
         const pb = new PocketBase(pocketbaseUrl);
         try {
-            console.log('Attemping PB Admin Auth...');
+            console.log('Authenticating as PocketBase Admin for setup...');
             await pb.admins.authWithPassword(pbAdminEmail, pbAdminPass);
-            console.log('PB Admin Auth successful.');
+            console.log('PB Admin authenticated.');
         } catch (authErr: any) {
-            console.error('PB Admin Auth Failed:', authErr.message);
-            return errorResponse('PocketBase Admin Login fehlgeschlagen. Bitte prüfen Sie die .env-Werte.', 500);
-        }
+            console.warn('PB Admin Auth Failed, checking if initial setup is needed...');
 
-        // 2b. FORCED PocketBase Schema Patch (Ensure superadmin exists)
-        try {
-            console.log('Verifying profiles collection schema...');
-            const col = await pb.collections.getOne('profiles');
-            const roleField = col.schema.find((f: any) => f.name === 'role');
-            if (roleField && !roleField.options.values.includes('superadmin')) {
-                console.log('Patching profiles collection with superadmin role...');
-                roleField.options.values = ['superadmin', 'owner', 'manager', 'staff'];
-                await pb.collections.update(col.id, col);
-                console.log('PocketBase profiles collection patched successfully.');
+            // Try to create the first admin if it doesn't exist
+            try {
+                console.log('Attempting to create first PB Admin...');
+                await pb.admins.create({
+                    email: pbAdminEmail,
+                    password: pbAdminPass,
+                    passwordConfirm: pbAdminPass,
+                });
+                console.log('First PB Admin created successfully.');
+
+                // Try to authenticate again
+                await pb.admins.authWithPassword(pbAdminEmail, pbAdminPass);
+                console.log('PB Admin authenticated after creation.');
+            } catch (createErr: any) {
+                console.error('PB Admin Setup Failed:', createErr.message);
+                return errorResponse('PocketBase Admin Login fehlgeschlagen. Bitte prüfen Sie, ob der Admin-Account existiert und die .env-Werte korrekt sind.', 500);
             }
-        } catch (patchErr: any) {
-            console.warn('Failed to patch PB schema (not fatal):', patchErr.message);
         }
 
-        // 3. Create Admin User (The Owner)
+        // 3. Create regular user in PocketBase (The Shop Owner)
         let pbUser;
         try {
-            console.log('Creating owner in PocketBase:', admin.email);
+            console.log('Creating Shop Owner in PocketBase:', owner.email);
             pbUser = await pb.collection('users').create({
-                email: admin.email,
-                password: admin.password,
-                passwordConfirm: admin.password,
+                email: owner.email,
+                password: owner.password,
+                passwordConfirm: owner.password,
                 emailVisibility: true,
                 verified: true
             });
-            console.log('Owner created in PB. ID:', pbUser.id);
+            console.log('Shop Owner created in PB. ID:', pbUser.id);
         } catch (userErr: any) {
             console.error('Failed to create PB Owner:', userErr.message, userErr.data);
-            return errorResponse(`Fehler beim Erstellen des Admin-Benutzers: ${userErr.message}`, 400);
+            return errorResponse(`Fehler beim Erstellen des Shop-Besitzers: ${userErr.message}`, 400);
         }
 
         // 4. Create Shop & Infrastructure in Prisma
@@ -97,7 +100,7 @@ export const POST: APIRoute = async ({ request }) => {
                     shopId: dbShop.id,
                     legalName: shop.legalName || shop.name,
                     displayName: shop.name,
-                    email: admin.email,
+                    email: owner.email,
                     addressLine1: shop.address || 'Hauptsitz',
                     city: 'Berlin',
                     postalCode: '10115',
@@ -128,7 +131,7 @@ export const POST: APIRoute = async ({ request }) => {
             console.log('Linking owner profile...');
             await pb.collection('profiles').create({
                 user: pbUser.id,
-                role: 'owner', // This should always exist
+                role: 'owner', // Shop Owners are 'owner'
                 active: true
             });
 
@@ -166,7 +169,7 @@ export const POST: APIRoute = async ({ request }) => {
                         posProfile: {
                             create: {
                                 contactName: 'Shop Manager',
-                                contactEmail: admin.email
+                                contactEmail: owner.email
                             }
                         }
                     }
@@ -176,7 +179,7 @@ export const POST: APIRoute = async ({ request }) => {
             console.error('Infrastructure setup failed:', infraErr.message);
         }
 
-        console.info(`Setup Complete. Owner: ${admin.email}`);
+        console.info(`Setup Complete. Owner: ${owner.email}`);
 
         return json({
             success: true,

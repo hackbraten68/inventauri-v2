@@ -1,67 +1,112 @@
 ---
-import AppLayout from '../../layouts/AppLayout.astro';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { PosTerminal } from '../../components/pos/PosTerminal';
-import { getPosInventory, listPosWarehouses } from '../../lib/data/pos';
-import { requireUser } from '../../lib/auth/server';
+import AppLayout from "../../layouts/AppLayout.astro";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import { PosTerminal } from "../../components/pos/PosTerminal";
+import { getPosInventory, listPosWarehouses } from "../../lib/data/pos";
+import { requireUser } from "../../lib/auth/server";
 
-const warehouseSlug = Astro.url.searchParams.get('warehouse');
+const warehouseSlug = Astro.url.searchParams.get("warehouse");
 const auth = await requireUser(Astro.request);
 const [inventory, warehouses] = await Promise.all([
   getPosInventory(warehouseSlug ?? undefined),
-  listPosWarehouses()
+  listPosWarehouses(),
 ]);
 ---
 
-<AppLayout title="POS / Warehouse" description="Schnelle Verkäufe und Warenausgänge erfassen">
+<AppLayout
+  title="POS / Warehouse"
+  description="Schnelle Verkäufe und Warenausgänge erfassen"
+>
   <section class="flex flex-col gap-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h2 class="text-lg font-semibold">Verkaufsstation</h2>
-        <p class="text-sm text-muted-foreground">Wähle ein POS-Lager und buche Verkäufe direkt ins System.</p>
+        <p class="text-sm text-muted-foreground">
+          Wähle ein POS-Lager und buche Verkäufe direkt ins System.
+        </p>
       </div>
-      {warehouses.length > 0 ? (
-        <form method="get" class="flex items-center gap-2 text-sm">
-          <label for="warehouse" class="text-muted-foreground">
-            POS Lager
-          </label>
-          <select
-            id="warehouse"
-            name="warehouse"
-            class="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
-            onchange="this.form.requestSubmit()"
-          >
-            {warehouses.map((warehouse) => (
-              <option value={warehouse.slug} selected={inventory.warehouse?.slug === warehouse.slug}>
-                {warehouse.name}
-              </option>
-            ))}
-          </select>
-        </form>
-      ) : null}
-    </div>
+      <div class="flex items-center gap-3">
+        {
+          warehouses.length === 0 && (
+            <a
+              href="/settings?tab=locations"
+              class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="mr-2"
+              >
+                <path d="M5 12h14" />
+                <path d="M12 5v14" />
+              </svg>
+              POS hinzufügen
+            </a>
+          )
+        }
+        {
+          warehouses.length > 0 ? (
+            <form method="get" class="flex items-center gap-2 text-sm">
+              <label for="warehouse" class="text-muted-foreground">
+                POS Lager
+              </label>
+              <select
+                id="warehouse"
+                name="warehouse"
+                class="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                onchange="this.form.requestSubmit()"
+              >
+                {warehouses.map((warehouse) => (
+                  <option
+                    value={warehouse.slug}
+                    selected={inventory.warehouse?.slug === warehouse.slug}
+                  >
+                    {warehouse.name}
+                  </option>
+                ))}
+              </select>
+            </form>
+          ) : null
+        }
+      </div>
 
-    {inventory.warehouse ? (
-      <Card class="border-border">
-        <CardHeader>
-          <CardTitle>Bestand & Verkauf</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PosTerminal
-            client:load
-            warehouseId={inventory.warehouse.id}
-            warehouseSlug={inventory.warehouse.slug}
-            warehouseName={inventory.warehouse.name}
-            items={inventory.items}
-          />
-        </CardContent>
-      </Card>
-    ) : (
-      <Card class="border-border">
-        <CardContent class="py-10 text-center text-sm text-muted-foreground">
-          Noch kein POS-Lager vorhanden. Lege eines im Inventar-Bereich an, um Verkäufe zu buchen.
-        </CardContent>
-      </Card>
-    )}
+      {
+        inventory.warehouse ? (
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle>Bestand & Verkauf</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PosTerminal
+                client:load
+                warehouseId={inventory.warehouse.id}
+                warehouseSlug={inventory.warehouse.slug}
+                warehouseName={inventory.warehouse.name}
+                items={inventory.items}
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-border">
+            <CardContent className="py-10 text-center text-sm text-muted-foreground">
+              Noch kein POS-Lager vorhanden. Lege eines im Inventar-Bereich an,
+              um Verkäufe zu buchen.
+            </CardContent>
+          </Card>
+        )
+      }
+    </div>
   </section>
 </AppLayout>

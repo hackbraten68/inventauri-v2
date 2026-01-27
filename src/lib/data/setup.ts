@@ -8,23 +8,20 @@ export interface SetupStatus {
 
 /**
  * Checks if the application is fully setup.
- * Self-hosting onboarding is triggered if no shops or super-admins exist.
+ * Onboarding is triggered if no shops or owners exist.
  */
 export async function getSetupStatus(): Promise<SetupStatus> {
-    const [shopCount, userShopCount, superAdminCount] = await Promise.all([
+    const [shopCount, ownerCount] = await Promise.all([
         prisma.shop.count(),
-        prisma.userShop.count({ where: { role: 'owner' } }),
-        prisma.userShop.count({ where: { role: 'superadmin' } })
+        prisma.userShop.count({ where: { role: 'owner' } })
     ]);
 
-    // We consider it initialized if there's at least one shop and one owner.
     const hasShops = shopCount > 0;
-    const hasOwner = userShopCount > 0;
-    const hasSuperAdmin = superAdminCount > 0;
+    const hasOwner = ownerCount > 0;
 
     return {
         hasShops,
-        hasSuperAdmin,
-        isInitialized: (hasShops && hasOwner) || hasSuperAdmin
+        hasSuperAdmin: hasOwner, // Mapping owner as the primary admin for status check
+        isInitialized: hasShops && hasOwner
     };
 }
