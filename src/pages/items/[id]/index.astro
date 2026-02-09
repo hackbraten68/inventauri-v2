@@ -1,18 +1,14 @@
 ---
-import AppLayout from '../../../layouts/AppLayout.astro';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { getInventorySnapshot } from '../../../lib/data/inventory';
-import { requireUser } from '../../../lib/auth/server';
+// Detect browser language or default to English
+const browserLang = Astro.request.headers.get('accept-language')?.split(',')[0]?.slice(0, 2) || 'en';
+const supportedLocales = ['en', 'de'];
+const locale = supportedLocales.includes(browserLang) ? browserLang : 'en';
 
 const { id } = Astro.params;
-const auth = await requireUser(Astro.request);
-const snapshot = await getInventorySnapshot();
-const item = snapshot.items.find((entry) => entry.itemId === id);
 
-if (!item) {
-  throw new Error('Artikel nicht gefunden.');
-}
+// Redirect to localized version
+return Astro.redirect(`/${locale}/items/${id}/`);
+---
 ---
 
 <AppLayout title={item.name} description={`SKU: ${item.sku}`}>

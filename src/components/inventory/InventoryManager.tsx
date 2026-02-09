@@ -1,73 +1,72 @@
 import { Fragment, useMemo, useState } from 'react';
-import type { InventoryItemSummary, InventorySnapshot, InventoryWarehouseBreakdown } from '../../lib/data/inventory';
+import type { InventoryItemSummary, InventorySnapshot, InventoryWarehouseBreakdown, StockAction } from '../../lib/data/inventory';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { postStockAction, fetchItemHistory } from '../../lib/api/client';
-
-const numberFormatter = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
-const dateFormatter = new Intl.DateTimeFormat('de-DE', {
-  dateStyle: 'short',
-  timeStyle: 'short'
-});
-
-const ACTION_LABELS = {
-  transfer: 'Umbuchung',
-  inbound: 'Einbuchung',
-  sale: 'Verkauf',
-  writeoff: 'Abschreibung',
-  donation: 'Spende',
-  return: 'Retoure',
-  adjust: 'Korrektur'
-} as const;
-
-type StockAction = keyof typeof ACTION_LABELS;
-
-type MutationResponse = {
-  result: {
-    transactionId: string;
-  };
-  snapshot: InventorySnapshot;
-};
-
-type HistoryEntry = {
-  id: string;
-  transactionType: string;
-  quantity: string;
-  reference?: string | null;
-  notes?: string | null;
-  performedBy?: string | null;
-  occurredAt: string;
-  sourceWarehouseId?: string | null;
-  targetWarehouseId?: string | null;
-};
+import { useTranslation } from '../../i18n/hooks';
+import { LocaleProvider } from '../../i18n/context';
+import type { Locale } from '../../i18n/constants';
 
 interface InventoryManagerProps {
   initialSnapshot: InventorySnapshot;
+  locale: Locale;
 }
 
-interface ActionFormState {
-  action: StockAction;
-  sourceWarehouseId: string;
-  targetWarehouseId: string;
-  quantity: string;
-  reference: string;
-  notes: string;
+export function InventoryManager({ initialSnapshot, locale }: InventoryManagerProps) {
+  return (
+    <LocaleProvider locale={locale}>
+      <InventoryManagerContent initialSnapshot={initialSnapshot} />
+    </LocaleProvider>
+  );
 }
 
-const ACTIONS_REQUIRING_TARGET: StockAction[] = ['transfer'];
-const ACTIONS_ALLOWING_NEGATIVE: StockAction[] = ['adjust'];
+function InventoryManagerContent({ initialSnapshot }: { initialSnapshot: InventorySnapshot }) {
+  const { t, formatNumber, formatDateTime } = useTranslation();
 
-function formatQty(value: number) {
-  return numberFormatter.format(value);
-}
+  interface ActionFormState {
+    action: StockAction;
+    sourceWarehouseId: string;
+    targetWarehouseId: string;
+    quantity: string;
+    reference: string;
+    notes: string;
+  }
 
-function getWarehouseName(warehouses: InventoryWarehouseBreakdown[], id?: string | null) {
-  if (!id) return '—';
-  return warehouses.find((warehouse) => warehouse.warehouseId === id)?.warehouseName ?? 'Unbekannt';
-}
+  const ACTIONS_REQUIRING_TARGET: StockAction[] = ['transfer'];
+  const ACTIONS_ALLOWING_NEGATIVE: StockAction[] = ['adjust'];
 
-export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
+  const formatQty = (value: number) => {
+    return formatNumber(value);
+  };
+
+  const getWarehouseName = (warehouses: InventoryWarehouseBreakdown[], id?: string | null) => {
+    if (!id) return '—';
+    return warehouses.find((warehouse) => warehouse.warehouseId === id)?.warehouseName ?? t('common.error');
+  };
+
+  const KpiCard = ({ title, value, unit, description }: KpiCardProps) => {
+    const displayValue = typeof value === 'number' ? formatQty(value) : value;
+    return (
+      <div className="rounded-xl border border-border bg-card/70 p-4 shadow-sm">
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{title}</p>
+        <p className="mt-2 text-2xl font-semibold text-foreground">
+          {displayValue}{unit ? ` ${unit}` : ''}
+        </p>
+        {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
+      </div>
+    );
+  };
+
+  const ACTION_LABELS = {
+    transfer: t('inventory.actions.transfer'),
+    inbound: t('inventory.actions.inbound'),
+    sale: t('inventory.actions.sale'),
+    writeoff: t('inventory.actions.writeoff'),
+    donation: t('inventory.actions.donation'),
+    return: t('inventory.actions.return'),
+    adjust: t('inventory.actions.adjust')
+  } as const;
   const [snapshot, setSnapshot] = useState(initialSnapshot);
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [historyItem, setHistoryItem] = useState<string | null>(null);
@@ -105,7 +104,7 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
 
       const quantityValue = Number(formState.quantity);
       if (!Number.isFinite(quantityValue)) {
-        throw new Error('Bitte eine gültige Menge angeben.');
+        throw new Error(t('inventory.validation.validQuantity'));
       }
 
       const payloadBase = {
@@ -119,13 +118,13 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
       switch (formState.action) {
         case 'transfer': {
           if (!formState.sourceWarehouseId || !formState.targetWarehouseId) {
-            throw new Error('Quelle und Ziel müssen gewählt werden.');
+            throw new Error(t('inventory.validation.warehousesRequired'));
           }
           if (formState.sourceWarehouseId === formState.targetWarehouseId) {
-            throw new Error('Quelle und Ziel dürfen nicht identisch sein.');
+            throw new Error(t('inventory.warehouse.sameWarehouse'));
           }
           if (quantityValue <= 0) {
-            throw new Error('Menge muss größer als 0 sein.');
+            throw new Error(t('inventory.validation.quantityGreaterThanZero'));
           }
           response = await postStockAction<MutationResponse>('transfer', {
             ...payloadBase,
@@ -138,10 +137,10 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
         case 'inbound': {
           const targetWarehouseId = formState.targetWarehouseId || formState.sourceWarehouseId;
           if (!targetWarehouseId) {
-            throw new Error('Ziel-Lager wählen.');
+            throw new Error(t('inventory.validation.selectTarget'));
           }
           if (quantityValue <= 0) {
-            throw new Error('Menge muss größer als 0 sein.');
+            throw new Error(t('inventory.validation.quantityGreaterThanZero'));
           }
           response = await postStockAction<MutationResponse>('inbound', {
             ...payloadBase,
@@ -155,10 +154,10 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
         case 'donation':
         case 'return': {
           if (!formState.sourceWarehouseId) {
-            throw new Error('Lager wählen.');
+            throw new Error(t('inventory.validation.selectSource'));
           }
           if (quantityValue <= 0) {
-            throw new Error('Menge muss größer als 0 sein.');
+            throw new Error(t('inventory.validation.quantityGreaterThanZero'));
           }
           response = await postStockAction<MutationResponse>(formState.action, {
             ...payloadBase,
@@ -169,10 +168,10 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
         }
         case 'adjust': {
           if (!formState.sourceWarehouseId) {
-            throw new Error('Lager wählen.');
+            throw new Error(t('inventory.validation.selectSource'));
           }
           if (quantityValue === 0) {
-            throw new Error('Der Wert darf nicht 0 sein.');
+            throw new Error(t('inventory.validation.quantityGreaterThanZero'));
           }
           response = await postStockAction<MutationResponse>('adjust', {
             ...payloadBase,
@@ -182,11 +181,11 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
           break;
         }
         default:
-          throw new Error('Unbekannte Aktion.');
+          throw new Error(t('common.error'));
       }
 
       setSnapshot(response.snapshot);
-      setSuccess(`${ACTION_LABELS[formState.action]} erfolgreich.`);
+      setSuccess(`${t(`inventory.actions.${formState.action}`)} ${t('inventory.status.success')}.`);
 
       setHistoryData((prev) => {
         if (!prev[item.itemId]) {
@@ -199,14 +198,14 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
 
       if (historyItem === item.itemId) {
         try {
-          setHistoryLoading(item.itemId);
+          setHistoryLoading(t('inventory.status.loading'));
           const refreshed = await fetchItemHistory({ itemId: item.itemId, limit: 10 });
           setHistoryData((prev) => ({
             ...prev,
             [item.itemId]: refreshed.data as HistoryEntry[]
           }));
         } catch (cause) {
-          console.error('Historie konnte nicht aktualisiert werden.', cause);
+          console.error(t('inventory.history.error'), cause);
         } finally {
           setHistoryLoading(null);
         }
@@ -220,7 +219,7 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
         notes: ''
       }));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unbekannter Fehler.');
+      setError(cause instanceof Error ? cause.message : t('inventory.messages.unknownError'));
     } finally {
       setLoading(false);
     }
@@ -246,7 +245,7 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
       }));
       setHistoryItem(itemId);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Historie konnte nicht geladen werden.');
+      setError(cause instanceof Error ? cause.message : t('inventory.status.error'));
     } finally {
       setHistoryLoading(null);
     }
@@ -262,23 +261,25 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
   const unitLabel = snapshot.items[0]?.unit ?? 'stk';
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 max-w-[1600px] mx-auto">
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <KpiCard title="Aktive Artikel" value={snapshot.items.length} description="Anzahl SKUs mit Bestand" />
+        <KpiCard title={t('inventory.stats.totalItems')} value={snapshot.items.length} />
         <KpiCard
-          title="Gesamtbestand"
-          value={`${formatQty(snapshot.totals.onHand)} ${unitLabel}`}
-          description={`Reserviert: ${formatQty(snapshot.totals.reserved)}`}
+          title={t('inventory.stats.totalValue')}
+          value={snapshot.totals.onHand}
+          unit={unitLabel}
         />
         <KpiCard
-          title="Zentrallager"
-          value={`${formatQty(centralTotals?.quantityOnHand ?? 0)} ${unitLabel}`}
-          description={centralTotals?.warehouseName ?? 'Noch kein Zentrallager vorhanden'}
+          title={t('inventory.stats.totalValue')}
+          value={centralTotals?.quantityOnHand ?? 0}
+          unit={unitLabel}
+          description={centralTotals?.warehouseName ?? t('common.error')}
         />
         <KpiCard
-          title="POS Lager"
-          value={`${formatQty(posTotals.reduce((acc, warehouse) => acc + warehouse.quantityOnHand, 0))} ${unitLabel}`}
-          description={`${posTotals.length} aktive POS Standorte`}
+          title={t('navigation.totalInventory')}
+          value={posTotals.reduce((acc, warehouse) => acc + warehouse.quantityOnHand, 0)}
+          unit={unitLabel}
+          description={`${posTotals.length} ${t('inventory.warehouse.activePosLocations') || 'POS Locations'}`}
         />
       </section>
 
@@ -292,14 +293,14 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
               {snapshot.warehouseTotals.length}
             </span>
             <div>
-              <p className="font-medium text-foreground">Lagerübersicht</p>
+              <p className="font-medium text-foreground">{t('inventory.warehouse.overview')}</p>
               <p className="text-xs">
-                {centralTotals?.warehouseName ?? 'Zentrallager fehlt'} • {posTotals.length} POS Standorte
+                {centralTotals?.warehouseName ?? t('inventory.warehouse.missingCentral')} • {posTotals.length} {t('inventory.warehouse.posLocations') || 'POS'}
               </p>
             </div>
           </div>
           <span className="text-xs uppercase tracking-[0.2em]">
-            Gesamt: {formatQty(snapshot.totals.onHand)} {unitLabel}
+            {t('inventory.table.total')}: {formatQty(snapshot.totals.onHand)} {unitLabel}
           </span>
         </div>
 
@@ -307,24 +308,24 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
           <table className="min-w-full divide-y divide-border text-sm">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
               <tr>
-                <th className="px-4 py-3 text-left">Artikel</th>
+                <th className="px-4 py-3 text-left">{t('inventory.table.item')}</th>
                 <th className="px-4 py-3 text-left">SKU</th>
-                <th className="px-4 py-3 text-left">Gesamt</th>
-                <th className="px-4 py-3 text-left">Reserviert</th>
-                <th className="px-4 py-3 text-left">Verfügbar</th>
+                <th className="px-4 py-3 text-left">{t('inventory.table.total')}</th>
+                <th className="px-4 py-3 text-left">{t('inventory.table.reserved')}</th>
+                <th className="px-4 py-3 text-left">{t('inventory.table.available')}</th>
                 {snapshot.warehouseTotals.map((warehouse) => (
                   <th className="px-4 py-3 text-left" key={warehouse.warehouseId}>
                     {warehouse.warehouseName}
                   </th>
                 ))}
-                <th className="px-4 py-3 text-right">Aktionen</th>
+                <th className="px-4 py-3 text-right">{t('inventory.table.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {snapshot.items.length === 0 ? (
                 <tr>
                   <td className="px-4 py-6 text-center text-muted-foreground" colSpan={5 + snapshot.warehouseTotals.length}>
-                    Noch keine Artikel mit Bestand.
+                    {t('inventory.messages.noItemsWithStock')}
                   </td>
                 </tr>
               ) : (
@@ -361,7 +362,7 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
                               onClick={() => void handleHistoryToggle(item.itemId)}
                               disabled={historyLoading === item.itemId}
                             >
-                              Details
+                              {t('common.details') || 'Details'}
                             </Button>
                             <Button
                               size="sm"
@@ -378,7 +379,7 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
                                 }));
                               }}
                             >
-                              Aktion
+                              {t('common.action') || 'Action'}
                             </Button>
                           </div>
                         </td>
@@ -387,34 +388,34 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
                         <tr className="bg-muted/20">
                           <td colSpan={6 + snapshot.warehouseTotals.length} className="px-4 py-4">
                             {historyLoading === item.itemId ? (
-                              <p className="text-sm text-muted-foreground">Historie wird geladen …</p>
+                              <p className="text-sm text-muted-foreground">{t('inventory.messages.historyLoading')}</p>
                             ) : historyData[item.itemId]?.length ? (
                               <div className="space-y-2 text-sm">
                                 {historyData[item.itemId]?.map((entry) => (
                                   <div key={entry.id} className="flex flex-col rounded-md border border-border/60 p-3">
                                     <div className="flex items-center justify-between">
-                                      <span className="font-medium text-foreground">{ACTION_LABELS[entry.transactionType as StockAction] ?? entry.transactionType}</span>
-                                      <span className="text-xs text-muted-foreground">{dateFormatter.format(new Date(entry.occurredAt))}</span>
+                                      <span className="font-medium text-foreground">{t(`inventory.actions.${entry.transactionType}`) || entry.transactionType}</span>
+                                      <span className="text-xs text-muted-foreground">{formatDateTime(new Date(entry.occurredAt))}</span>
                                     </div>
                                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                      <span>Menge: {formatQty(Number(entry.quantity))}</span>
+                                      <span>{t('inventory.history.item')}: {formatQty(Number(entry.quantity))}</span>
                                       {entry.sourceWarehouseId ? (
-                                        <span>Quelle: {getWarehouseName(snapshot.warehouseTotals, entry.sourceWarehouseId)}</span>
+                                        <span>{t('inventory.warehouse.selectSource')}: {getWarehouseName(snapshot.warehouseTotals, entry.sourceWarehouseId)}</span>
                                       ) : null}
                                       {entry.targetWarehouseId ? (
-                                        <span>Ziel: {getWarehouseName(snapshot.warehouseTotals, entry.targetWarehouseId)}</span>
+                                        <span>{t('inventory.warehouse.selectTarget')}: {getWarehouseName(snapshot.warehouseTotals, entry.targetWarehouseId)}</span>
                                       ) : null}
-                                      {entry.reference ? <span>Referenz: {entry.reference}</span> : null}
-                                      {entry.performedBy ? <span>Von: {entry.performedBy}</span> : null}
+                                      {entry.reference ? <span>{t('inventory.form.reference')}: {entry.reference}</span> : null}
+                                      {entry.performedBy ? <span>{t('common.from')}: {entry.performedBy}</span> : null}
                                     </div>
                                     {entry.notes ? (
-                                      <p className="mt-2 text-xs text-muted-foreground">Notiz: {entry.notes}</p>
+                                      <p className="mt-2 text-xs text-muted-foreground">{t('inventory.form.notesLabel')} {entry.notes}</p>
                                     ) : null}
                                   </div>
                                 ))}
                               </div>
                             ) : (
-                              <p className="text-sm text-muted-foreground">Noch keine Historie vorhanden.</p>
+                              <p className="text-sm text-muted-foreground">{t('inventory.history.noHistory')}</p>
                             )}
                           </td>
                         </tr>
@@ -430,7 +431,7 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
                               }}
                             >
                               <div className="space-y-2">
-                                <Label htmlFor="action">Aktion</Label>
+                                <Label htmlFor="action">{t('inventory.form.submit')}</Label>
                                 <select
                                   id="action"
                                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
@@ -447,26 +448,26 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
                                 </select>
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="quantity">Menge</Label>
+                                <Label htmlFor="quantity">{t('inventory.form.quantity')}</Label>
                                 <Input
                                   id="quantity"
                                   type="number"
                                   step="0.01"
                                   value={formState.quantity}
                                   onChange={(event) => handleFormValue('quantity', event.target.value)}
-                                  placeholder={ACTIONS_ALLOWING_NEGATIVE.includes(formState.action) ? 'z. B. -2 oder 5' : 'z. B. 5'}
+                                  placeholder={ACTIONS_ALLOWING_NEGATIVE.includes(formState.action) ? t('inventory.form.quantityPlaceholder') : t('inventory.form.exampleQuantity') || '5'}
                                   required
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="source">Quelle</Label>
+                                <Label htmlFor="source">{t('inventory.warehouse.selectSource')}</Label>
                                 <select
                                   id="source"
                                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                                   value={formState.sourceWarehouseId}
                                   onChange={(event) => handleFormValue('sourceWarehouseId', event.target.value)}
                                 >
-                                  <option value="">Lager wählen…</option>
+                                  <option value="">{t('inventory.warehouse.selectPlaceholder')}</option>
                                   {snapshot.warehouseTotals.map((warehouse) => (
                                     <option key={warehouse.warehouseId} value={warehouse.warehouseId}>
                                       {warehouse.warehouseName}
@@ -476,14 +477,14 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
                               </div>
                               {ACTIONS_REQUIRING_TARGET.includes(formState.action) || formState.action === 'inbound' ? (
                                 <div className="space-y-2">
-                                  <Label htmlFor="target">Ziel</Label>
+                                  <Label htmlFor="target">{t('inventory.warehouse.selectTarget')}</Label>
                                   <select
                                     id="target"
                                     className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                                     value={formState.targetWarehouseId}
                                     onChange={(event) => handleFormValue('targetWarehouseId', event.target.value)}
                                   >
-                                    <option value="">Lager wählen…</option>
+                                    <option value="">{t('inventory.warehouse.selectPlaceholder')}</option>
                                     {snapshot.warehouseTotals
                                       .filter((warehouse) =>
                                         formState.action !== 'transfer' || warehouse.warehouseId !== formState.sourceWarehouseId
@@ -497,27 +498,27 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
                                 </div>
                               ) : null}
                               <div className="space-y-2 md:col-span-2">
-                                <Label htmlFor="reference">Referenz</Label>
+                                <Label htmlFor="reference">{t('inventory.form.reference')}</Label>
                                 <Input
                                   id="reference"
                                   value={formState.reference}
                                   onChange={(event) => handleFormValue('reference', event.target.value)}
-                                  placeholder="z. B. Belegnummer"
+                                  placeholder={t('inventory.form.referencePlaceholder')}
                                 />
                               </div>
                               <div className="space-y-2 md:col-span-2">
-                                <Label htmlFor="notes">Notiz</Label>
+                                <Label htmlFor="notes">{t('inventory.form.notes')}</Label>
                                 <textarea
                                   id="notes"
                                   className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                   value={formState.notes}
                                   onChange={(event) => handleFormValue('notes', event.target.value)}
-                                  placeholder="Optional, z. B. Begründung"
+                                  placeholder={t('inventory.form.notes')}
                                 />
                               </div>
                               <div className="flex gap-3 md:col-span-2">
                                 <Button type="submit" disabled={loading}>
-                                  {loading ? 'Wird ausgeführt …' : ACTION_LABELS[formState.action]}
+                                  {loading ? t('inventory.status.loading') : t(`inventory.actions.${formState.action}`)}
                                 </Button>
                                 <Button
                                   type="button"
@@ -528,7 +529,7 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
                                     setSuccess(null);
                                   }}
                                 >
-                                  Abbrechen
+                                  {t('common.cancel')}
                                 </Button>
                               </div>
                             </form>
@@ -545,20 +546,33 @@ export function InventoryManager({ initialSnapshot }: InventoryManagerProps) {
       </div>
     </div>
   );
+
 }
 
 interface KpiCardProps {
   title: string;
-  value: string | number;
-  description: string;
+  value: number | string;
+  unit?: string;
+  description?: string;
 }
 
-function KpiCard({ title, value, description }: KpiCardProps) {
-  return (
-    <div className="rounded-xl border border-border bg-card/70 p-4 shadow-sm">
-      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{title}</p>
-      <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{description}</p>
-    </div>
-  );
+interface HistoryEntry {
+  id: string;
+  transactionType: string;
+  quantity: string;
+  reference?: string | null;
+  notes?: string | null;
+  performedBy?: string | null;
+  occurredAt: string;
+  sourceWarehouseId?: string | null;
+  targetWarehouseId?: string | null;
 }
+
+interface MutationResponse {
+  result: {
+    transactionId: string;
+  };
+  snapshot: InventorySnapshot;
+}
+
+

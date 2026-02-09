@@ -27,6 +27,8 @@ coverage/
 # Logs
 # ============================================
 *.log
+!audit.log
+!audit.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -78,6 +80,8 @@ tmp/
 specs/
 docs/
 scripts/
+!scripts/audit-hardcoded-strings.cjs
+!scripts/audit-json-symmetry.cjs
 
 # Keep important spec & retrospec files (documentation only)
 !.specify/specify.md
@@ -92,3 +96,4 @@ scripts/
 *.tar.gz
 *.zip
 /backups/
+audit.log

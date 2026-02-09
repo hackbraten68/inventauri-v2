@@ -11,19 +11,7 @@ async function ensureVariantId(
   return undefined;
 }
 
-async function assertItemBelongsToShop(
-  tx: Prisma.TransactionClient,
-  itemId: string,
-  shopId: string
-) {
-  const item = await tx.item.findUnique({
-    where: { id: itemId },
-    select: { shopId: true }
-  });
-  if (!item || item.shopId !== shopId) {
-    throw new Error('Artikel gehört nicht zu diesem Shop.');
-  }
-}
+
 
 interface BaseMutationOptions {
   reference?: string;

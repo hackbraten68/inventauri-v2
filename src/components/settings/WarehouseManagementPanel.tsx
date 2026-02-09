@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from '../../i18n/hooks';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -17,19 +18,11 @@ interface Warehouse {
     } | null;
 }
 
-const TYPE_LABELS = {
-    pos: 'POS / Verkauf',
-    central: 'Zentrallager',
-    virtual: 'Virtuell'
-};
+// Translation handling for constants will be done inside component
 
-const TYPE_ICONS = {
-    pos: Store,
-    central: Building,
-    virtual: Package
-};
 
 export function WarehouseManagementPanel() {
+    const { t } = useTranslation();
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
@@ -99,9 +92,9 @@ export function WarehouseManagementPanel() {
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Fehler beim Speichern');
+            if (!res.ok) throw new Error(data.error || t('common.error'));
 
-            setSuccess(`Standort "${data.warehouse.name}" wurde ${editId ? 'aktualisiert' : 'erstellt'}.`);
+            setSuccess(t('settings.warehouses.success', { name: data.warehouse.name, action: editId ? t('settings.warehouses.updated') : t('settings.warehouses.created') }));
             handleCancel();
             await fetchWarehouses();
         } catch (err: any) {
@@ -115,13 +108,13 @@ export function WarehouseManagementPanel() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-medium text-foreground">Standorte & Lager</h3>
-                    <p className="text-sm text-muted-foreground">Verwalte deine physischen und virtuellen Lagerorte.</p>
+                    <h3 className="text-lg font-medium text-foreground">{t('settings.warehouses.title')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('settings.warehouses.subtitle')}</p>
                 </div>
                 {!isCreating && (
                     <Button onClick={() => setIsCreating(true)} className="gap-2">
                         <Plus className="h-4 w-4" />
-                        Neuer Standort
+                        {t('settings.warehouses.new')}
                     </Button>
                 )}
             </div>
@@ -132,7 +125,7 @@ export function WarehouseManagementPanel() {
             {isCreating && (
                 <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-border p-4 bg-background/40">
                     <div className="flex items-center justify-between border-b border-border pb-2 mb-4">
-                        <h4 className="font-semibold">{editId ? 'Standort bearbeiten' : 'Neuen Standort anlegen'}</h4>
+                        <h4 className="font-semibold">{editId ? t('settings.warehouses.edit') : t('settings.warehouses.create')}</h4>
                         <Button type="button" variant="ghost" size="sm" onClick={handleCancel}>
                             <X className="h-4 w-4" />
                         </Button>
@@ -140,59 +133,59 @@ export function WarehouseManagementPanel() {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
-                            <Label htmlFor="name">Name des Standorts</Label>
+                            <Label htmlFor="name">{t('settings.warehouses.name')}</Label>
                             <Input
                                 id="name"
                                 value={form.name}
                                 onChange={e => setForm({ ...form, name: e.target.value })}
-                                placeholder="z.B. Store Berlin Mitte"
+                                placeholder={t('settings.warehouses.placeholders.name')}
                                 required
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="type">Typ</Label>
+                            <Label htmlFor="type">{t('settings.warehouses.type')}</Label>
                             <select
                                 id="type"
                                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                                 value={form.type}
                                 onChange={e => setForm({ ...form, type: e.target.value as any })}
                             >
-                                <option value="pos">POS / Verkaufsstelle</option>
-                                <option value="central">Zentrallager</option>
-                                <option value="virtual">Virtuelles Lager</option>
+                                <option value="pos">{t('settings.warehouses.types.pos')}</option>
+                                <option value="central">{t('settings.warehouses.types.central')}</option>
+                                <option value="virtual">{t('settings.warehouses.types.virtual')}</option>
                             </select>
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="address">Adresse (Optional)</Label>
+                        <Label htmlFor="address">{t('settings.warehouses.address')}</Label>
                         <Input
                             id="address"
                             value={form.address}
                             onChange={e => setForm({ ...form, address: e.target.value })}
-                            placeholder="Musterstr. 123, 12345 Berlin"
+                            placeholder={t('settings.warehouses.placeholders.address')}
                         />
                     </div>
 
                     {form.type === 'pos' && !editId && (
                         <div className="grid gap-4 sm:grid-cols-2 border-t border-border pt-4">
                             <div className="space-y-2">
-                                <Label htmlFor="contactName">Ansprechpartner</Label>
+                                <Label htmlFor="contactName">{t('settings.warehouses.contactName')}</Label>
                                 <Input
                                     id="contactName"
                                     value={form.contactName}
                                     onChange={e => setForm({ ...form, contactName: e.target.value })}
-                                    placeholder="Vorname Nachname"
+                                    placeholder={t('settings.warehouses.placeholders.contactName')}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="contactEmail">Kontakt E-Mail</Label>
+                                <Label htmlFor="contactEmail">{t('settings.warehouses.contactEmail')}</Label>
                                 <Input
                                     id="contactEmail"
                                     type="email"
                                     value={form.contactEmail}
                                     onChange={e => setForm({ ...form, contactEmail: e.target.value })}
-                                    placeholder="pos@inventauri.app"
+                                    placeholder={t('settings.warehouses.placeholders.contactEmail')}
                                 />
                             </div>
                         </div>
@@ -201,10 +194,10 @@ export function WarehouseManagementPanel() {
                     <div className="flex gap-2 pt-2">
                         <Button type="submit" disabled={loading} className="gap-2">
                             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                            {editId ? 'Aktualisieren' : 'Speichern'}
+                            {editId ? t('common.save') : t('common.save')}
                         </Button>
                         <Button type="button" variant="ghost" onClick={handleCancel}>
-                            Abbrechen
+                            {t('common.cancel')}
                         </Button>
                     </div>
                 </form>
@@ -215,28 +208,32 @@ export function WarehouseManagementPanel() {
                     <table className="min-w-full divide-y divide-border text-sm">
                         <thead className="bg-muted/40 text-xs uppercase text-muted-foreground font-medium">
                             <tr>
-                                <th className="px-4 py-3 text-left">Standort</th>
-                                <th className="px-4 py-3 text-left">Typ</th>
-                                <th className="px-4 py-3 text-left">Adresse</th>
-                                <th className="px-4 py-3 text-right">Aktionen</th>
+                                <th className="px-4 py-3 text-left">{t('settings.warehouses.name')}</th>
+                                <th className="px-4 py-3 text-left">{t('settings.warehouses.type')}</th>
+                                <th className="px-4 py-3 text-left">{t('settings.warehouses.address')}</th>
+                                <th className="px-4 py-3 text-right">{t('common.edit')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
                             {loading && warehouses.length === 0 ? (
                                 <tr>
                                     <td colSpan={4} className="px-4 py-10 text-center text-muted-foreground animate-pulse">
-                                        Wird geladen...
+                                        {t('settings.warehouses.loading')}
                                     </td>
                                 </tr>
                             ) : warehouses.length === 0 ? (
                                 <tr>
                                     <td colSpan={4} className="px-4 py-10 text-center text-muted-foreground">
-                                        Noch keine Standorte definiert.
+                                        {t('settings.warehouses.empty')}
                                     </td>
                                 </tr>
                             ) : (
                                 warehouses.map(w => {
-                                    const Icon = TYPE_ICONS[w.type] || Package;
+                                    const Icon = {
+                                        pos: Store,
+                                        central: Building,
+                                        virtual: Package
+                                    }[w.type] || Package;
                                     return (
                                         <tr key={w.id} className="hover:bg-accent/40 transition-colors">
                                             <td className="px-4 py-3">
@@ -251,7 +248,7 @@ export function WarehouseManagementPanel() {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 text-muted-foreground">
-                                                {TYPE_LABELS[w.type]}
+                                                {t(`settings.warehouses.types.${w.type}`)}
                                             </td>
                                             <td className="px-4 py-3 text-muted-foreground max-w-[200px] truncate">
                                                 {w.address || '—'}
@@ -259,7 +256,7 @@ export function WarehouseManagementPanel() {
                                             <td className="px-4 py-3 text-right">
                                                 <Button size="sm" variant="ghost" onClick={() => handleEdit(w)}>
                                                     <Edit2 className="h-3.5 w-3.5 mr-1" />
-                                                    Bearbeiten
+                                                    {t('common.edit')}
                                                 </Button>
                                             </td>
                                         </tr>

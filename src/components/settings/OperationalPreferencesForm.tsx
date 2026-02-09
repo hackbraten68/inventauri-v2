@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from '../../i18n/hooks';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -25,17 +26,10 @@ const defaultState: OperationalPreferenceState = {
   version: 0
 };
 
-const weekDayOptions = [
-  { value: 1, label: 'Montag' },
-  { value: 0, label: 'Sonntag' },
-  { value: 2, label: 'Dienstag' },
-  { value: 3, label: 'Mittwoch' },
-  { value: 4, label: 'Donnerstag' },
-  { value: 5, label: 'Freitag' },
-  { value: 6, label: 'Samstag' }
-];
+// Moved inside component or translated dynamically
 
 export function OperationalPreferencesForm() {
+  const { t } = useTranslation();
   const [state, setState] = useState(defaultState);
   const [baseline, setBaseline] = useState(defaultState);
   const [loading, setLoading] = useState(true);
@@ -54,7 +48,7 @@ export function OperationalPreferencesForm() {
         const response = await fetch('/api/settings/operational');
         const body = await response.json();
         if (!response.ok) {
-          throw new Error(body.error ?? body.message ?? 'Einstellungen konnten nicht geladen werden.');
+          throw new Error(body.error ?? body.message ?? t('common.error'));
         }
         if (active) {
           setState(body);
@@ -62,7 +56,7 @@ export function OperationalPreferencesForm() {
         }
       } catch (cause) {
         if (active) {
-          setError(cause instanceof Error ? cause.message : 'Unbekannter Fehler.');
+          setError(cause instanceof Error ? cause.message : t('common.error'));
         }
       } finally {
         if (active) setLoading(false);
@@ -104,13 +98,13 @@ export function OperationalPreferencesForm() {
         });
         const body = await response.json();
         if (!response.ok) {
-          throw new Error(body.error ?? body.message ?? 'Speichern fehlgeschlagen.');
+          throw new Error(body.error ?? body.message ?? t('common.error'));
         }
         setState(body);
         setBaseline(body);
-        setSuccess('Betriebliche Vorgaben aktualisiert.');
+        setSuccess(t('settings.operational.success'));
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Unbekannter Fehler beim Speichern.');
+        setError(cause instanceof Error ? cause.message : t('common.error'));
       } finally {
         setSaving(false);
       }
@@ -122,20 +116,20 @@ export function OperationalPreferencesForm() {
     <form className="space-y-6" onSubmit={handleSubmit}>
       <fieldset className="space-y-4" disabled={loading || saving}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <FormField label="Standardwährung" id="currency" value={state.currencyCode} onChange={onChange('currencyCode')} />
-          <FormField label="Zeitzone" id="timezone" value={state.timezone} onChange={onChange('timezone')} />
+          <FormField label={t('settings.operational.currency')} id="currency" value={state.currencyCode} onChange={onChange('currencyCode')} />
+          <FormField label={t('settings.operational.timezone')} id="timezone" value={state.timezone} onChange={onChange('timezone')} />
           <SelectField
-            label="Einheitensystem"
+            label={t('settings.operational.unitSystem')}
             id="unitSystem"
             value={state.unitSystem}
             onChange={onChange('unitSystem')}
             options={[
-              { value: 'metric', label: 'Metrisch (kg, m, °C)' },
-              { value: 'imperial', label: 'Imperial (lb, ft, °F)' }
+              { value: 'metric', label: t('settings.operational.metric') },
+              { value: 'imperial', label: t('settings.operational.imperial') }
             ]}
           />
           <FormField
-            label="Standard Genauigkeit"
+            label={t('settings.operational.precision')}
             id="precision"
             type="number"
             min={0}
@@ -144,11 +138,19 @@ export function OperationalPreferencesForm() {
             onChange={onChange('defaultUnitPrecision')}
           />
           <SelectField
-            label="Wochenbeginn"
+            label={t('settings.operational.weekStart')}
             id="weekStart"
             value={state.fiscalWeekStart.toString()}
             onChange={onChange('fiscalWeekStart')}
-            options={weekDayOptions.map((option) => ({ value: option.value.toString(), label: option.label }))}
+            options={[
+              { value: '1', label: t('settings.operational.days.monday') },
+              { value: '2', label: t('settings.operational.days.tuesday') },
+              { value: '3', label: t('settings.operational.days.wednesday') },
+              { value: '4', label: t('settings.operational.days.thursday') },
+              { value: '5', label: t('settings.operational.days.friday') },
+              { value: '6', label: t('settings.operational.days.saturday') },
+              { value: '0', label: t('settings.operational.days.sunday') }
+            ]}
           />
           <div className="flex items-center gap-2">
             <input
@@ -158,7 +160,7 @@ export function OperationalPreferencesForm() {
               checked={state.autoApplyTaxes}
               onChange={onChange('autoApplyTaxes')}
             />
-            <Label htmlFor="autoTaxes">Steuern automatisch anwenden</Label>
+            <Label htmlFor="autoTaxes">{t('settings.operational.autoApplyTaxes')}</Label>
           </div>
         </div>
       </fieldset>
@@ -167,7 +169,7 @@ export function OperationalPreferencesForm() {
         <div className="space-y-1 text-sm">
           {error ? <p className="text-destructive">{error}</p> : null}
           {success && !error ? <p className="text-emerald-600">{success}</p> : null}
-          {isDirty ? <p className="text-muted-foreground">Ungespeicherte Änderungen vorhanden.</p> : null}
+          {isDirty ? <p className="text-muted-foreground">{t('settings.businessProfile.unsavedChanges')}</p> : null}
         </div>
         <div className="flex gap-2">
           <Button
@@ -180,10 +182,10 @@ export function OperationalPreferencesForm() {
               setSuccess(null);
             }}
           >
-            Änderungen verwerfen
+            {t('settings.businessProfile.discard')}
           </Button>
           <Button type="submit" disabled={!isDirty || saving}>
-            {saving ? 'Speichert …' : 'Speichern'}
+            {saving ? t('settings.businessProfile.saving') : t('settings.businessProfile.save')}
           </Button>
         </div>
       </div>

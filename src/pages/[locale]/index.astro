@@ -1,0 +1,63 @@
+---
+import '../../styles/global.css';
+import { Button } from '../../components/ui/button';
+import { getTranslationFunction, getLocaleAttributes } from '../../i18n/astro';
+import type { Locale } from '../../i18n/constants';
+
+const locale = Astro.params.locale as Locale || 'en';
+const t = getTranslationFunction(Astro);
+const localeAttrs = getLocaleAttributes(locale);
+---
+
+<html {...localeAttrs}>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Inventauri – Micro-Shop Inventory</title>
+  </head>
+  <body class="min-h-screen bg-background text-foreground">
+    <div class="container mx-auto flex min-h-screen flex-col items-center justify-center gap-14 py-24">
+      <div class="max-w-xl text-center">
+        <span class="text-xs uppercase tracking-[0.35em] text-muted-foreground">Inventauri</span>
+        <h1 class="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
+          {locale === 'de' ? 'Leichtgewichtiges Inventar für Micro-Shops' : 'Lightweight Inventory for Micro-Shops'}
+        </h1>
+        <p class="mt-4 text-base text-muted-foreground sm:text-lg">
+          {locale === 'de' 
+            ? 'Verwalte Artikel, tracke Bestände und verkaufe direkt aus dem Browser. Dieses Setup liefert dir das Grundgerüst mit PocketBase Auth und Shadcn UI Komponenten – bereit für deine individuelle Logik.'
+            : 'Manage items, track inventory and sell directly from your browser. This setup provides you with the basic framework with PocketBase Auth and Shadcn UI components – ready for your custom logic.'
+          }
+        </p>
+      </div>
+      <div class="flex flex-col items-center gap-6 sm:flex-row">
+        <Button client:load size="lg" className="shadow-lg">
+          <a href={`/${locale}/login`}>{locale === 'de' ? 'Zum Login' : 'Go to Login'}</a>
+        </Button>
+        <a href={`/${locale}/dashboard`} class="text-sm text-muted-foreground underline-offset-4 hover:underline">
+          {locale === 'de' ? 'Dashboard Vorschau ansehen' : 'View Dashboard Preview'}
+        </a>
+      </div>
+      <div class="grid w-full max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="rounded-lg border border-dashed border-border p-4">
+          <p class="text-sm font-semibold">{locale === 'de' ? 'Realtime Lagerstände' : 'Real-time Inventory'}</p>
+          <p class="mt-2 text-xs text-muted-foreground">
+            {locale === 'de' ? 'Placeholder für KPIs & Alerts' : 'Placeholder for KPIs & Alerts'}
+          </p>
+        </div>
+        <div class="rounded-lg border border-dashed border-border p-4">
+          <p class="text-sm font-semibold">{locale === 'de' ? 'POS Schnellerfassung' : 'POS Quick Entry'}</p>
+          <p class="mt-2 text-xs text-muted-foreground">
+            {locale === 'de' ? 'Registrierkasse Workflows, Rabattlogik, Zahlarten' : 'Cash register workflows, discount logic, payment methods'}
+          </p>
+        </div>
+        <div class="rounded-lg border border-dashed border-border p-4">
+          <p class="text-sm font-semibold">{locale === 'de' ? 'Artikelkatalog' : 'Item Catalog'}</p>
+          <p class="mt-2 text-xs text-muted-foreground">
+            {locale === 'de' ? 'Varianten, Lieferanten, Mindestbestände' : 'Variants, suppliers, minimum stock levels'}
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

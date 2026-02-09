@@ -1,0 +1,510 @@
+{
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "add": "Hinzufügen",
+    "search": "Suchen",
+    "filter": "Filter",
+    "loading": "Laden...",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "confirm": "Bestätigen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "close": "Schließen",
+    "details": "Details",
+    "to": "bis"
+  },
+  "auth": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "loginFailed": "Login fehlgeschlagen",
+    "loginInProgress": "Anmeldung läuft",
+    "loginSuccess": "Login erfolgreich",
+    "logoutInProgress": "Wird abgemeldet",
+    "logoutFailed": "Abmeldung fehlgeschlagen",
+    "welcomeBack": "Willkommen zurück",
+    "loginToInventauri": "Melde dich bei Inventauri an"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "totalInventory": "Gesamt Inventar",
+    "posWarehouse": "POS / Warehouse",
+    "itemManagement": "Artikelverwaltung",
+    "addItem": "Artikel anlegen",
+    "settings": "Einstellungen",
+    "descriptions": {
+      "dashboard": "Kennzahlen & Trends",
+      "totalInventory": "Artikelübersicht & Lagerbestände",
+      "posWarehouse": "Schnelle Buchungen & Warenausgang",
+      "itemManagement": "Produkte, Varianten & Lieferanten",
+      "addItem": "Neue Produkte erfassen"
+    }
+  },
+  "layout": {
+    "quickSearch": "Schnellsuche",
+    "myAccount": "Mein Konto",
+    "profile": "Profil",
+    "appearance": "Erscheinungsbild"
+  },
+  "pos": {
+    "title": "Point of Sale",
+    "subtitle": "Wähle Artikel, ergänze Mengen und buche Verkäufe oder Retouren direkt ins System",
+    "description": "Schnelle Verkäufe und Warenausgänge erfassen",
+    "addLocation": "POS hinzufügen",
+    "selectWarehouse": "POS Lager",
+    "noWarehouse": "Noch kein POS-Lager vorhanden. Lege eines im Inventar-Bereich an, um Verkäufe zu buchen.",
+    "modes": {
+      "sale": "Verkauf",
+      "return": "Retoure"
+    },
+    "search": {
+      "placeholder": "SKU scannen oder Artikel suchen (Enter zum Hinzufügen)",
+      "clear": "Löschen"
+    },
+    "quickSelect": "Schnellauswahl",
+    "allItems": "Alle Artikel",
+    "noItemsFound": "Keine Artikel gefunden",
+    "stock": {
+      "standard": "Standard",
+      "inStock": "vorhanden"
+    },
+    "cart": {
+      "title": "Warenkorb",
+      "clear": "Leeren",
+      "isEmpty": "Warenkorb ist aktuell leer",
+      "scanOrSelect": "Scanne einen Artikel oder wähle einen aus der Liste"
+    },
+    "checkout": {
+      "total": "Zwischensumme",
+      "subtotal": "Zwischensumme",
+      "amount": "Anzahl",
+      "empty": "Warenkorb ist leer",
+      "processing": "Verarbeitung...",
+      "complete": "Verkauf abschließen"
+    },
+    "sale": {
+      "added": "\"{name}\" hinzugefügt",
+      "error": "Warenkorb ist leer",
+      "success": "Verkauf erfolgreich gebucht. Referenz: {reference}"
+    },
+    "return": {
+      "lookup": {
+        "title": "Rückgabe anhand Belegnummer",
+        "inputPlaceholder": "Referenz eingeben oder scannen",
+        "noReference": "Bitte Referenz eingeben",
+        "loadButton": "Referenz laden",
+        "notFound": "Keine Verkäufe zu dieser Referenz gefunden",
+        "wrongWarehouse": "Diese Referenz gehört zu einem anderen POS-Lager",
+        "found": "Verkauf gefunden. Bitte Mengen prüfen und Rückgabe buchen",
+        "loadError": "Referenz konnte nicht geladen werden"
+      },
+      "process": {
+        "title": "Rückgabe von Verkaufspositionen",
+        "noReference": "Bitte zuerst eine Referenz laden",
+        "noQuantities": "Keine Mengen für die Rückgabe ausgewählt",
+        "noData": "Noch keine Referenz geladen",
+        "itemOverReturn": "Rückgabemenge für {name} übersteigt den Verkauf",
+        "success": "Rückgabe erfolgreich eingebucht",
+        "error": "Rückgabe fehlgeschlagen"
+      },
+      "quantityLabel": "Rückgabemenge",
+      "reasonPlaceholder": "Grund der Rückgabe (optional)",
+      "returnButton": "Rückgabe buchen",
+      "processing": "Verarbeitung...",
+      "returning": "Rückgabe",
+      "soldInfo": "Verkauft: {quantity} {unit}",
+      "book": "Rückgabe buchen",
+      "noReferenceLoaded": "Noch keine Referenz geladen"
+    }
+  },
+  "items": {
+    "masterData": "Stammdaten",
+    "sku": "SKU",
+    "title": "Artikel",
+    "description": "Alle Artikel inklusive Bestände pro Lager",
+    "createNew": "Neuen Artikel anlegen",
+    "createTitle": "Neuen Artikel anlegen",
+    "createDescription": "Neuen Artikel zum Inventar hinzufügen",
+    "delete": {
+      "confirm": "Artikel \"{name}\" wirklich löschen?",
+      "loading": "Lösche...",
+      "button": "Löschen"
+    },
+    "form": {
+      "name": "Artikelname",
+      "sku": "SKU",
+      "barcode": "Barcode",
+      "unit": "Einheit",
+      "supplier": "Lieferant",
+      "description": "Beschreibung",
+      "priceAndStock": "Preis & Bestand",
+      "price": "Preis",
+      "initialStock": "Startbestand",
+      "warehouse": "Lager für Startbestand",
+      "selectWarehouse": "Bitte wählen",
+      "noWarehouses": "Noch keine Lager vorhanden. Lege zuerst ein Lager im Inventar an.",
+      "reset": "Zurücksetzen",
+      "save": "Artikel speichern",
+      "saving": "Speichert...",
+      "namePlaceholder": "Kaffeebohnen",
+      "skuPlaceholder": "KAFFEE-250",
+      "barcodePlaceholder": "Scan Code",
+      "unitPlaceholder": "z.B. stk, kg",
+      "supplierPlaceholder": "z.B. Rösterei XYZ",
+      "descriptionPlaceholder": "Kurzbeschreibung, Verkaufsargumente",
+      "pricePlaceholder": "0,00",
+      "stockPlaceholder": "0",
+      "nameRequired": "Name ist erforderlich",
+      "stockMustBeNumber": "Bestand muss eine Zahl sein",
+      "warehouseRequired": "Lager für Startbestand erforderlich",
+      "error": "Artikel konnte nicht erstellt werden",
+      "created": "Artikel erfolgreich erstellt",
+      "unknownError": "Unbekannter Fehler",
+      "success": "Lieferant: {supplier}"
+    },
+    "failed": "Löschen fehlgeschlagen.",
+    "success": "Artikel gelöscht. Inventar aktualisiert.",
+    "error": "Artikel konnte nicht gelöscht werden."
+  },
+  "inventory": {
+    "warehouse": {
+      "selectPlaceholder": "Lager auswählen...",
+      "overview": "Lagerübersicht",
+      "selectSource": "Quelllager auswählen",
+      "selectTarget": "Ziellager auswählen",
+      "noSelection": "Bitte Lager auswählen",
+      "sameWarehouse": "Quelle und Ziel müssen unterschiedlich sein",
+      "posLocations": "POS Standorte",
+      "activePosLocations": "Aktive POS Standorte"
+    },
+    "table": {
+      "item": "Artikel",
+      "available": "Verfügbar",
+      "sku": "SKU",
+      "total": "Gesamt",
+      "reserved": "Reserviert",
+      "actions": "Aktionen"
+    },
+    "messages": {
+      "noItemsWithStock": "Noch keine Artikel mit Bestand.",
+      "historyLoading": "Lade Historie...",
+      "unknownError": "Unbekannter Fehler."
+    },
+    "form": {
+      "quantityPlaceholder": "z.B. -2 oder 5",
+      "referencePlaceholder": "z.B. Referenznummer",
+      "notesLabel": "Notiz:",
+      "quantity": "Menge",
+      "reference": "Referenz",
+      "notes": "Notizen",
+      "submit": "Absenden"
+    },
+    "title": "Bestandsverwaltung",
+    "subtitle": "Lagerbestände und Korrekturen verwalten",
+    "actions": {
+      "transfer": "Umlagerung",
+      "inbound": "Wareneingang",
+      "sale": "Verkauf",
+      "writeoff": "Abschreibung",
+      "donation": "Spende",
+      "return": "Retoure",
+      "adjust": "Korrektur"
+    },
+    "validation": {
+      "validQuantity": "Bitte eine gültige Menge eingeben",
+      "quantityGreaterThanZero": "Menge muss größer als 0 sein",
+      "warehousesRequired": "Bitte beide Lager auswählen",
+      "selectSource": "Bitte Quelllager auswählen",
+      "selectTarget": "Bitte Ziellager auswählen"
+    },
+    "status": {
+      "loading": "Laden...",
+      "success": "Aktion erfolgreich ausgeführt",
+      "error": "Aktion fehlgeschlagen"
+    },
+    "history": {
+      "title": "Kürzliche Transaktionen",
+      "noHistory": "Keine Historie vorhanden",
+      "empty": "Keine Daten anzuzeigen"
+    },
+    "search": {
+      "placeholder": "Suche nach Name oder SKU",
+      "noResults": "Keine Artikel gefunden"
+    },
+    "stats": {
+      "totalItems": "Gesamte Artikel",
+      "totalValue": "Gesamtwert"
+    }
+  },
+  "settings": {
+    "tabs": {
+      "businessProfile": {
+        "label": "Geschäftsprofil",
+        "caption": "Firmendaten & Kontakte",
+        "heading": "Geschäftsprofil",
+        "description": "Verwalte Stammdaten, Kontakte und Dokumentenangaben für dein Unternehmen."
+      },
+      "operationalPreferences": {
+        "label": "Betriebliche Vorgaben",
+        "caption": "Währung, Zeitzone, Einheiten",
+        "heading": "Betriebliche Einstellungen",
+        "description": "Definiere Standardwerte für Preise, Zeitzonen und Maßeinheiten, damit Berichte konsistent bleiben."
+      },
+      "notifications": {
+        "label": "Benachrichtigungen",
+        "caption": "Alerts & Empfänger",
+        "heading": "Benachrichtigungen & Empfänger",
+        "description": "Steuere, welche Warnungen aktiv sind und wer sie erhält."
+      },
+      "staffAccess": {
+        "label": "Team & Zugriff",
+        "caption": "Einladungen & Rollen",
+        "heading": "Teamverwaltung & Zugriffsrechte",
+        "description": "Verwalte Einladungen, Rollen und Deaktivierungen für dein Team."
+      },
+      "auditLog": {
+        "label": "Protokolle",
+        "caption": "Änderungsverlauf",
+        "heading": "Audit Log",
+        "description": "Überwache Änderungen an Einstellungen für volle Nachvollziehbarkeit."
+      },
+      "locations": {
+        "label": "Standorte & Lager",
+        "caption": "POS & Zentrallager",
+        "heading": "Standorte & Lagerverwaltung",
+        "description": "Erstelle und verwalte Verkaufsstellen (POS) und Lagerorte."
+      }
+    },
+    "businessProfile": {
+      "title": "Geschäftsprofil",
+      "description": "Verwalte Firmendaten für Rechnungen und Belege.",
+      "legalName": "Offizielle Firmenbezeichnung",
+      "displayName": "Anzeigename (Shop-Name)",
+      "taxId": "USt-IdNr. / Steuernummer",
+      "email": "Kontakt-E-Mail",
+      "phone": "Telefonnummer",
+      "website": "Webseite",
+      "address": "Straße & Hausnummer",
+      "addressLine2": "Adresszusatz",
+      "postalCode": "Postleitzahl",
+      "city": "Stadt",
+      "country": "Ländercode (ISO)",
+      "unsavedChanges": "Du hast ungespeicherte Änderungen.",
+      "discard": "Verwerfen",
+      "save": "Profil speichern",
+      "saving": "Speichert...",
+      "success": "Profil erfolgreich aktualisiert.",
+      "placeholders": {
+        "taxId": "z.B. DE123456789",
+        "phone": "z.B. +49 30 123456",
+        "website": "https://beispiel.de"
+      }
+    },
+    "operational": {
+      "currency": "Standardwährung",
+      "timezone": "Zeitzone",
+      "unitSystem": "Einheitensystem",
+      "metric": "Metrisch (kg, m, °C)",
+      "imperial": "Imperial (lb, ft, °F)",
+      "precision": "Standard Genauigkeit",
+      "weekStart": "Wochenbeginn",
+      "autoApplyTaxes": "Steuern automatisch anwenden",
+      "days": {
+        "monday": "Montag",
+        "sunday": "Sonntag",
+        "tuesday": "Dienstag",
+        "wednesday": "Mittwoch",
+        "thursday": "Donnerstag",
+        "friday": "Freitag",
+        "saturday": "Samstag"
+      },
+      "success": "Betriebliche Vorgaben aktualisiert."
+    },
+    "warehouses": {
+      "title": "Standorte & Lager",
+      "subtitle": "Verwalte deine physischen und virtuellen Lagerorte.",
+      "new": "Neuer Standort",
+      "edit": "Standort bearbeiten",
+      "create": "Neuen Standort anlegen",
+      "name": "Name des Standorts",
+      "type": "Typ",
+      "address": "Adresse (Optional)",
+      "contactName": "Ansprechpartner",
+      "contactEmail": "Kontakt E-Mail",
+      "types": {
+        "pos": "Physischer Standort (POS)",
+        "central": "Zentrallager",
+        "virtual": "Virtuell"
+      },
+      "placeholders": {
+        "name": "z.B. Store Berlin Mitte",
+        "address": "Musterstr. 123, 10115 Berlin",
+        "contactName": "Max Mustermann",
+        "contactEmail": "pos@inventauri.app"
+      },
+      "empty": "Noch keine Standorte definiert.",
+      "loading": "Wird geladen...",
+      "success": "Standort \"{name}\" wurde {action}.",
+      "created": "erstellt",
+      "updated": "aktualisiert"
+    },
+    "audit": {
+      "title": "Audit Logs",
+      "loading": "Lade Audit-Logs …",
+      "empty": "Noch keine Audit-Logs vorhanden.",
+      "section": "Bereich",
+      "all": "Alle",
+      "refresh": "Aktualisieren",
+      "sections": {
+        "business_profile": "Geschäftsprofil",
+        "operational": "Betrieb",
+        "notifications": "Benachrichtigungen",
+        "staff": "Team"
+      },
+      "actions": {
+        "create": "Angelegt",
+        "update": "Aktualisiert",
+        "delete": "Gelöscht",
+        "deactivate": "Deaktiviert"
+      }
+    },
+    "staff": {
+      "loading": "Lade Team …",
+      "empty": "Keine Teammitglieder gefunden",
+      "status": "Status: {status}",
+      "role": "Rolle",
+      "email": "E-Mail",
+      "reactivate": "Reaktivieren",
+      "deactivate": "Deaktivieren",
+      "invite": "Einladung senden",
+      "roles": {
+        "owner": "Owner",
+        "manager": "Manager",
+        "staff": "Mitarbeiter"
+      }
+    },
+    "notifications": {
+      "loading": "Lade Benachrichtigungen …",
+      "empty": "Keine Benachrichtigungen konfiguriert.",
+      "channel": "Kanal: {channel}",
+      "active": "Aktiv",
+      "recipients": "Empfänger",
+      "noRecipients": "Noch keine Empfänger zugeordnet.",
+      "emailPlaceholder": "E-Mail",
+      "userShopIdPlaceholder": "UserShop-ID",
+      "addRecipient": "Empfänger hinzufügen"
+    }
+  },
+  "onboarding": {
+    "infrastructure": {
+      "pos": {
+        "title": "POS Demo-Standort",
+        "description": "Erstellt einen Beispiel-Verkaufsort in der Innenstadt."
+      },
+      "items": {
+        "title": "Beispiel Produkte & Bestände",
+        "description": "Füllt Ihr Inventar mit Kaffeebohnen & Zubehör."
+      },
+      "finish": "Setup abschließen",
+      "processing": "Instanz wird konfiguriert..."
+    },
+    "success": {
+      "title": "Installation Fertig!",
+      "description": "Ihr Inventauri Dashboard ist nun einsatzbereit. Wir haben Ihren Admin-Account und das Unternehmen erstellt.",
+      "login": "Zum Login",
+      "hint": "Hinweis: Melden Sie sich mit den eben erstellten Zugangsdaten an."
+    },
+    "footer": "Inventauri Self-Hosted Engine v0.1.0-alpha",
+    "steps": {
+      "admin": "Admin",
+      "shop": "Shop",
+      "infrastructure": "System"
+    },
+    "admin": {
+      "title": "Eigentümer (CEO) erstellen",
+      "description": "Erstellen Sie den Hauptzugang für Ihr Unternehmen. Dieser Account wird für den täglichen Betrieb genutzt.",
+      "email": "Admin E-Mail",
+      "emailPlaceholder": "admin@firma.de",
+      "password": "Passwort",
+      "confirm": "Bestätigen",
+      "passwordMismatch": "Passwörter stimmen nicht überein.",
+      "next": "Weiter zum Unternehmen"
+    },
+    "shop": {
+      "title": "Unternehmensprofil",
+      "description": "Geben Sie die Basisdaten Ihres Shops oder Unternehmens an. Diese erscheinen später auf Belegen und in den Berichten.",
+      "name": "Shop Name",
+      "namePlaceholder": "z.B. Coffee Roastery HQ",
+      "legalName": "Rechtlicher Name (Optional)",
+      "legalNamePlaceholder": "Müller & Co. OHG",
+      "address": "Firmenadresse",
+      "addressPlaceholder": "Straße, Hausnummer, PLZ & Stadt",
+      "next": "Lager & POS konfigurieren",
+      "back": "Zurück"
+    },
+    "errors": {
+      "invalidResponse": "Ungültige Antwort vom Server.",
+      "updateFailed": "Aktualisierung fehlgeschlagen.",
+      "unknownError": "Unbekannter Fehler beim Speichern.",
+      "recipientAddFailed": "Empfänger konnte nicht hinzugefügt werden.",
+      "recipientRemoveFailed": "Empfänger konnte nicht entfernt werden."
+    },
+    "defaults": {
+      "recipient": "Empfänger"
+    }
+  },
+  "dashboard": {
+    "title": "Geschäftsüberblick",
+    "subtitle": "Echtzeit-Überwachung Ihrer Bestandsleistung.",
+    "chartPeriod": {
+      "7days": "7 Tage",
+      "14days": "14 Tage",
+      "30days": "30 Tage"
+    },
+    "sales": {
+      "revenue": "Umsatz",
+      "quantity": "Verkäufe (Stk)",
+      "orders": "Bestellungen",
+      "avgBasket": "Warenkorb Ø",
+      "revenueDescription": "Umsatz im gewählten Zeitraum",
+      "unitsDescription": "Verkaufte Einheiten im gewählten Zeitraum",
+      "ordersDescription": "Bestellungen im gewählten Zeitraum",
+      "aovDescription": "Durchschnittlicher Warenkorbwert",
+      "vsPreviousPeriod": "vs. Vorperiode",
+      "totalInventoryValue": "Aktueller Gesamtwert des Inventars",
+      "totalUnits": "Physische Einheiten gesamt"
+    },
+    "settings": {},
+    "stats": {
+      "totalValue": "Gesamtwert"
+    },
+    "inventory": {
+      "itemCount": "Gesamte Artikel"
+    },
+    "topSold": {
+      "title": "Top-Seller",
+      "noData": "Noch keine Verkaufsdaten verfügbar."
+    },
+    "activities": {
+      "title": "Kürzliche Aktivitäten",
+      "subtitle": "Neueste Bestandsbewegungen und Verkäufe.",
+      "loadingTransactions": "Lade Transaktionen..."
+    },
+    "health": {
+      "title": "Bestandsgesundheit",
+      "subtitle": "Kritische Lagerbestände",
+      "critical": "Kritisch",
+      "threshold": "Grenzwert",
+      "allGood": "Alles im grünen Bereich"
+    },
+    "error": {
+      "noComparisonData": "Keine Daten"
+    }
+  }
+}

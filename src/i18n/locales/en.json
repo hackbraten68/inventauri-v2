@@ -1,0 +1,520 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "details": "Details",
+    "to": "to"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "loginFailed": "Login failed",
+    "loginInProgress": "Logging in...",
+    "loginSuccess": "Login successful",
+    "logoutInProgress": "Logging out...",
+    "logoutFailed": "Logout failed",
+    "welcomeBack": "Welcome back",
+    "loginToInventauri": "Login to Inventauri"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "totalInventory": "Total Inventory",
+    "posWarehouse": "POS / Warehouse",
+    "itemManagement": "Item Management",
+    "addItem": "Add Item",
+    "settings": "Settings",
+    "descriptions": {
+      "dashboard": "Metrics & Trends",
+      "totalInventory": "Item Overview & Stock Levels",
+      "posWarehouse": "Quick Sales & Outbound",
+      "itemManagement": "Products, Variants & Suppliers",
+      "addItem": "Register New Products"
+    }
+  },
+  "layout": {
+    "quickSearch": "Quick search",
+    "myAccount": "My Account",
+    "profile": "Profile",
+    "appearance": "Appearance"
+  },
+  "pos": {
+    "title": "Point of Sale",
+    "subtitle": "Select items, add quantities and process sales or returns",
+    "description": "Quick sales and stock removal processing",
+    "addLocation": "Add Location",
+    "selectWarehouse": "POS Warehouse",
+    "noWarehouse": "No POS warehouse available. Create one in the inventory area to process sales.",
+    "modes": {
+      "sale": "Sale",
+      "return": "Return"
+    },
+    "search": {
+      "placeholder": "Scan SKU or search item (Enter to add)",
+      "clear": "Clear"
+    },
+    "quickSelect": "Quick Select",
+    "allItems": "All Items",
+    "noItemsFound": "No items found",
+    "stock": {
+      "standard": "Standard",
+      "inStock": "in stock"
+    },
+    "cart": {
+      "title": "Shopping Cart",
+      "clear": "Clear",
+      "isEmpty": "Cart is currently empty",
+      "scanOrSelect": "Scan an item or select one from the list"
+    },
+    "checkout": {
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "amount": "Amount",
+      "empty": "Cart is empty",
+      "processing": "Processing...",
+      "complete": "Complete Sale"
+    },
+    "sale": {
+      "added": "\"{name}\" added to cart",
+      "error": "Cart is empty",
+      "success": "Sale successfully booked. Reference: {reference}"
+    },
+    "return": {
+      "lookup": {
+        "title": "Return by reference number",
+        "inputPlaceholder": "Enter or scan reference",
+        "noReference": "Please enter reference",
+        "loadButton": "Load Reference",
+        "notFound": "No sales found for this reference",
+        "wrongWarehouse": "This reference belongs to another POS warehouse",
+        "found": "Sale found. Please check quantities and process return",
+        "loadError": "Reference could not be loaded"
+      },
+      "process": {
+        "title": "Return items from sale",
+        "noReference": "Please enter a reference first",
+        "noQuantities": "No quantities selected for return",
+        "noData": "No reference loaded yet",
+        "itemsFromSale": "Position(s) from sale",
+        "itemOverReturn": "Return quantity for {name} exceeds sold quantity",
+        "success": "Return successfully booked",
+        "error": "Return failed"
+      },
+      "quantityLabel": "Return quantity",
+      "reasonPlaceholder": "Reason for return (optional)",
+      "returnButton": "Process Return",
+      "processing": "Processing...",
+      "returning": "Returning",
+      "soldInfo": "Sold: {quantity} {unit}",
+      "book": "Book Return",
+      "noReferenceLoaded": "No reference loaded yet"
+    },
+    "error": {
+      "prefix": "Error:"
+    }
+  },
+  "items": {
+    "masterData": "Master Data",
+    "sku": "SKU",
+    "title": "Items",
+    "description": "All items including stock levels per warehouse",
+    "createNew": "Create New Item",
+    "createTitle": "Create New Item",
+    "createDescription": "Add a new item to your inventory",
+    "delete": {
+      "confirm": "Really delete item \"{name}\"?",
+      "loading": "Deleting...",
+      "button": "Delete"
+    },
+    "form": {
+      "name": "Item Name",
+      "sku": "SKU",
+      "barcode": "Barcode",
+      "unit": "Unit",
+      "supplier": "Supplier",
+      "description": "Description",
+      "priceAndStock": "Price & Stock",
+      "price": "Price",
+      "initialStock": "Initial Stock",
+      "warehouse": "Warehouse for Initial Stock",
+      "selectWarehouse": "Please select",
+      "noWarehouses": "No warehouses defined yet. Create one in the inventory section first.",
+      "reset": "Reset",
+      "save": "Save Item",
+      "saving": "Saving...",
+      "namePlaceholder": "Coffee Beans",
+      "skuPlaceholder": "COFFEE-250",
+      "barcodePlaceholder": "Scan Code",
+      "unitPlaceholder": "e.g. pcs, kg",
+      "supplierPlaceholder": "e.g. Roastery XYZ",
+      "descriptionPlaceholder": "Short description, sales points",
+      "pricePlaceholder": "0.00",
+      "stockPlaceholder": "0",
+      "nameRequired": "Name is required",
+      "stockMustBeNumber": "Stock must be a valid number",
+      "warehouseRequired": "Warehouse required for initial stock",
+      "error": "Failed to create item",
+      "created": "Item created successfully",
+      "unknownError": "Unknown error occurred",
+      "success": "Supplier: {supplier}"
+    },
+    "failed": "Delete failed.",
+    "success": "Item deleted. Inventory updated.",
+    "error": "Item could not be deleted."
+  },
+  "inventory": {
+    "warehouse": {
+      "selectPlaceholder": "Select warehouse...",
+      "overview": "Warehouse Overview",
+      "selectSource": "Select source warehouse",
+      "selectTarget": "Select target warehouse",
+      "noSelection": "Please select warehouses",
+      "sameWarehouse": "Source and target must be different warehouses",
+      "posLocations": "POS Locations",
+      "activePosLocations": "Active POS Locations"
+    },
+    "table": {
+      "item": "Item",
+      "available": "Available",
+      "sku": "SKU",
+      "total": "Total",
+      "reserved": "Reserved",
+      "actions": "Actions"
+    },
+    "messages": {
+      "noItemsWithStock": "No items with stock yet.",
+      "historyLoading": "Loading history...",
+      "unknownError": "Unknown error."
+    },
+    "form": {
+      "quantityPlaceholder": "e.g. -2 or 5",
+      "referencePlaceholder": "e.g. Reference number",
+      "notesLabel": "Note:",
+      "quantity": "Quantity",
+      "reference": "Reference",
+      "notes": "Notes",
+      "submit": "Submit"
+    },
+    "title": "Inventory Management",
+    "subtitle": "Manage stock transfers and adjustments",
+    "actions": {
+      "transfer": "Transfer",
+      "inbound": "Receive",
+      "sale": "Sell",
+      "writeoff": "Write-off",
+      "donation": "Donation",
+      "return": "Return",
+      "adjust": "Adjust"
+    },
+    "validation": {
+      "validQuantity": "Please enter a valid quantity",
+      "quantityGreaterThanZero": "Quantity must be greater than 0",
+      "warehousesRequired": "Please select both warehouses",
+      "selectSource": "Please select a source warehouse",
+      "selectTarget": "Please select a target warehouse"
+    },
+    "status": {
+      "loading": "Loading...",
+      "success": "Action completed successfully",
+      "error": "Action failed"
+    },
+    "history": {
+      "title": "Recent Transactions",
+      "noHistory": "No transaction history",
+      "empty": "No data to display"
+    },
+    "search": {
+      "placeholder": "Search by item name or SKU",
+      "noResults": "No items found"
+    },
+    "stats": {
+      "totalItems": "Total Items",
+      "totalValue": "Total Value"
+    }
+  },
+  "settings": {
+    "tabs": {
+      "businessProfile": {
+        "label": "Business Profile",
+        "caption": "Company Data & Contacts",
+        "heading": "Business Profile",
+        "description": "Manage master data, contacts and document details for your company."
+      },
+      "operationalPreferences": {
+        "label": "Operational Preferences",
+        "caption": "Currency, Timezone, Units",
+        "heading": "Operational Settings",
+        "description": "Define default values for prices, timezones and units to keep reports consistent."
+      },
+      "notifications": {
+        "label": "Notifications",
+        "caption": "Alerts & Recipients",
+        "heading": "Notifications & Recipients",
+        "description": "Control which alerts are active and who receives them."
+      },
+      "staffAccess": {
+        "label": "Team & Access",
+        "caption": "Invites & Roles",
+        "heading": "Team Management & Access Rights",
+        "description": "Manage invites, roles and deactivations for your team."
+      },
+      "auditLog": {
+        "label": "Logs",
+        "caption": "Change History",
+        "heading": "Audit Log",
+        "description": "Monitor settings changes for full traceability."
+      },
+      "locations": {
+        "label": "Locations & Warehouses",
+        "caption": "POS & Central Warehouse",
+        "heading": "Locations & Warehouse Management",
+        "description": "Create and manage point of sales (POS) and warehouse locations."
+      }
+    },
+    "businessProfile": {
+      "title": "Business Profile",
+      "description": "Manage your company details shown on invoices and receipts.",
+      "legalName": "Legal Company Name",
+      "displayName": "Display Name (Shop Name)",
+      "taxId": "VAT / Tax ID",
+      "email": "Contact Email",
+      "phone": "Phone Number",
+      "website": "Website",
+      "address": "Street & Number",
+      "addressLine2": "Address Line 2",
+      "postalCode": "Postal Code",
+      "city": "City",
+      "country": "Country Code (ISO)",
+      "unsavedChanges": "You have unsaved changes.",
+      "discard": "Discard Changes",
+      "save": "Save Profile",
+      "saving": "Saving...",
+      "success": "Profile updated successfully.",
+      "placeholders": {
+        "taxId": "e.g. DE123456789",
+        "phone": "e.g. +49 30 123456",
+        "website": "https://example.com"
+      }
+    },
+    "operational": {
+      "currency": "Default Currency",
+      "timezone": "Timezone",
+      "unitSystem": "Unit System",
+      "metric": "Metric (kg, m, °C)",
+      "imperial": "Imperial (lb, ft, °F)",
+      "precision": "Default Precision",
+      "weekStart": "Week Start",
+      "autoApplyTaxes": "Automatically apply taxes",
+      "days": {
+        "monday": "Monday",
+        "sunday": "Sunday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday"
+      },
+      "success": "Operational preferences updated."
+    },
+    "warehouses": {
+      "title": "Locations & Warehouses",
+      "subtitle": "Manage your physical and virtual warehouse locations.",
+      "new": "New Location",
+      "edit": "Edit Location",
+      "create": "Create New Location",
+      "name": "Location Name",
+      "type": "Type",
+      "address": "Address (Optional)",
+      "contactName": "Contact Person",
+      "contactEmail": "Contact Email",
+      "types": {
+        "pos": "Physical Store (POS)",
+        "central": "Central Warehouse",
+        "virtual": "Virtual"
+      },
+      "placeholders": {
+        "name": "e.g. Store Berlin Central",
+        "address": "Example St. 123, 10115 Berlin",
+        "contactName": "John Doe"
+      },
+      "empty": "No locations defined yet.",
+      "loading": "Loading...",
+      "success": "Location \"{name}\" was {action}.",
+      "created": "created",
+      "updated": "updated"
+    },
+    "audit": {
+      "title": "Audit Logs",
+      "loading": "Loading Audit Logs...",
+      "empty": "No audit logs available.",
+      "section": "Section",
+      "all": "All",
+      "refresh": "Refresh",
+      "sections": {
+        "business_profile": "Business Profile",
+        "operational": "Operations",
+        "notifications": "Notifications",
+        "staff": "Team"
+      },
+      "actions": {
+        "create": "Created",
+        "update": "Updated",
+        "delete": "Deleted",
+        "deactivate": "Deactivated"
+      }
+    },
+    "staff": {
+      "loading": "Loading Team...",
+      "empty": "No team members found",
+      "status": "Status: {status}",
+      "role": "Role",
+      "email": "Email",
+      "reactivate": "Reactivate",
+      "deactivate": "Deactivate",
+      "invite": "Send Invitation",
+      "roles": {
+        "owner": "Owner",
+        "manager": "Manager",
+        "staff": "Staff"
+      }
+    },
+    "notifications": {
+      "loading": "Loading Notifications...",
+      "empty": "No notifications configured.",
+      "channel": "Channel: {channel}",
+      "active": "Active",
+      "recipients": "Recipients",
+      "noRecipients": "No recipients assigned yet.",
+      "emailPlaceholder": "Email",
+      "userShopIdPlaceholder": "UserShop ID",
+      "addRecipient": "Add Recipient"
+    },
+    "errors": {
+      "invalidResponse": "Invalid response from server.",
+      "updateFailed": "Update failed.",
+      "unknownError": "Unknown error occurred while saving.",
+      "recipientAddFailed": "Could not add recipient.",
+      "recipientRemoveFailed": "Could not remove recipient."
+    },
+    "defaults": {
+      "recipient": "Recipient"
+    }
+  },
+  "onboarding": {
+    "infrastructure": {
+      "title": "Infrastructure & Start Menu",
+      "description": "We automatically create your central warehouse. Do you want to generate additional example data?",
+      "standard": {
+        "title": "Standard HQ & Warehouse",
+        "description": "Always created as main location.",
+        "badge": "Required"
+      },
+      "pos": {
+        "title": "POS Demo Location",
+        "description": "Creates an example point of sale in the city center."
+      },
+      "items": {
+        "title": "Example Products & Stock",
+        "description": "Fills your inventory with coffee beans & accessories."
+      },
+      "finish": "Complete Setup",
+      "processing": "Configuring instance..."
+    },
+    "success": {
+      "title": "Installation Complete!",
+      "description": "Your Inventauri Dashboard is now ready. We have created your admin account and company.",
+      "login": "Go to Login",
+      "hint": "Note: Log in with the credentials just created."
+    },
+    "footer": "Inventauri Self-Hosted Engine v0.1.0-alpha",
+    "steps": {
+      "admin": "Admin",
+      "shop": "Shop",
+      "infrastructure": "System"
+    },
+    "admin": {
+      "title": "Create Owner (CEO)",
+      "description": "Create the main access for your company. This account will be used for daily operations.",
+      "email": "Admin Email",
+      "emailPlaceholder": "admin@company.com",
+      "password": "Password",
+      "confirm": "Confirm",
+      "passwordMismatch": "Passwords do not match.",
+      "next": "Continue to Company"
+    },
+    "shop": {
+      "title": "Company Profile",
+      "description": "Enter the basic data of your shop or company. These appear later on receipts and reports.",
+      "name": "Shop Name",
+      "namePlaceholder": "e.g. Coffee Roastery HQ",
+      "legalName": "Legal Name (Optional)",
+      "legalNamePlaceholder": "Mueller & Co. KG",
+      "address": "Company Address",
+      "addressPlaceholder": "Street, No., Zip & City",
+      "next": "Configure Warehouse & POS",
+      "back": "Back"
+    }
+  },
+  "dashboard": {
+    "title": "Business Overview",
+    "subtitle": "Monitoring your inventory performance in real-time.",
+    "chartPeriod": {
+      "7days": "7 days",
+      "14days": "14 days",
+      "30days": "30 days"
+    },
+    "sales": {
+      "revenue": "Revenue",
+      "quantity": "Sales (Units)",
+      "orders": "Orders",
+      "avgBasket": "Avg Basket",
+      "revenueDescription": "Revenue over selected period",
+      "unitsDescription": "Units sold over selected period",
+      "ordersDescription": "Orders placed over selected period",
+      "aovDescription": "Average Order Value",
+      "vsPreviousPeriod": "vs. previous period",
+      "totalInventoryValue": "Current total inventory value",
+      "totalUnits": "Total physical units"
+    },
+    "settings": {},
+    "stats": {
+      "totalValue": "Total Value"
+    },
+    "inventory": {
+      "itemCount": "Total Items"
+    },
+    "topSold": {
+      "title": "Top Sold Items",
+      "noData": "No sales data available yet."
+    },
+    "activities": {
+      "title": "Recent Activities",
+      "subtitle": "Latest stock movements and sales.",
+      "loadingTransactions": "Loading transactions..."
+    },
+    "health": {
+      "title": "Inventory Health",
+      "subtitle": "Critical Stock Levels",
+      "critical": "Critical",
+      "threshold": "Threshold",
+      "allGood": "All stock levels are healthy"
+    },
+    "error": {
+      "noComparisonData": "No comparison data"
+    }
+  }
+}

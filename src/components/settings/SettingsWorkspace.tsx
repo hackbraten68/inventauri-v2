@@ -1,5 +1,8 @@
-import { useState, type ReactNode, useEffect } from 'react';
+import { useState, type ReactNode, useEffect, useMemo } from 'react';
 import { cn } from '../../lib/utils';
+import { useTranslation } from '../../i18n/hooks';
+import { LocaleProvider } from '../../i18n/context';
+import type { Locale } from '../../i18n/constants';
 import { BusinessProfileForm } from './BusinessProfileForm';
 import { OperationalPreferencesForm } from './OperationalPreferencesForm';
 import { NotificationPreferencesPanel } from './NotificationPreferencesPanel';
@@ -16,58 +19,75 @@ interface TabConfig {
   render: () => ReactNode;
 }
 
-const tabs: TabConfig[] = [
-  {
-    id: 'business-profile',
-    label: 'Geschäftsprofil',
-    caption: 'Firmendaten & Kontakte',
-    heading: 'Geschäftsprofil',
-    description: 'Verwalte Stammdaten, Kontakte und Dokumentenangaben für dein Unternehmen.',
-    render: () => <BusinessProfileForm />
-  },
-  {
-    id: 'operational-preferences',
-    label: 'Betriebliche Vorgaben',
-    caption: 'Währung, Zeitzone, Einheiten',
-    heading: 'Betriebliche Einstellungen',
-    description: 'Definiere Standardwerte für Preise, Zeitzonen und Maßeinheiten, damit Berichte konsistent bleiben.',
-    render: () => <OperationalPreferencesForm />
-  },
-  {
-    id: 'notifications',
-    label: 'Benachrichtigungen',
-    caption: 'Alerts & Empfänger',
-    heading: 'Benachrichtigungen & Empfänger',
-    description: 'Steuere, welche Warnungen aktiv sind und wer sie erhält.',
-    render: () => <NotificationPreferencesPanel />
-  },
-  {
-    id: 'staff-access',
-    label: 'Team & Zugriff',
-    caption: 'Einladungen & Rollen',
-    heading: 'Teamverwaltung & Zugriffsrechte',
-    description: 'Verwalte Einladungen, Rollen und Deaktivierungen für dein Team.',
-    render: () => <StaffManagementPanel />
-  },
-  {
-    id: 'audit-log',
-    label: 'Protokolle',
-    caption: 'Änderungsverlauf',
-    heading: 'Audit Log',
-    description: 'Überwache Änderungen an Einstellungen für volle Nachvollziehbarkeit.',
-    render: () => <AuditLogPanel />
-  },
-  {
-    id: 'locations',
-    label: 'Standorte & Lager',
-    caption: 'POS & Zentrallager',
-    heading: 'Standorte & Lagerverwaltung',
-    description: 'Erstelle und verwalte Verkaufsstellen (POS) und Lagerorte.',
-    render: () => <WarehouseManagementPanel />
-  }
-];
+// Tabs configuration moved inside component to access translation
 
-export function SettingsWorkspace() {
+
+interface SettingsWorkspaceProps {
+  locale: Locale;
+}
+
+export function SettingsWorkspace({ locale }: SettingsWorkspaceProps) {
+  return (
+    <LocaleProvider locale={locale}>
+      <SettingsWorkspaceContent />
+    </LocaleProvider>
+  );
+}
+
+function SettingsWorkspaceContent() {
+  const { t } = useTranslation();
+
+  const tabs: TabConfig[] = useMemo(() => [
+    {
+      id: 'business-profile',
+      label: t('settings.tabs.businessProfile.label'),
+      caption: t('settings.tabs.businessProfile.caption'),
+      heading: t('settings.tabs.businessProfile.heading'),
+      description: t('settings.tabs.businessProfile.description'),
+      render: () => <BusinessProfileForm />
+    },
+    {
+      id: 'operational-preferences',
+      label: t('settings.tabs.operationalPreferences.label'),
+      caption: t('settings.tabs.operationalPreferences.caption'),
+      heading: t('settings.tabs.operationalPreferences.heading'),
+      description: t('settings.tabs.operationalPreferences.description'),
+      render: () => <OperationalPreferencesForm />
+    },
+    {
+      id: 'notifications',
+      label: t('settings.tabs.notifications.label'),
+      caption: t('settings.tabs.notifications.caption'),
+      heading: t('settings.tabs.notifications.heading'),
+      description: t('settings.tabs.notifications.description'),
+      render: () => <NotificationPreferencesPanel />
+    },
+    {
+      id: 'staff-access',
+      label: t('settings.tabs.staffAccess.label'),
+      caption: t('settings.tabs.staffAccess.caption'),
+      heading: t('settings.tabs.staffAccess.heading'),
+      description: t('settings.tabs.staffAccess.description'),
+      render: () => <StaffManagementPanel />
+    },
+    {
+      id: 'audit-log',
+      label: t('settings.tabs.auditLog.label'),
+      caption: t('settings.tabs.auditLog.caption'),
+      heading: t('settings.tabs.auditLog.heading'),
+      description: t('settings.tabs.auditLog.description'),
+      render: () => <AuditLogPanel />
+    },
+    {
+      id: 'locations',
+      label: t('settings.tabs.locations.label'),
+      caption: t('settings.tabs.locations.caption'),
+      heading: t('settings.tabs.locations.heading'),
+      description: t('settings.tabs.locations.description'),
+      render: () => <WarehouseManagementPanel />
+    }
+  ], [t]);
+
   const [activeTab, setActiveTab] = useState<string>(tabs[0]?.id ?? 'business-profile');
 
   useEffect(() => {
@@ -132,4 +152,5 @@ export function SettingsWorkspace() {
       </section>
     </div>
   );
+
 }

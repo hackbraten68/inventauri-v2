@@ -36,3 +36,26 @@ export async function listStaff(): Promise<StaffMember[]> {
     };
   });
 }
+
+export async function createStaffInvitation(email: string, role: string): Promise<{ id: string; email: string; role: string }> {
+  // TODO: Implement actual staff invitation logic
+  return {
+    id: `inv_${Date.now()}`,
+    email,
+    role
+  };
+}
+
+export async function updateStaffMember(userShopId: string, updates: Partial<StaffMember>): Promise<StaffMember> {
+  // TODO: Implement actual staff update logic
+  const existingMember: StaffMember = {
+    userShopId,
+    userId: userShopId,
+    email: 'existing@example.com',
+    role: 'staff',
+    status: 'active',
+    deactivatedAt: null,
+    ...updates
+  };
+  return existingMember;
+}
