@@ -3,7 +3,11 @@ import "../styles/global.css";
 import { SessionGuard } from "../components/auth/SessionGuard";
 import { SidebarSettings } from "../components/layout/SidebarSettings";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
-import { getCurrentLocale, getTranslationFunction, getLocaleAttributes } from "../i18n/astro";
+import {
+  getCurrentLocale,
+  getTranslationFunction,
+  getLocaleAttributes,
+} from "../i18n/astro";
 
 interface NavItem {
   href: string;
@@ -46,32 +50,32 @@ const {
 const navItems = [
   {
     href: `/${locale}/dashboard`,
-    label: t('navigation.dashboard'),
-    description: "Kennzahlen & Trends",
+    label: t("navigation.dashboard"),
+    description: t("navigation.descriptions.dashboard"),
     icon: LayoutDashboard,
   },
   {
     href: `/${locale}/inventory`,
-    label: t('navigation.totalInventory'),
-    description: "Artikelübersicht & Lagerbestände",
+    label: t("navigation.totalInventory"),
+    description: t("navigation.descriptions.totalInventory"),
     icon: Box,
   },
   {
     href: `/${locale}/pos`,
-    label: t('navigation.posWarehouse'),
-    description: "Schnelle Buchungen & Warenausgang",
+    label: t("navigation.posWarehouse"),
+    description: t("navigation.descriptions.posWarehouse"),
     icon: ShoppingCart,
   },
   {
     href: `/${locale}/items`,
-    label: t('navigation.itemManagement'),
-    description: "Produkte, Varianten & Lieferanten",
+    label: t("navigation.itemManagement"),
+    description: t("navigation.descriptions.itemManagement"),
     icon: Package,
   },
   {
     href: `/${locale}/items/new`,
-    label: t('navigation.addItem'),
-    description: "Neue Produkte erfassen",
+    label: t("navigation.addItem"),
+    description: t("navigation.descriptions.addItem"),
     icon: PackagePlus,
   },
 ] satisfies NavItem[];
@@ -203,7 +207,7 @@ const navItems = [
           }
         </nav>
         <div class="border-t border-border px-3 py-4">
-          <SidebarSettings client:load />
+          <SidebarSettings locale={locale} client:load />
         </div>
       </aside>
       <main class="flex-1 bg-background">
@@ -225,10 +229,10 @@ const navItems = [
               <button
                 class="inline-flex w-full items-center justify-between gap-2 rounded-md border border-input bg-background/50 px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                 <div class="flex items-center gap-2">
-                   <LayoutDashboard size={14} className="opacity-50" />
-                   <span>{t('layout.quickSearch')}...</span>
-                 </div>
+                <div class="flex items-center gap-2">
+                  <LayoutDashboard size={14} className="opacity-50" />
+                  <span>{t("layout.quickSearch")}...</span>
+                </div>
                 <kbd
                   class="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex"
                 >
@@ -238,7 +242,7 @@ const navItems = [
             </div>
 
             <div class="flex items-center gap-2">
-              <LanguageSwitcher client:load />
+              <LanguageSwitcher locale={locale} client:load />
               <div
                 class="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground"
               >

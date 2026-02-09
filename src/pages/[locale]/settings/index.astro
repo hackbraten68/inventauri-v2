@@ -1,0 +1,29 @@
+---
+import AppLayout from "../../../layouts/AppLayout.astro";
+import { SettingsWorkspace } from "../../../components/settings/SettingsWorkspace";
+import {
+  getTranslationFunction,
+  getLocaleAttributes,
+} from "../../../i18n/astro";
+import type { Locale } from "../../../i18n/constants";
+
+const locale = (Astro.params.locale as Locale) || "en";
+const t = getTranslationFunction(Astro);
+const localeAttrs = getLocaleAttributes(locale);
+const pageTitle = t("navigation.settings");
+const pageDescription = t("navigation.settings");
+---
+
+<html {...localeAttrs}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle} • Inventauri</title>
+    <meta name="description" content={pageDescription} />
+  </head>
+  <body class="bg-background text-foreground">
+    <AppLayout title={pageTitle} description={pageDescription}>
+      <SettingsWorkspace client:load locale={locale} />
+    </AppLayout>
+  </body>
+</html>

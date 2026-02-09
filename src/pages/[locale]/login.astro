@@ -1,10 +1,12 @@
 ---
-// Detect browser language or default to English
-const browserLang = Astro.request.headers.get('accept-language')?.split(',')[0]?.slice(0, 2) || 'en';
-const supportedLocales = ['en', 'de'];
-const locale = supportedLocales.includes(browserLang) ? browserLang : 'en';
+import '../../styles/global.css';
+import { LoginForm } from '../../components/auth/LoginForm';
+import { ThemeToggle } from '../../components/ui/theme-toggle';
+import { getTranslationFunction, getLocaleAttributes } from '../../i18n/astro';
+import type { Locale } from '../../i18n/constants';
 
-const redirectTo = Astro.url.searchParams.get('redirectTo') ?? `/${locale}/dashboard`;
+const redirectTo = Astro.url.searchParams.get('redirectTo') ?? `/${Astro.params.locale}/dashboard`;
+const locale = Astro.params.locale as Locale || 'en';
 const t = getTranslationFunction(Astro);
 const localeAttrs = getLocaleAttributes(locale);
 ---

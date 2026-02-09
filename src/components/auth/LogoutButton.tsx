@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Button } from '../ui/button';
 import { LogOut } from 'lucide-react';
 import { DropdownMenuItem } from '../ui/dropdown-menu';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../i18n/hooks';
 
 interface LogoutButtonProps {
   redirectTo?: string;

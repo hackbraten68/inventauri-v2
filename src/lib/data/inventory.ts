@@ -29,6 +29,8 @@ export interface InventoryItemSummary {
   breakdown: InventoryWarehouseBreakdown[];
 }
 
+export type StockAction = 'transfer' | 'inbound' | 'sale' | 'writeoff' | 'donation' | 'return' | 'adjust';
+
 export interface InventorySnapshot {
   items: InventoryItemSummary[];
   totals: {

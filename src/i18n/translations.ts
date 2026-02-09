@@ -39,12 +39,20 @@ export interface Translations {
     addItem: string;
     settings: string;
   };
+  // Complex objects typed as any for flexibility during migration
+  dashboard: any;
+  layout: any;
+  items: any;
+  inventory: any;
+  pos: any;
+  settings: any;
+  onboarding: any;
 }
 
 import en from './locales/en.json';
 import de from './locales/de.json';
 
 export const translations: Record<Locale, Translations> = {
-  en,
-  de
+  en: en as Translations,
+  de: de as Translations
 } as const;

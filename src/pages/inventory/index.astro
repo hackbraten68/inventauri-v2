@@ -1,13 +1,9 @@
 ---
-import AppLayout from '../../layouts/AppLayout.astro';
-import { InventoryManager } from '../../components/inventory/InventoryManager';
-import { getInventorySnapshot } from '../../lib/data/inventory';
-import { requireUser } from '../../lib/auth/server';
+// Detect browser language or default to English
+const browserLang = Astro.request.headers.get('accept-language')?.split(',')[0]?.slice(0, 2) || 'en';
+const supportedLocales = ['en', 'de'];
+const locale = supportedLocales.includes(browserLang) ? browserLang : 'en';
 
-const auth = await requireUser(Astro.request);
-const snapshot = await getInventorySnapshot();
+// Redirect to localized version
+return Astro.redirect(`/${locale}/inventory/`);
 ---
-
-<AppLayout title="Gesamt Inventar" description="Aktuelle Bestände pro Lager inkl. Zentrallager & POS">
-  <InventoryManager client:load initialSnapshot={snapshot} />
-</AppLayout>

@@ -25,6 +25,9 @@ import {
   Calendar,
   LayoutDashboard
 } from 'lucide-react';
+import { useTranslation } from '../../i18n/hooks';
+import { LocaleProvider } from '../../i18n/context';
+import type { Locale } from '../../i18n/constants';
 
 type SalesDirection = 'up' | 'down' | 'flat' | 'na';
 type ChartMetric = 'revenue' | 'units' | 'orders' | 'aov';
@@ -93,29 +96,55 @@ interface DashboardSnapshot {
   }>;
 }
 
-const numberFormatter = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 });
-const currencyFormatter = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
 
-const ranges = [
-  { label: '7 Tage', value: 7 },
-  { label: '14 Tage', value: 14 },
-  { label: '30 Tage', value: 30 }
-];
 
-const METRICS: { label: string; value: ChartMetric }[] = [
-  { label: 'Umsatz', value: 'revenue' },
-  { label: 'Menge', value: 'units' },
-  { label: 'Orders', value: 'orders' },
-  { label: 'Ø Warenkorb', value: 'aov' }
-];
 
-export function DashboardOverview() {
+
+interface DashboardOverviewProps {
+  locale: Locale;
+}
+
+export function DashboardOverview({ locale }: DashboardOverviewProps) {
+  return (
+    <LocaleProvider locale={locale}>
+      <DashboardOverviewContent />
+    </LocaleProvider>
+  );
+}
+
+function DashboardOverviewContent() {
+  const { t, locale, formatCurrency, formatNumber, formatDateTime } = useTranslation();
   const [range, setRange] = useState<number | 'custom'>(7);
   const [activeMetric, setActiveMetric] = useState<ChartMetric>('units');
+
+  // Define translated ranges inside component to access t()
+  const ranges = [
+    { label: t('dashboard.chartPeriod.7days'), value: 7 },
+    { label: t('dashboard.chartPeriod.14days'), value: 14 },
+    { label: t('dashboard.chartPeriod.30days'), value: 30 }
+  ];
+
+  const METRICS: { label: string; value: ChartMetric }[] = [
+    { label: t('dashboard.sales.revenue'), value: 'revenue' },
+    { label: t('dashboard.sales.quantity'), value: 'units' },
+    { label: t('dashboard.sales.orders'), value: 'orders' },
+    { label: t('dashboard.sales.avgBasket'), value: 'aov' }
+  ];
   const [customRange, setCustomRange] = useState({
-    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    to: new Date().toISOString().split('T')[0]
+    from: '',
+    to: ''
   });
+
+  // Initialize dates on client-side only to prevent hydration mismatch
+  useEffect(() => {
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    setCustomRange({
+      from: weekAgo.toISOString().split('T')[0],
+      to: now.toISOString().split('T')[0]
+    });
+  }, []);
   const [data, setData] = useState<DashboardSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -148,7 +177,7 @@ export function DashboardOverview() {
         }
       } catch (cause) {
         if (active) {
-          setError(cause instanceof Error ? cause.message : 'Unbekannter Fehler.');
+          setError(cause instanceof Error ? cause.message : t('common.error'));
         }
       } finally {
         if (active) {
@@ -188,12 +217,12 @@ export function DashboardOverview() {
   }, [data]);
 
   function formatSalesValue(value: number, metric: 'revenue' | 'units') {
-    return metric === 'revenue' ? currencyFormatter.format(value ?? 0) : numberFormatter.format(value ?? 0);
+    return metric === 'revenue' ? formatCurrency(value ?? 0) : formatNumber(value ?? 0);
   }
 
   function deltaBadgeContent(delta?: SalesDelta) {
     if (!delta || delta.direction === 'na') {
-      return { text: 'Keine Vergleichsdaten', variant: 'secondary' as const, icon: null };
+      return { text: t('dashboard.error.noComparisonData'), variant: 'secondary' as const, icon: null };
     }
 
     const sign = delta.absolute > 0 ? '+' : delta.absolute < 0 ? '−' : '';
@@ -219,11 +248,11 @@ export function DashboardOverview() {
 
   function deltaDescription(delta?: SalesDelta) {
     if (!delta || delta.direction === 'na') {
-      return 'Keine Vergleichsdaten.';
+      return t('dashboard.error.noComparisonData');
     }
     const absolute = formatSalesValue(Math.abs(delta.absolute), delta.metric);
     const prefix = delta.absolute >= 0 ? '+' : '−';
-    return `${prefix}${absolute} vs. Vorperiode`;
+    return `${prefix}${absolute} ${t('dashboard.sales.vsPreviousPeriod')}`;
   }
 
   const badge = deltaBadgeContent(salesDelta);
@@ -234,9 +263,9 @@ export function DashboardOverview() {
         <div className="space-y-1">
           <div className="flex items-center gap-2 mb-1">
             <LayoutDashboard className="h-5 w-5 text-primary" />
-            <h2 className="text-2xl font-bold tracking-tight">Business Overview</h2>
+            <h2 className="text-2xl font-bold tracking-tight">{t('dashboard.title')}</h2>
           </div>
-          <p className="text-sm text-muted-foreground font-medium">Monitoring your inventory performance in real-time.</p>
+          <p className="text-sm text-muted-foreground font-medium">{t('dashboard.subtitle')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5 bg-muted/50 p-1 rounded-lg border border-border">
           {ranges.map((option) => (
@@ -269,7 +298,7 @@ export function DashboardOverview() {
                 onChange={(e) => setCustomRange(prev => ({ ...prev, from: e.target.value }))}
                 className="bg-transparent text-xs font-bold focus:outline-none w-[110px] accent-primary"
               />
-              <span className="text-[10px] text-muted-foreground font-bold opacity-50 px-1">bis</span>
+              <span className="text-[10px] text-muted-foreground font-bold opacity-50 px-1">{t('common.to')}</span>
               <input
                 type="date"
                 value={customRange.to}
@@ -292,85 +321,85 @@ export function DashboardOverview() {
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mt-4">
         <Card className="border-none bg-card shadow-sm ring-1 ring-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Umsatz Total</CardTitle>
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('dashboard.sales.revenue')}</CardTitle>
             <Wallet className="h-4 w-4 text-primary opacity-70" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black text-foreground tabular-nums">
-              {loading ? '—' : currencyFormatter.format(data?.totals.salesRevenue ?? 0)}
+              {loading ? '—' : formatCurrency(data?.totals.salesRevenue ?? 0)}
             </div>
             <div className="flex items-center gap-1.5 mt-1.5">
               {badge.icon && <badge.icon className={`h-3 w-3 ${badge.variant === 'destructive' ? 'text-destructive' : 'text-primary'}`} />}
               <span className={`text-[10px] font-bold ${badge.variant === 'destructive' ? 'text-destructive' : 'text-primary'}`}>
                 {badge.text}
               </span>
-              <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">vs. Vorperiode</span>
+              <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">{t('dashboard.sales.vsPreviousPeriod')}</span>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-none bg-card shadow-sm ring-1 ring-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Ø Best.-Wert</CardTitle>
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('dashboard.sales.avgBasket')}</CardTitle>
             <ShoppingCart className="h-4 w-4 text-blue-500 opacity-70" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black text-foreground tabular-nums">
-              {loading ? '—' : currencyFormatter.format(avgOrderValue)}
+              {loading ? '—' : formatCurrency(avgOrderValue)}
             </div>
-            <p className="text-[10px] text-muted-foreground font-medium mt-1">Average order value per checkout</p>
+            <p className="text-[10px] text-muted-foreground font-medium mt-1">{t('dashboard.sales.aovDescription')}</p>
           </CardContent>
         </Card>
 
         <Card className="border-none bg-card shadow-sm ring-1 ring-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Checkouts</CardTitle>
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('dashboard.sales.orders')}</CardTitle>
             <Calendar className="h-4 w-4 text-indigo-500 opacity-70" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black text-foreground tabular-nums">
-              {loading ? '—' : numberFormatter.format(data?.totals.totalOrders ?? 0)}
+              {loading ? '—' : formatNumber(data?.totals.totalOrders ?? 0)}
             </div>
-            <p className="text-[10px] text-muted-foreground font-medium mt-1">Total orders processed</p>
+            <p className="text-[10px] text-muted-foreground font-medium mt-1">{t('dashboard.sales.ordersDescription')}</p>
           </CardContent>
         </Card>
 
         <Card className="border-none bg-card shadow-sm ring-1 ring-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Lagerwert</CardTitle>
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('dashboard.stats.totalValue')}</CardTitle>
             <Package className="h-4 w-4 text-orange-500 opacity-70" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black text-foreground tabular-nums">
-              {loading ? '—' : currencyFormatter.format(data?.totals.totalValue ?? 0)}
+              {loading ? '—' : formatCurrency(data?.totals.totalValue ?? 0)}
             </div>
-            <p className="text-[10px] text-muted-foreground font-medium mt-1">Current total inventory value</p>
+            <p className="text-[10px] text-muted-foreground font-medium mt-1">{t('dashboard.sales.totalInventoryValue')}</p>
           </CardContent>
         </Card>
 
         <Card className="border-none bg-card shadow-sm ring-1 ring-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Items In Stock</CardTitle>
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('dashboard.inventory.itemCount')}</CardTitle>
             <Activity className="h-4 w-4 text-green-500 opacity-70" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black text-foreground tabular-nums">
-              {loading ? '—' : numberFormatter.format(data?.totals.totalOnHand ?? 0)}
+              {loading ? '—' : formatNumber(data?.totals.totalOnHand ?? 0)}
             </div>
-            <p className="text-[10px] text-muted-foreground font-medium mt-1">Total physical units</p>
+            <p className="text-[10px] text-muted-foreground font-medium mt-1">{t('dashboard.sales.totalUnits')}</p>
           </CardContent>
         </Card>
 
         <Card className="border-none bg-card shadow-sm ring-1 ring-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Kritisch</CardTitle>
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('dashboard.health.critical')}</CardTitle>
             <AlertTriangle className={`h-4 w-4 ${warningCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-black tabular-nums ${warningCount > 0 ? 'text-destructive' : 'text-foreground'}`}>
               {loading ? '—' : warningCount}
             </div>
-            <p className="text-[10px] text-muted-foreground font-medium mt-1">Items below threshold</p>
+            <p className="text-[10px] text-muted-foreground font-medium mt-1">{t('dashboard.health.subtitle')}</p>
           </CardContent>
         </Card>
       </section>
@@ -383,12 +412,12 @@ export function DashboardOverview() {
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-lg font-bold">
-                  {METRICS.find(m => m.value === activeMetric)?.label || 'Performance'}
+                  {METRICS.find(m => m.value === activeMetric)?.label || t('dashboard.title')}
                 </CardTitle>
                 <CardDescription className="font-medium">
-                  {activeMetric === 'revenue' ? 'Täglicher Umsatzverlauf' :
-                    activeMetric === 'units' ? 'Verkaufte Einheiten pro Tag' :
-                      activeMetric === 'orders' ? 'Gesamtbestellungen pro Tag' : 'Durchschnittlicher Warenkorbwert'}
+                  {activeMetric === 'revenue' ? t('dashboard.sales.revenueDescription') :
+                    activeMetric === 'units' ? t('dashboard.sales.unitsDescription') :
+                      activeMetric === 'orders' ? t('dashboard.sales.ordersDescription') : t('dashboard.sales.aovDescription')}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border border-border">
@@ -397,8 +426,8 @@ export function DashboardOverview() {
                     key={m.value}
                     onClick={() => setActiveMetric(m.value)}
                     className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all ${activeMetric === m.value
-                        ? 'bg-background text-primary shadow-sm ring-1 ring-border/50'
-                        : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-background text-primary shadow-sm ring-1 ring-border/50'
+                      : 'text-muted-foreground hover:text-foreground'
                       }`}
                   >
                     {m.label}
@@ -431,7 +460,7 @@ export function DashboardOverview() {
                       axisLine={false}
                       tickFormatter={(val) => {
                         const d = new Date(val);
-                        return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+                        return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
                       }}
                     />
                     <YAxis
@@ -451,8 +480,8 @@ export function DashboardOverview() {
                       }}
                       formatter={(val: any) => [
                         (activeMetric === 'revenue' || activeMetric === 'aov')
-                          ? currencyFormatter.format(Number(val) || 0)
-                          : numberFormatter.format(Number(val) || 0),
+                          ? formatCurrency(Number(val) || 0)
+                          : formatNumber(Number(val) || 0),
                         METRICS.find(m => m.value === activeMetric)?.label
                       ]}
                     />
@@ -475,8 +504,8 @@ export function DashboardOverview() {
         {/* Top Products */}
         <Card className="lg:col-span-4 border-none shadow-premium ring-1 ring-border/50 bg-card">
           <CardHeader className="px-6 py-6 border-b border-border/50">
-            <CardTitle className="text-lg font-bold">Top Seller</CardTitle>
-            <CardDescription className="font-medium">Meistverkaufte Artikel</CardDescription>
+            <CardTitle className="text-lg font-bold">{t('dashboard.topSold.title')}</CardTitle>
+            <CardDescription className="font-medium">{t('dashboard.topSold.title')}</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-5">
@@ -497,12 +526,12 @@ export function DashboardOverview() {
                       </div>
                     </div>
                     <Badge variant="secondary" className="font-black tabular-nums h-7 rounded-lg">
-                      {numberFormatter.format(entry.quantity)}
+                      {formatNumber(entry.quantity)}
                     </Badge>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 opacity-40">Keine Daten verfügbar</div>
+                <div className="text-center py-8 opacity-40">{t('dashboard.topSold.noData')}</div>
               )}
             </div>
           </CardContent>
@@ -514,15 +543,15 @@ export function DashboardOverview() {
         <Card className="lg:col-span-8 border-none shadow-premium ring-1 ring-border/50 bg-card">
           <CardHeader className="px-6 py-6 border-b border-border/50 flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-bold">Lager-Journal</CardTitle>
-              <CardDescription className="font-medium">Letzte 15 Transaktionen</CardDescription>
+              <CardTitle className="text-lg font-bold">{t('dashboard.activities.title')}</CardTitle>
+              <CardDescription className="font-medium">{t('dashboard.activities.subtitle')}</CardDescription>
             </div>
             <History className="h-5 w-5 text-muted-foreground opacity-30" />
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-border/50">
               {loading ? (
-                <div className="p-12 text-center text-muted-foreground text-sm">Lade Transaktionen...</div>
+                <div className="p-12 text-center text-muted-foreground text-sm">{t('dashboard.activities.loadingTransactions')}</div>
               ) : data && data.recentTransactions.length > 0 ? (
                 data.recentTransactions.map((tx) => (
                   <div key={tx.id} className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-muted/30">
@@ -535,7 +564,7 @@ export function DashboardOverview() {
                       <div>
                         <p className="text-sm font-bold text-foreground">{tx.itemName}</p>
                         <p className="text-[10px] text-muted-foreground font-medium">
-                          {tx.warehouseName} · {new Date(tx.occurredAt).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}
+                          {tx.warehouseName} · {formatDateTime(new Date(tx.occurredAt))}
                         </p>
                       </div>
                     </div>
@@ -550,7 +579,7 @@ export function DashboardOverview() {
                   </div>
                 ))
               ) : (
-                <div className="p-12 text-center text-muted-foreground text-sm">Keine Bewegungen vorhanden.</div>
+                <div className="p-12 text-center text-muted-foreground text-sm">{t('dashboard.activities.loadingTransactions')}</div>
               )}
             </div>
           </CardContent>
@@ -559,13 +588,13 @@ export function DashboardOverview() {
         {/* Warnings / Inventory Health */}
         <Card className="lg:col-span-4 border-none shadow-premium ring-1 ring-border/50 bg-card">
           <CardHeader className="px-6 py-6 border-b border-border/50">
-            <CardTitle className="text-lg font-bold">Inventory Health</CardTitle>
-            <CardDescription className="font-medium">Kritische Bestände</CardDescription>
+            <CardTitle className="text-lg font-bold">{t('dashboard.health.title')}</CardTitle>
+            <CardDescription className="font-medium">{t('dashboard.health.subtitle')}</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
               {loading ? (
-                <p className="text-sm text-muted-foreground">Prüfe Bestände...</p>
+                <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
               ) : data && data.warnings.length > 0 ? (
                 data.warnings.map((warning) => (
                   <div key={`${warning.itemId}-${warning.warehouseId}`} className="p-4 rounded-2xl border border-destructive/20 bg-destructive/5 space-y-2">
@@ -578,7 +607,7 @@ export function DashboardOverview() {
                     </div>
                     <div className="flex items-center gap-2 pt-1 border-t border-destructive/10">
                       <Activity className="h-3 w-3 text-destructive" />
-                      <span className="text-[10px] font-bold text-destructive">Threshold: {warning.threshold}</span>
+                      <span className="text-[10px] font-bold text-destructive">{t('dashboard.health.threshold')}: {warning.threshold}</span>
                     </div>
                   </div>
                 ))
@@ -587,7 +616,7 @@ export function DashboardOverview() {
                   <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
                     <Activity className="h-6 w-6 text-green-600" />
                   </div>
-                  <p className="text-sm font-bold">Alles im grünen Bereich</p>
+                  <p className="text-sm font-bold">{t('dashboard.health.allGood')}</p>
                 </div>
               )}
             </div>

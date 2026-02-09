@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from '../../i18n/hooks';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
@@ -37,6 +38,7 @@ function isNotificationPreferenceArray(value: unknown): value is NotificationPre
 }
 
 export function NotificationPreferencesPanel() {
+  const { t } = useTranslation();
   const [preferences, setPreferences] = useState<NotificationPreferenceState[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,10 +84,10 @@ export function NotificationPreferencesPanel() {
         });
         const body = await response.json();
         if (!response.ok) {
-          throw new Error(body.error ?? body.message ?? 'Aktualisierung fehlgeschlagen.');
+          throw new Error(body.error ?? body.message ?? t('settings.errors.updateFailed'));
         }
         if (!isNotificationPreferenceArray(body)) {
-          throw new Error('Ungültige Antwort vom Server.');
+          throw new Error(t('settings.errors.invalidResponse'));
         }
         const updatedPreferences = body;
         setPreferences((current) => {
@@ -102,7 +104,7 @@ export function NotificationPreferencesPanel() {
           return merged;
         });
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Unbekannter Fehler beim Speichern.');
+        setError(cause instanceof Error ? cause.message : t('settings.errors.unknownError'));
       } finally {
         setSavingId(null);
       }
@@ -143,7 +145,7 @@ export function NotificationPreferencesPanel() {
         await load();
         setDrafts((current) => ({ ...current, [preference.id]: {} }));
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Empfänger konnte nicht hinzugefügt werden.');
+        setError(cause instanceof Error ? cause.message : t('settings.errors.recipientAddFailed'));
       } finally {
         setSavingId(null);
       }
@@ -167,7 +169,7 @@ export function NotificationPreferencesPanel() {
         });
         await load();
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Empfänger konnte nicht entfernt werden.');
+        setError(cause instanceof Error ? cause.message : t('settings.errors.recipientRemoveFailed'));
       } finally {
         setSavingId(null);
       }
@@ -177,10 +179,10 @@ export function NotificationPreferencesPanel() {
 
   const content = useMemo(() => {
     if (loading) {
-      return <p className="text-sm text-muted-foreground">Lade Benachrichtigungen …</p>;
+      return <p className="text-sm text-muted-foreground">{t('settings.notifications.loading')}</p>;
     }
     if (preferences.length === 0) {
-      return <p className="text-sm text-muted-foreground">Keine Benachrichtigungen konfiguriert.</p>;
+      return <p className="text-sm text-muted-foreground">{t('settings.notifications.empty')}</p>;
     }
     return preferences.map((preference) => {
       const draft = drafts[preference.id] ?? {};
@@ -191,11 +193,11 @@ export function NotificationPreferencesPanel() {
               <h3 className="text-sm font-semibold text-foreground">
                 {preference.category.replace(/_/g, ' ').toUpperCase()}
               </h3>
-              <p className="text-xs text-muted-foreground">Kanal: {preference.channel}</p>
+              <p className="text-xs text-muted-foreground">{t('settings.notifications.channel', { channel: preference.channel })}</p>
             </div>
             <div className="flex items-center gap-2">
               <Label htmlFor={`toggle-${preference.id}`} className="text-sm">
-                Aktiv
+                {t('settings.notifications.active')}
               </Label>
               <input
                 id={`toggle-${preference.id}`}
@@ -209,17 +211,17 @@ export function NotificationPreferencesPanel() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Empfänger</p>
+            <p className="text-xs font-medium text-muted-foreground">{t('settings.notifications.recipients')}</p>
             <div className="flex flex-wrap gap-2">
               {preference.recipients.length === 0 ? (
-                <span className="text-xs text-muted-foreground">Noch keine Empfänger zugeordnet.</span>
+                <span className="text-xs text-muted-foreground">{t('settings.notifications.noRecipients')}</span>
               ) : (
                 preference.recipients.map((recipient) => (
                   <span
                     key={recipient.id}
                     className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground"
                   >
-                    {recipient.email ?? recipient.userShopId ?? 'Empfänger'}
+                    {recipient.email ?? recipient.userShopId ?? t('settings.defaults.recipient')}
                     <button
                       type="button"
                       className="text-xs text-destructive"
@@ -237,18 +239,18 @@ export function NotificationPreferencesPanel() {
           <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
             <div className="flex flex-col gap-2 sm:flex-row">
               <Input
-                placeholder="E-Mail"
+                placeholder={t('settings.notifications.emailPlaceholder')}
                 value={draft.email ?? ''}
                 onChange={(event) => updateDraft(preference.id, 'email', event.target.value)}
               />
               <Input
-                placeholder="UserShop-ID"
+                placeholder={t('settings.notifications.userShopIdPlaceholder')}
                 value={draft.userShopId ?? ''}
                 onChange={(event) => updateDraft(preference.id, 'userShopId', event.target.value)}
               />
             </div>
             <Button type="button" onClick={() => addRecipient(preference)} disabled={savingId === preference.id}>
-              Empfänger hinzufügen
+              {t('settings.notifications.addRecipient')}
             </Button>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from '../../i18n/hooks';
 import { Button } from '../ui/button';
 
 interface AuditLogEntry {
@@ -10,21 +11,10 @@ interface AuditLogEntry {
   createdAt: string;
 }
 
-const sectionLabels: Record<string, string> = {
-  business_profile: 'Geschäftsprofil',
-  operational: 'Betrieb',
-  notifications: 'Benachrichtigungen',
-  staff: 'Team'
-};
 
-const changeTypeLabels: Record<string, string> = {
-  create: 'Angelegt',
-  update: 'Aktualisiert',
-  delete: 'Gelöscht',
-  deactivate: 'Deaktiviert'
-};
 
 export function AuditLogPanel() {
+  const { t } = useTranslation();
   const [entries, setEntries] = useState<AuditLogEntry[]>([]);
   const [section, setSection] = useState<string>('all');
   const [loading, setLoading] = useState(true);
@@ -60,10 +50,10 @@ export function AuditLogPanel() {
 
   const renderedEntries = useMemo(() => {
     if (loading) {
-      return <p className="text-sm text-muted-foreground">Lade Audit-Logs …</p>;
+      return <p className="text-sm text-muted-foreground">{t('settings.audit.loading')}</p>;
     }
     if (entries.length === 0) {
-      return <p className="text-sm text-muted-foreground">Noch keine Audit-Logs vorhanden.</p>;
+      return <p className="text-sm text-muted-foreground">{t('settings.audit.empty')}</p>;
     }
     return (
       <ul className="space-y-3">
@@ -71,14 +61,14 @@ export function AuditLogPanel() {
           <li key={entry.id} className="rounded-lg border border-border bg-background/60 p-4 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="font-medium text-foreground">
-                {sectionLabels[entry.section] ?? entry.section}
+                {t(`settings.audit.sections.${entry.section}` as any) || entry.section}
               </div>
               <div className="text-xs text-muted-foreground">
                 {new Date(entry.createdAt).toLocaleString()}
               </div>
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
-              {changeTypeLabels[entry.changeType] ?? entry.changeType} durch {entry.actorEmail}
+              {t(`settings.audit.actions.${entry.changeType}` as any) || entry.changeType} durch {entry.actorEmail}
             </div>
             {entry.diff ? (
               <pre className="mt-2 max-h-48 overflow-auto rounded bg-card/80 p-3 text-xs text-muted-foreground">
@@ -95,22 +85,22 @@ export function AuditLogPanel() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm">
-          <label htmlFor="audit-section">Bereich</label>
+          <label htmlFor="audit-section">{t('settings.audit.section')}</label>
           <select
             id="audit-section"
             value={section}
             onChange={(event) => setSection(event.target.value)}
             className="rounded-md border border-input bg-background px-3 py-1 text-sm"
           >
-            <option value="all">Alle</option>
-            <option value="business_profile">Geschäftsprofil</option>
-            <option value="operational">Betrieb</option>
-            <option value="notifications">Benachrichtigungen</option>
-            <option value="staff">Team</option>
+            <option value="all">{t('settings.audit.all')}</option>
+            <option value="business_profile">{t('settings.audit.sections.business_profile')}</option>
+            <option value="operational">{t('settings.audit.sections.operational')}</option>
+            <option value="notifications">{t('settings.audit.sections.notifications')}</option>
+            <option value="staff">{t('settings.audit.sections.staff')}</option>
           </select>
         </div>
         <Button size="sm" variant="outline" onClick={() => setRefreshToken((value) => value + 1)}>
-          Aktualisieren
+          {t('settings.audit.refresh')}
         </Button>
       </div>
 

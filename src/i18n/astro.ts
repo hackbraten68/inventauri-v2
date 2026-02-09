@@ -3,9 +3,19 @@ import type { Locale } from './constants';
 import { createTranslator } from './utils';
 
 /**
- * Get the current locale from Astro context
+ * Get current locale from Astro context
  */
 export function getCurrentLocale(Astro: AstroGlobal): Locale {
+  // First try to get from params (for [locale] routes)
+  if (Astro.params?.locale) {
+    const locale = Astro.params.locale as Locale;
+    // Validate that it's a supported locale
+    if (['en', 'de'].includes(locale)) {
+      return locale;
+    }
+  }
+  
+  // Fallback to URL parsing (for redirects or edge cases)
   const url = Astro.url.pathname;
   const localeMatch = url.match(/^\/([a-z]{2})\//);
   const locale = (localeMatch?.[1] as Locale) || 'en';

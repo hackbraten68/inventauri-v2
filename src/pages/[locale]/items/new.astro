@@ -1,0 +1,58 @@
+---
+import AppLayout from "../../../layouts/AppLayout.astro";
+import { Button } from "../../../components/ui/button";
+import { ItemCreateForm } from "../../../components/items/ItemCreateForm";
+import { listWarehouses } from "../../../lib/data/warehouses";
+import { requireUser } from "../../../lib/auth/server";
+import {
+  getTranslationFunction,
+  getLocaleAttributes,
+} from "../../../i18n/astro";
+import type { Locale } from "../../../i18n/constants";
+
+const locale = (Astro.params.locale as Locale) || "en";
+const t = getTranslationFunction(Astro);
+const localeAttrs = getLocaleAttributes(locale);
+const pageTitle = t("items.createTitle");
+const pageDescription = t("items.createDescription");
+
+const auth = await requireUser(Astro.request);
+const warehouses = await listWarehouses();
+const defaultWarehouseId =
+  warehouses.find((warehouse) => warehouse.type === "central")?.id ??
+  warehouses[0]?.id ??
+  null;
+---
+
+<html {...localeAttrs}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle} • Inventauri</title>
+    <meta name="description" content={pageDescription} />
+  </head>
+  <body class="bg-background text-foreground">
+    <AppLayout title={pageTitle} description={pageDescription}>
+      <section
+        class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+      >
+        <div>
+          <h2 class="text-lg font-semibold">{pageTitle}</h2>
+          <p class="text-sm text-muted-foreground">{pageDescription}</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <Button client:load variant="outline" asChild>
+            <a href="/{locale}/items">{t("common.back")}</a>
+          </Button>
+        </div>
+      </section>
+
+      <ItemCreateForm
+        client:load
+        warehouses={warehouses}
+        defaultWarehouseId={defaultWarehouseId}
+        locale={locale}
+      />
+    </AppLayout>
+  </body>
+</html>

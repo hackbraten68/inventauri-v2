@@ -11,9 +11,23 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Settings, LogOut, User, Palette } from 'lucide-react';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../i18n/hooks';
+import { LocaleProvider } from '../../i18n/context';
+import type { Locale } from '../../i18n/constants';
 
-export function SidebarSettings() {
+interface SidebarSettingsProps {
+  locale: Locale;
+}
+
+export function SidebarSettings({ locale }: SidebarSettingsProps) {
+  return (
+    <LocaleProvider locale={locale}>
+      <SidebarSettingsContent locale={locale} />
+    </LocaleProvider>
+  );
+}
+
+function SidebarSettingsContent({ locale }: { locale: Locale }) {
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-2">
@@ -34,7 +48,7 @@ export function SidebarSettings() {
           <DropdownMenuSeparator />
 
           <DropdownMenuItem asChild>
-            <a href="/settings" className="flex w-full items-center gap-2 cursor-pointer">
+            <a href={`/${locale}/settings`} className="flex w-full items-center gap-2 cursor-pointer">
               <Settings size={14} />
               <span>{t('navigation.settings')}</span>
             </a>
@@ -62,4 +76,5 @@ export function SidebarSettings() {
       </DropdownMenu>
     </div>
   );
+
 }

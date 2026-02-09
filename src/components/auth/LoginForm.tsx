@@ -3,7 +3,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { cn } from '../../lib/utils';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../i18n/hooks';
 
 interface LoginFormProps {
   className?: string;

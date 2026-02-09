@@ -20,20 +20,20 @@ export const POST: APIRoute = async ({ request }) => {
         const status = await getSetupStatus();
         if (status.isInitialized) {
             console.warn('Setup blocked: Instance already initialized.');
-            return errorResponse('Instanz ist bereits initialisiert.', 403);
+            return errorResponse('Instance is already initialized.', 403);
         }
 
         const payload = await request.json();
         const { admin: owner, shop, config } = payload; // admin in payload is the business owner
 
         if (!owner.email || !owner.password || !shop.name) {
-            return errorResponse('Unvollständige Daten (E-Mail, Passwort oder Shopname fehlt).', 400);
+            return errorResponse('Incomplete data (email, password or shop name missing).', 400);
         }
 
         // 2. PocketBase Admin Auth (used for configuration)
         if (!pocketbaseUrl || !pbAdminEmail || !pbAdminPass) {
             console.error('Missing environment variables for PocketBase setup.');
-            return errorResponse('Server-Konfiguration fehlt (PB_ADMIN_EMAIL/PASSWORD).', 500);
+            return errorResponse('Server configuration missing (PB_ADMIN_EMAIL/PASSWORD).', 500);
         }
 
         const pb = new PocketBase(pocketbaseUrl);
@@ -59,7 +59,7 @@ export const POST: APIRoute = async ({ request }) => {
                 console.log('PB Admin authenticated after creation.');
             } catch (createErr: any) {
                 console.error('PB Admin Setup Failed:', createErr.message);
-                return errorResponse('PocketBase Admin Login fehlgeschlagen. Bitte prüfen Sie, ob der Admin-Account existiert und die .env-Werte korrekt sind.', 500);
+                return errorResponse('PocketBase Admin Login failed. Please check if the admin account exists and the .env values are correct.', 500);
             }
         }
 
@@ -77,7 +77,7 @@ export const POST: APIRoute = async ({ request }) => {
             console.log('Shop Owner created in PB. ID:', pbUser.id);
         } catch (userErr: any) {
             console.error('Failed to create PB Owner:', userErr.message, userErr.data);
-            return errorResponse(`Fehler beim Erstellen des Shop-Besitzers: ${userErr.message}`, 400);
+            return errorResponse(`Failed to create shop owner: ${userErr.message}`, 400);
         }
 
         // 4. Create Shop & Infrastructure in Prisma
@@ -123,7 +123,7 @@ export const POST: APIRoute = async ({ request }) => {
             console.log('Shop and related profiles created in Prisma. ID:', dbShop.id);
         } catch (prismaErr: any) {
             console.error('Prisma Setup Failed:', prismaErr.message);
-            return errorResponse('Datenbank-Fehler beim Erstellen des Shops.', 500);
+            return errorResponse('Database error while creating shop.', 500);
         }
 
         // 5. Create Profile & UserShop for OWNER 
@@ -145,7 +145,7 @@ export const POST: APIRoute = async ({ request }) => {
             });
         } catch (profileErr: any) {
             console.error('Failed to link Owner profile:', profileErr.message, profileErr.data);
-            return errorResponse('Profil-Verknüpfung fehlgeschlagen.', 500);
+            return errorResponse('Failed to link profile.', 500);
         }
 
         // 6. Create Infrastructure (Warehouse)
@@ -190,6 +190,6 @@ export const POST: APIRoute = async ({ request }) => {
     } catch (err: any) {
         console.error('--- SETUP FAILED UNEXPECTEDLY ---');
         console.error('Error:', err.message);
-        return errorResponse(err.message || 'Ein unerwarteter Fehler ist aufgetreten.', 500);
+        return errorResponse(err.message || 'An unexpected error occurred.', 500);
     }
 };

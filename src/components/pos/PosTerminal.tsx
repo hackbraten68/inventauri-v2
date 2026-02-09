@@ -16,9 +16,9 @@ import {
   Star,
   ScanLine
 } from 'lucide-react';
-
-const numberFormatter = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
-
+import { useTranslation } from '../../i18n/hooks';
+import { LocaleProvider } from '../../i18n/context';
+import type { Locale } from '../../i18n/constants';
 type PosMode = 'sale' | 'return';
 
 interface StockItem {
@@ -62,7 +62,29 @@ interface CartLine {
   quantity: number;
 }
 
-export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }: PosTerminalProps) {
+interface PosTerminalProps {
+  warehouseId: string;
+  warehouseSlug: string;
+  warehouseName: string;
+  items: StockItem[];
+  locale: Locale;
+}
+
+export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items, locale }: PosTerminalProps) {
+  return (
+    <LocaleProvider locale={locale}>
+      <PosTerminalContent
+        warehouseId={warehouseId}
+        warehouseSlug={warehouseSlug}
+        warehouseName={warehouseName}
+        items={items}
+      />
+    </LocaleProvider>
+  );
+}
+
+function PosTerminalContent({ warehouseId, warehouseSlug, warehouseName, items }: Omit<PosTerminalProps, 'locale'>) {
+  const { t, formatNumber } = useTranslation();
   const [mode, setMode] = useState<PosMode>('sale');
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartLine[]>([]);
@@ -124,13 +146,13 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
       if (exactMatch) {
         addToCart(exactMatch);
         setSearch('');
-        setSuccess(`"${exactMatch.name}" hinzugefügt`);
+        setSuccess(t('pos.sale.added', { name: exactMatch.name }));
         setTimeout(() => setSuccess(null), 2000);
       } else if (filteredItems.length === 1) {
         // If only one partial match, add it
         addToCart(filteredItems[0]);
         setSearch('');
-        setSuccess(`"${filteredItems[0].name}" hinzugefügt`);
+        setSuccess(t('pos.sale.added', { name: filteredItems[0].name }));
         setTimeout(() => setSuccess(null), 2000);
       }
     }
@@ -190,7 +212,7 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
       setSuccess(null);
 
       if (cart.length === 0) {
-        setError('Warenkorb ist leer.');
+        setError(t('pos.cart.empty'));
         return;
       }
 
@@ -207,14 +229,14 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
         latestSnapshot = response.snapshot;
       }
 
-      setSuccess(`Verkauf erfolgreich gebucht. Referenz: ${reference}`);
+      setSuccess(t('pos.sale.success', { reference }));
       clearCart();
 
       if (latestSnapshot) {
         refreshStockFromSnapshot(latestSnapshot);
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Verkauf fehlgeschlagen.');
+      setError(cause instanceof Error ? cause.message : t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -227,20 +249,20 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
       setSuccess(null);
 
       if (!returnReference.trim()) {
-        setError('Bitte eine Referenz eingeben.');
+        setError(t('pos.return.lookup.noReference'));
         return;
       }
 
       const data = (await fetchSaleByReference(returnReference.trim())) as SaleLookupResponse;
 
       if (!data.items || data.items.length === 0) {
-        setError('Keine Verkäufe zu dieser Referenz gefunden.');
+        setError(t('pos.return.lookup.notFound'));
         setReturnData(null);
         return;
       }
 
       if (data.warehouseId && data.warehouseId !== warehouseId) {
-        setError('Diese Referenz gehört zu einem anderen POS-Lager.');
+        setError(t('pos.return.lookup.wrongWarehouse'));
         setReturnData(null);
         return;
       }
@@ -252,10 +274,10 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
 
       setReturnData(data);
       setReturnQuantities(quantities);
-      setSuccess('Verkauf gefunden. Bitte Mengen prüfen und Rückgabe buchen.');
+      setSuccess(t('pos.return.lookup.found'));
     } catch (cause) {
       setReturnData(null);
-      setError(cause instanceof Error ? cause.message : 'Referenz konnte nicht geladen werden.');
+      setError(cause instanceof Error ? cause.message : t('pos.return.lookup.loadError'));
     } finally {
       setLoading(false);
     }
@@ -268,7 +290,7 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
       setSuccess(null);
 
       if (!returnData) {
-        setError('Bitte zuerst eine Referenz laden.');
+        setError(t('pos.return.process.noReference'));
         return;
       }
 
@@ -280,7 +302,7 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
         .filter((item) => item.requestedQuantity > 0);
 
       if (itemsToReturn.length === 0) {
-        setError('Keine Mengen für die Rückgabe ausgewählt.');
+        setError(t('pos.return.process.noQuantities'));
         return;
       }
 
@@ -288,7 +310,7 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
 
       for (const item of itemsToReturn) {
         if (item.requestedQuantity > item.quantity) {
-          throw new Error(`Rückgabemenge für ${item.name} übersteigt den Verkauf.`);
+          throw new Error(t('pos.return.process.itemOverReturn', { name: item.name }));
         }
 
         const response = await postStockAction<{ snapshot: InventorySnapshot }>('return', {
@@ -306,10 +328,10 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
         refreshStockFromSnapshot(latestSnapshot);
       }
 
-      setSuccess('Rückgabe erfolgreich eingebucht.');
+      setSuccess(t('pos.return.process.success'));
       resetReturnState();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Rückgabe fehlgeschlagen.');
+      setError(cause instanceof Error ? cause.message : t('pos.return.process.error'));
     } finally {
       setLoading(false);
     }
@@ -320,16 +342,16 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
       <header className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">{warehouseName}</h2>
         <p className="text-sm text-muted-foreground">
-          Wähle Artikel, ergänze Mengen und buche Verkäufe oder Retouren direkt ins System.
+          {t('pos.subtitle')}
         </p>
       </header>
 
       <div className="flex gap-2">
         <Button type="button" variant={mode === 'sale' ? 'default' : 'outline'} onClick={() => handleModeChange('sale')}>
-          Verkauf
+          {t('pos.modes.sale')}
         </Button>
         <Button type="button" variant={mode === 'return' ? 'default' : 'outline'} onClick={() => handleModeChange('return')}>
-          Retoure
+          {t('pos.modes.return')}
         </Button>
       </div>
 
@@ -343,7 +365,7 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 onKeyDown={handleSearchKeyDown}
-                placeholder="SKU scannen oder Artikel suchen (Enter zum Hinzufügen)"
+                placeholder={t('pos.search.placeholder')}
                 className="pl-10 h-12 text-base ring-offset-background transition-all focus:ring-2 focus:ring-primary"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -354,7 +376,7 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
                   className="h-8 px-2 text-xs"
                   onClick={() => setSearch('')}
                 >
-                  Löschen
+                  {t('pos.search.clear')}
                 </Button>
               </div>
             </div>
@@ -363,7 +385,7 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 <Star size={14} className="text-primary fill-primary/20" />
-                <span>Schnellauswahl</span>
+                <span>{t('pos.quickSelect')}</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {stock.slice(0, 6).map((item) => (
@@ -376,7 +398,7 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
                       <Plus size={20} />
                     </div>
                     <span className="text-xs font-bold truncate w-full">{item.name}</span>
-                    <span className="text-[10px] text-muted-foreground">Standard</span>
+                    <span className="text-[10px] text-muted-foreground">{t('pos.stock.standard')}</span>
                   </button>
                 ))}
               </div>
@@ -385,13 +407,13 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 <Package size={14} />
-                <span>Alle Artikel ({filteredItems.length})</span>
+                <span>{t('pos.allItems')} ({filteredItems.length})</span>
               </div>
               <div className="grid gap-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 {filteredItems.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-dashed border-border bg-muted/20">
                     <Search className="h-8 w-8 text-muted-foreground/30 mb-2" />
-                    <p className="text-sm text-muted-foreground">Keine Artikel gefunden.</p>
+                    <p className="text-sm text-muted-foreground">{t('pos.noItemsFound')}</p>
                   </div>
                 ) : (
                   filteredItems.map((item) => (
@@ -411,10 +433,10 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Bestand</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{item.quantityOnHand > 5 ? t('pos.stock.inStock') : t('pos.stock.standard')}</span>
                         <div className={`text-xs font-bold rounded-full px-2 py-0.5 ${item.quantityOnHand > 5 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                           }`}>
-                          {numberFormatter.format(item.quantityOnHand)} {item.unit}
+                          {formatNumber(item.quantityOnHand)} {item.unit}
                         </div>
                       </div>
                     </button>
@@ -432,12 +454,12 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <ShoppingCart size={16} />
                   </div>
-                  <h3 className="font-bold text-foreground">Warenkorb</h3>
+                  <h3 className="font-bold text-foreground">{t('pos.cart.title')}</h3>
                 </div>
                 {cart.length > 0 && (
                   <Button variant="ghost" size="sm" onClick={clearCart} className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10">
                     <Trash2 size={14} className="mr-1" />
-                    Leeren
+                    {t('pos.cart.clear')}
                   </Button>
                 )}
               </header>
@@ -445,7 +467,7 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
               <div className="flex-1 p-6 space-y-4 min-h-[300px]">
                 {error && (
                   <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                    <span className="font-bold">Error:</span> {error}
+                    <span className="font-bold">{t('pos.error.prefix')}</span> {error}
                   </div>
                 )}
                 {success && (
@@ -458,8 +480,8 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
                 {cart.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
                     <ShoppingCart size={48} strokeWidth={1} />
-                    <p className="mt-4 text-sm font-medium">Dein Warenkorb ist aktuell leer</p>
-                    <p className="text-xs">Scanne einen Artikel oder wähle einen aus der Liste</p>
+                    <p className="mt-4 text-sm font-medium">{t('pos.cart.isEmpty')}</p>
+                    <p className="text-xs">{t('pos.cart.scanOrSelect')}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -502,13 +524,13 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
 
               <div className="mt-auto border-t border-border bg-muted/20 p-6 space-y-4">
                 <div className="flex items-center justify-between font-medium">
-                  <span className="text-muted-foreground">Zwischensumme ({cart.length} Pos.)</span>
-                  <span className="text-foreground">{numberFormatter.format(subtotal)} {cart.length > 0 ? cart[0].unit : ''}</span>
+                  <span className="text-muted-foreground">{t('pos.checkout.amount')} ({cart.length} Pos.)</span>
+                  <span className="text-foreground">{formatNumber(subtotal)} {cart.length > 0 ? cart[0].unit : ''}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold text-foreground">Gesamtbetrag</span>
+                  <span className="text-lg font-bold text-foreground">{t('pos.checkout.total')}</span>
                   <span className="text-3xl font-black text-primary tabular-nums tracking-tighter">
-                    {numberFormatter.format(subtotal)}
+                    {formatNumber(subtotal)}
                   </span>
                 </div>
                 <Button
@@ -517,10 +539,10 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
                   onClick={handleCheckout}
                   disabled={loading || cart.length === 0}
                 >
-                  {loading ? 'Verarbeitung...' : (
+                  {loading ? t('pos.checkout.processing') : (
                     <div className="flex items-center gap-2">
                       <ShoppingCart size={20} />
-                      <span>Verkauf abschließen</span>
+                      <span>{t('pos.checkout.complete')}</span>
                     </div>
                   )}
                 </Button>
@@ -531,21 +553,21 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
       ) : (
         <div className="space-y-4">
           <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
-            <h3 className="text-sm font-semibold text-foreground">Rückgabe anhand Belegnummer</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t('pos.return.lookup.title')}</h3>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Input
                 value={returnReference}
                 onChange={(event) => setReturnReference(event.target.value)}
-                placeholder="Referenz eingeben oder scannen"
+                placeholder={t('pos.return.lookup.inputPlaceholder')}
                 className="flex-1"
               />
               <Button type="button" onClick={loadReturnReference} disabled={loading}>
-                Referenz laden
+                {t('pos.return.lookup.loadButton')}
               </Button>
             </div>
             <textarea
               className="min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-              placeholder="Grund der Rückgabe (optional)"
+              placeholder={t('pos.return.reasonPlaceholder')}
               value={returnReason}
               onChange={(event) => setReturnReason(event.target.value)}
             />
@@ -558,7 +580,7 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
             {returnData ? (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  {returnData.items.length} Position(en) aus Verkauf {returnData.reference}
+                  {t('pos.return.itemsFrom', { count: returnData.items.length, reference: returnData.reference })}
                 </p>
                 <div className="space-y-2">
                   {returnData.items.map((item) => (
@@ -566,11 +588,11 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
                       <div>
                         <p className="text-sm font-medium text-foreground">{item.name}</p>
                         <p className="text-xs text-muted-foreground">{item.sku}</p>
-                        <p className="text-xs text-muted-foreground">Verkauft: {numberFormatter.format(item.quantity)} {item.unit}</p>
+                        <p className="text-xs text-muted-foreground">                          {t('pos.return.soldInfo', { quantity: formatNumber(item.quantity), unit: item.unit })}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <label className="text-xs text-muted-foreground" htmlFor={`return-${item.itemId}`}>
-                          Rückgabe Menge
+                          {t('pos.return.quantityLabel')}
                         </label>
                         <input
                           id={`return-${item.itemId}`}
@@ -592,15 +614,16 @@ export function PosTerminal({ warehouseId, warehouseSlug, warehouseName, items }
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">Noch keine Referenz geladen.</p>
+              <p className="text-sm text-muted-foreground">{t('pos.return.noReferenceLoaded')}</p>
             )}
           </div>
 
           <Button type="button" className="w-full" size="lg" onClick={handleReturn} disabled={loading || !returnData}>
-            {loading ? 'Buchen …' : 'Rückgabe buchen'}
+            {loading ? t('pos.return.processing') : t('pos.return.book')}
           </Button>
         </div>
       )}
     </div>
   );
+
 }

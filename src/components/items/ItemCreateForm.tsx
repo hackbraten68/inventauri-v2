@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from '../../i18n/hooks';
+import { LocaleProvider } from '../../i18n/context';
+import type { Locale } from '../../i18n/constants';
 import { getAccessToken } from '../../lib/api/client';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -15,33 +18,43 @@ interface WarehouseOption {
 interface ItemCreateFormProps {
   warehouses: WarehouseOption[];
   defaultWarehouseId: string | null;
+  locale: Locale;
 }
 
-interface FormState {
-  name: string;
-  sku: string;
-  unit: string;
-  barcode: string;
-  description: string;
-  price: string;
-  supplier: string;
-  initialStock: string;
-  warehouseId: string;
+export function ItemCreateForm({ warehouses, defaultWarehouseId, locale }: ItemCreateFormProps) {
+  return (
+    <LocaleProvider locale={locale}>
+      <ItemCreateFormContent warehouses={warehouses} defaultWarehouseId={defaultWarehouseId} />
+    </LocaleProvider>
+  );
 }
 
-const initialState = (defaultWarehouseId: string | null): FormState => ({
-  name: '',
-  sku: '',
-  unit: 'stk',
-  barcode: '',
-  description: '',
-  price: '',
-  supplier: '',
-  initialStock: '0',
-  warehouseId: defaultWarehouseId ?? ''
-});
+function ItemCreateFormContent({ warehouses, defaultWarehouseId }: Omit<ItemCreateFormProps, 'locale'>) {
+  const { t } = useTranslation();
 
-export function ItemCreateForm({ warehouses, defaultWarehouseId }: ItemCreateFormProps) {
+  interface FormState {
+    name: string;
+    sku: string;
+    unit: string;
+    barcode: string;
+    description: string;
+    price: string;
+    supplier: string;
+    initialStock: string;
+    warehouseId: string;
+  }
+
+  const initialState = (defaultWarehouseId: string | null): FormState => ({
+    name: '',
+    sku: '',
+    unit: 'stk',
+    barcode: '',
+    description: '',
+    price: '',
+    supplier: '',
+    initialStock: '0',
+    warehouseId: defaultWarehouseId ?? ''
+  });
   const [form, setForm] = useState<FormState>(() => initialState(defaultWarehouseId));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,16 +81,16 @@ export function ItemCreateForm({ warehouses, defaultWarehouseId }: ItemCreateFor
 
     try {
       if (!form.name.trim() || !form.sku.trim()) {
-        throw new Error('Name und SKU sind erforderlich.');
+        throw new Error(t('items.form.nameRequired'));
       }
 
       const stockValue = Number(form.initialStock || '0');
       if (Number.isNaN(stockValue) || stockValue < 0) {
-        throw new Error('Startbestand muss eine Zahl >= 0 sein.');
+        throw new Error(t('items.form.stockMustBeNumber'));
       }
 
       if (stockValue > 0 && !form.warehouseId) {
-        throw new Error('Für einen Startbestand muss ein Lager ausgewählt werden.');
+        throw new Error(t('items.form.warehouseRequired'));
       }
 
       const token = await getAccessToken();
@@ -102,19 +115,19 @@ export function ItemCreateForm({ warehouses, defaultWarehouseId }: ItemCreateFor
           metadata: Object.keys(metadata).length ? metadata : undefined,
           initialStock: stockValue,
           warehouseId: stockValue > 0 ? form.warehouseId : null,
-          notes: form.supplier ? `Angelegt für ${form.supplier}` : undefined
+          notes: form.supplier ? t('items.form.success', { supplier: form.supplier }) : undefined
         })
       });
 
       const dataJson = await response.json();
       if (!response.ok) {
-        throw new Error(dataJson.error ?? 'Artikel konnte nicht angelegt werden.');
+        throw new Error(dataJson.error ?? t('items.form.error'));
       }
 
-      setSuccess('Artikel erfolgreich angelegt.');
+      setSuccess(t('items.form.created'));
       resetForm();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unbekannter Fehler beim Anlegen.');
+      setError(cause instanceof Error ? cause.message : t('items.form.unknownError'));
     } finally {
       setLoading(false);
     }
@@ -124,60 +137,59 @@ export function ItemCreateForm({ warehouses, defaultWarehouseId }: ItemCreateFor
     <form className="grid gap-6 lg:grid-cols-[1.5fr_1fr]" onSubmit={handleSubmit}>
       <Card>
         <CardHeader>
-          <CardTitle>Stammdaten</CardTitle>
+          <CardTitle>{t('items.masterData')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Artikelname</Label>
-            <Input id="name" placeholder="z.B. Kaffee Premium 250g" value={form.name} onChange={handleChange('name')} required />
+            <Label htmlFor="name">{t('items.form.name')}</Label>
+            <Input id="name" placeholder={t('items.form.namePlaceholder')} value={form.name} onChange={handleChange('name')} required />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="sku">SKU</Label>
-              <Input id="sku" placeholder="KAFFEE-250" value={form.sku} onChange={handleChange('sku')} required />
+              <Label htmlFor="sku">{t('items.form.sku')}</Label>
+              <Input id="sku" placeholder={t('items.form.skuPlaceholder')} value={form.sku} onChange={handleChange('sku')} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="barcode">Barcode</Label>
-              <Input id="barcode" placeholder="Scan Code" value={form.barcode} onChange={handleChange('barcode')} />
+              <Label htmlFor="barcode">{t('items.form.barcode')}</Label>
+              <Input id="barcode" placeholder={t('items.form.barcodePlaceholder')} value={form.barcode} onChange={handleChange('barcode')} />
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="unit">Einheit</Label>
-              <Input id="unit" placeholder="z.B. stk, kg" value={form.unit} onChange={handleChange('unit')} />
+              <Label htmlFor="unit">{t('items.form.unit')}</Label>
+              <Input id="unit" placeholder={t('items.form.unitPlaceholder')} value={form.unit} onChange={handleChange('unit')} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="supplier">Lieferant</Label>
-              <Input id="supplier" placeholder="z.B. Rösterei XYZ" value={form.supplier} onChange={handleChange('supplier')} />
+              <Label htmlFor="supplier">{t('items.form.supplier')}</Label>
+              <Input id="supplier" placeholder={t('items.form.supplierPlaceholder')} value={form.supplier} onChange={handleChange('supplier')} />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Beschreibung</Label>
+            <Label htmlFor="description">{t('items.form.description')}</Label>
             <textarea
               id="description"
               className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="Kurzbeschreibung, Verkaufsargumente"
+              placeholder={t('items.form.descriptionPlaceholder')}
               value={form.description}
-              onChange={handleChange('description')}
             />
           </div>
         </CardContent>
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Preis & Bestand</CardTitle>
+          <CardTitle>{t('items.form.priceAndStock')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="price">Preis (EUR)</Label>
-            <Input id="price" type="number" step="0.01" placeholder="0.00" value={form.price} onChange={handleChange('price')} />
+            <Label htmlFor="price">{t('items.form.price')} (EUR)</Label>
+            <Input id="price" type="number" step="0.01" placeholder={t('items.form.pricePlaceholder')} value={form.price} onChange={handleChange('price')} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="initialStock">Startbestand</Label>
-            <Input id="initialStock" type="number" min="0" placeholder="0" value={form.initialStock} onChange={handleChange('initialStock')} />
+            <Label htmlFor="initialStock">{t('items.form.initialStock')}</Label>
+            <Input id="initialStock" type="number" min="0" placeholder={t('items.form.stockPlaceholder')} value={form.initialStock} onChange={handleChange('initialStock')} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="warehouse">Lager für Startbestand</Label>
+            <Label htmlFor="warehouse">{t('items.form.warehouse')}</Label>
             <select
               id="warehouse"
               value={form.warehouseId}
@@ -185,7 +197,7 @@ export function ItemCreateForm({ warehouses, defaultWarehouseId }: ItemCreateFor
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
               disabled={!hasWarehouses}
             >
-              <option value="">Bitte wählen</option>
+              <option value="">{t('items.form.selectWarehouse')}</option>
               {warehouses.map((warehouse) => (
                 <option key={warehouse.id} value={warehouse.id}>
                   {warehouse.name}
@@ -193,21 +205,22 @@ export function ItemCreateForm({ warehouses, defaultWarehouseId }: ItemCreateFor
               ))}
             </select>
             {!hasWarehouses ? (
-              <p className="text-xs text-muted-foreground">Noch keine Lager vorhanden. Lege zuerst ein Lager im Inventar an.</p>
+              <p className="text-xs text-muted-foreground">{t('items.form.noWarehouses')}</p>
             ) : null}
           </div>
         </CardContent>
       </Card>
       <div className="lg:col-span-2 flex flex-wrap justify-end gap-3">
         <Button type="button" variant="outline" onClick={resetForm} disabled={loading}>
-          Zurücksetzen
+          {t('items.form.reset')}
         </Button>
         <Button type="submit" disabled={loading}>
-          {loading ? 'Speichern …' : 'Artikel speichern'}
+          {loading ? t('items.form.saving') : t('items.form.save')}
         </Button>
       </div>
       {error ? <p className="lg:col-span-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p> : null}
       {success ? <p className="lg:col-span-2 rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-primary">{success}</p> : null}
     </form>
   );
+
 }

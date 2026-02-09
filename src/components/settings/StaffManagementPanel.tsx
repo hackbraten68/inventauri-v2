@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
+import { useTranslation } from '../../i18n/hooks';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
@@ -13,11 +14,7 @@ interface StaffMember {
   deactivatedAt?: string | null;
 }
 
-const roles = [
-  { value: 'owner', label: 'Owner' },
-  { value: 'manager', label: 'Manager' },
-  { value: 'staff', label: 'Mitarbeiter' }
-];
+
 
 interface InvitationDraft {
   email: string;
@@ -29,8 +26,16 @@ const defaultInvitation: InvitationDraft = {
   role: 'manager'
 };
 
+
 export function StaffManagementPanel() {
+  const { t } = useTranslation();
   const [staff, setStaff] = useState<StaffMember[]>([]);
+
+  const roles = useMemo(() => [
+    { value: 'owner', label: t('settings.staff.roles.owner') },
+    { value: 'manager', label: t('settings.staff.roles.manager') },
+    { value: 'staff', label: t('settings.staff.roles.staff') }
+  ], [t]);
   const [invitation, setInvitation] = useState(defaultInvitation);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -114,10 +119,10 @@ export function StaffManagementPanel() {
 
   const roster = useMemo(() => {
     if (loading) {
-      return <p className="text-sm text-muted-foreground">Lade Team …</p>;
+      return <p className="text-sm text-muted-foreground">{t('settings.staff.loading')}</p>;
     }
     if (staff.length === 0) {
-      return <p className="text-sm text-muted-foreground">Noch keine Teammitglieder verfügbar.</p>;
+      return <p className="text-sm text-muted-foreground">{t('settings.staff.empty')}</p>;
     }
     return (
       <div className="space-y-3">
@@ -125,12 +130,13 @@ export function StaffManagementPanel() {
           <div key={member.userShopId} className="grid gap-2 rounded-lg border border-border bg-background/60 p-4 md:grid-cols-2">
             <div>
               <p className="text-sm font-medium text-foreground">{member.email}</p>
-              <p className="text-xs text-muted-foreground">Status: {member.status}</p>
+              <p className="text-xs text-muted-foreground">{t('settings.staff.status', { status: member.status })}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <SelectControl
-                label="Rolle"
+                label={t('settings.staff.role')}
                 value={member.role}
+                options={roles}
                 onChange={(event) => updateStaff(member, { role: event.target.value })}
                 disabled={savingId === member.userShopId}
               />
@@ -143,7 +149,7 @@ export function StaffManagementPanel() {
                   updateStaff(member, { status: member.status === 'deactivated' ? 'active' : 'deactivated' })
                 }
               >
-                {member.status === 'deactivated' ? 'Reaktivieren' : 'Deaktivieren'}
+                {member.status === 'deactivated' ? t('settings.staff.reactivate') : t('settings.staff.deactivate')}
               </Button>
             </div>
           </div>
@@ -160,7 +166,7 @@ export function StaffManagementPanel() {
       <form className="space-y-4 rounded-lg border border-border bg-background/60 p-4" onSubmit={submitInvitation}>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <div className="flex-1">
-            <Label htmlFor="invite-email">E-Mail</Label>
+            <Label htmlFor="invite-email">{t('settings.staff.email')}</Label>
             <Input
               id="invite-email"
               name="email"
@@ -171,7 +177,7 @@ export function StaffManagementPanel() {
             />
           </div>
           <div>
-            <Label htmlFor="invite-role">Rolle</Label>
+            <Label htmlFor="invite-role">{t('settings.staff.role')}</Label>
             <select
               id="invite-role"
               name="role"
@@ -187,7 +193,7 @@ export function StaffManagementPanel() {
             </select>
           </div>
           <Button type="submit" disabled={savingId === 'invite'}>
-            Einladung senden
+            {t('settings.staff.invite')}
           </Button>
         </div>
       </form>
@@ -201,10 +207,11 @@ interface SelectControlProps {
   label: string;
   value: string;
   disabled?: boolean;
+  options: { value: string; label: string }[];
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void;
 }
 
-function SelectControl({ label, value, disabled, onChange }: SelectControlProps) {
+function SelectControl({ label, value, disabled, options, onChange }: SelectControlProps) {
   return (
     <label className="flex items-center gap-2 text-sm">
       <span>{label}</span>
@@ -214,7 +221,7 @@ function SelectControl({ label, value, disabled, onChange }: SelectControlProps)
         disabled={disabled}
         onChange={onChange}
       >
-        {roles.map((role) => (
+        {options.map((role) => (
           <option key={role.value} value={role.value}>
             {role.label}
           </option>

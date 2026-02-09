@@ -1,12 +1,9 @@
 ---
-import AppLayout from '../../layouts/AppLayout.astro';
-import { ItemCreateForm } from '../../components/items/ItemCreateForm';
-import { listWarehouses } from '../../lib/data/warehouses';
+// Detect browser language or default to English
+const browserLang = Astro.request.headers.get('accept-language')?.split(',')[0]?.slice(0, 2) || 'en';
+const supportedLocales = ['en', 'de'];
+const locale = supportedLocales.includes(browserLang) ? browserLang : 'en';
 
-const warehouses = await listWarehouses();
-const defaultWarehouseId = warehouses.find((warehouse) => warehouse.type === 'central')?.id ?? warehouses[0]?.id ?? null;
+// Redirect to localized version
+return Astro.redirect(`/${locale}/items/new`);
 ---
-
-<AppLayout title="Artikel anlegen" description="Lege neue Artikel an und buche optional initialen Bestand.">
-  <ItemCreateForm client:load warehouses={warehouses} defaultWarehouseId={defaultWarehouseId} />
-</AppLayout>

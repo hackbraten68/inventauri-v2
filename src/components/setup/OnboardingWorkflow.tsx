@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from '../../i18n/hooks';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -19,6 +20,7 @@ import {
 type SetupStep = 'admin' | 'shop' | 'infrastructure' | 'success';
 
 export function OnboardingWorkflow() {
+    const { t } = useTranslation();
     const [step, setStep] = React.useState<SetupStep>('admin');
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
@@ -31,9 +33,9 @@ export function OnboardingWorkflow() {
     });
 
     const [shopData, setShopData] = React.useState({
-        name: 'Mein Inventauri Shop',
+        name: 'My Inventauri Shop',
         legalName: '',
-        address: 'Musterstraße 1, 12345 Berlin'
+        address: 'Example Street 1, 12345 City'
     });
 
     const [infraData, setInfraData] = React.useState({
@@ -44,7 +46,7 @@ export function OnboardingWorkflow() {
     const handleAdminSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (adminData.password !== adminData.confirmPassword) {
-            setError('Passwörter stimmen nicht überein.');
+            setError(t('onboarding.admin.passwordMismatch'));
             return;
         }
         setError(null);
@@ -72,12 +74,12 @@ export function OnboardingWorkflow() {
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.error || 'Initialisierung fehlgeschlagen.');
+                throw new Error(data.error || t('common.error'));
             }
 
             setStep('success');
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Ein unbekannter Fehler ist aufgetreten.');
+            setError(err instanceof Error ? err.message : t('common.error'));
         } finally {
             setLoading(false);
         }
@@ -88,9 +90,9 @@ export function OnboardingWorkflow() {
             {/* Progress Multi-Step */}
             <div className="flex items-center justify-between px-4">
                 {[
-                    { id: 'admin', icon: UserPlus, label: 'Eigentümer (CEO)' },
-                    { id: 'shop', icon: Building2, label: 'Unternehmen' },
-                    { id: 'infrastructure', icon: PackageCheck, label: 'Setup' }
+                    { id: 'admin', icon: UserPlus, label: t('onboarding.steps.admin') },
+                    { id: 'shop', icon: Building2, label: t('onboarding.steps.shop') },
+                    { id: 'infrastructure', icon: PackageCheck, label: t('onboarding.steps.infrastructure') }
                 ].map((s, i) => {
                     const Icon = s.icon;
                     const isActive = step === s.id;
@@ -124,20 +126,20 @@ export function OnboardingWorkflow() {
                         <CardHeader>
                             <div className="flex items-center gap-3 mb-2">
                                 <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">Step 1</Badge>
-                                <CardTitle className="text-xl">Eigentümer (CEO) erstellen</CardTitle>
+                                <CardTitle className="text-xl">{t('onboarding.admin.title')}</CardTitle>
                             </div>
                             <CardDescription>
-                                Erstellen Sie den Hauptzugang für Ihr Unternehmen. Dieser Account wird für den täglichen Betrieb genutzt.
+                                {t('onboarding.admin.description')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handleAdminSubmit} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="email">Admin E-Mail</Label>
+                                    <Label htmlFor="email">{t('onboarding.admin.email')}</Label>
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder="admin@firma.de"
+                                        placeholder={t('onboarding.admin.emailPlaceholder')}
                                         required
                                         value={adminData.email}
                                         onChange={e => setAdminData({ ...adminData, email: e.target.value })}
@@ -145,7 +147,7 @@ export function OnboardingWorkflow() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="pass">Passwort</Label>
+                                        <Label htmlFor="pass">{t('onboarding.admin.password')}</Label>
                                         <Input
                                             id="pass"
                                             type="password"
@@ -155,7 +157,7 @@ export function OnboardingWorkflow() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="confirm">Bestätigen</Label>
+                                        <Label htmlFor="confirm">{t('onboarding.admin.confirm')}</Label>
                                         <Input
                                             id="confirm"
                                             type="password"
@@ -167,7 +169,7 @@ export function OnboardingWorkflow() {
                                 </div>
                                 {error && <p className="text-sm text-destructive font-medium bg-destructive/5 p-3 rounded-lg border border-destructive/20">{error}</p>}
                                 <Button type="submit" className="w-full h-11">
-                                    Weiter zum Unternehmen <ArrowRight className="ml-2 h-4 w-4" />
+                                    {t('onboarding.admin.next')} <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                             </form>
                         </CardContent>
@@ -179,22 +181,22 @@ export function OnboardingWorkflow() {
                         <CardHeader>
                             <div className="flex items-center gap-3 mb-2">
                                 <Badge variant="outline" className="bg-blue-500/5 text-blue-500 border-blue-500/20">Step 2</Badge>
-                                <CardTitle className="text-xl">Unternehmensprofil</CardTitle>
+                                <CardTitle className="text-xl">{t('onboarding.shop.title')}</CardTitle>
                             </div>
                             <CardDescription>
-                                Geben Sie die Basisdaten Ihres Shops oder Unternehmens an. Diese erscheinen später auf Belegen und in den Berichten.
+                                {t('onboarding.shop.description')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handleShopSubmit} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="shopName">Shop Name</Label>
+                                    <Label htmlFor="shopName">{t('onboarding.shop.name')}</Label>
                                     <div className="relative">
                                         <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             id="shopName"
                                             className="pl-10"
-                                            placeholder="z.B. Coffee Roastery HQ"
+                                            placeholder={t('onboarding.shop.namePlaceholder')}
                                             required
                                             value={shopData.name}
                                             onChange={e => setShopData({ ...shopData, name: e.target.value })}
@@ -202,28 +204,28 @@ export function OnboardingWorkflow() {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="legal">Rechtlicher Name (Optional)</Label>
+                                    <Label htmlFor="legal">{t('onboarding.shop.legalName')}</Label>
                                     <Input
                                         id="legal"
-                                        placeholder="Müller & Co. OHG"
+                                        placeholder={t('onboarding.shop.legalNamePlaceholder')}
                                         value={shopData.legalName}
                                         onChange={e => setShopData({ ...shopData, legalName: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="addr">Firmenadresse</Label>
+                                    <Label htmlFor="addr">{t('onboarding.shop.address')}</Label>
                                     <Input
                                         id="addr"
-                                        placeholder="Straße, Hausnummer, PLZ & Stadt"
+                                        placeholder={t('onboarding.shop.addressPlaceholder')}
                                         required
                                         value={shopData.address}
                                         onChange={e => setShopData({ ...shopData, address: e.target.value })}
                                     />
                                 </div>
                                 <Button type="submit" className="w-full h-11 bg-blue-600 hover:bg-blue-700">
-                                    Lager & POS konfigurieren <ArrowRight className="ml-2 h-4 w-4" />
+                                    {t('onboarding.shop.next')} <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" type="button" onClick={() => setStep('admin')} className="w-full text-muted-foreground">Zurück</Button>
+                                <Button variant="ghost" type="button" onClick={() => setStep('admin')} className="w-full text-muted-foreground">{t('onboarding.shop.back')}</Button>
                             </form>
                         </CardContent>
                     </div>
@@ -234,10 +236,10 @@ export function OnboardingWorkflow() {
                         <CardHeader>
                             <div className="flex items-center gap-3 mb-2">
                                 <Badge variant="outline" className="bg-orange-500/5 text-orange-500 border-orange-500/20">Step 3</Badge>
-                                <CardTitle className="text-xl">Infrastruktur & Startmenü</CardTitle>
+                                <CardTitle className="text-xl">{t('onboarding.infrastructure.title')}</CardTitle>
                             </div>
                             <CardDescription>
-                                Wir legen automatisch Ihr Zentrallager an. Möchten Sie zusätzliche Beispiel-Daten generieren?
+                                {t('onboarding.infrastructure.description')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
@@ -248,11 +250,11 @@ export function OnboardingWorkflow() {
                                             <WarehouseIcon className="h-5 w-5" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold">Standard HQ & Lager</p>
-                                            <p className="text-xs text-muted-foreground">Wird immer als Hauptstandort erstellt.</p>
+                                            <p className="text-sm font-bold">{t('onboarding.infrastructure.standard.title')}</p>
+                                            <p className="text-xs text-muted-foreground">{t('onboarding.infrastructure.standard.description')}</p>
                                         </div>
                                     </div>
-                                    <Badge variant="secondary">Erforderlich</Badge>
+                                    <Badge variant="secondary">{t('onboarding.infrastructure.standard.badge')}</Badge>
                                 </div>
 
                                 <div
@@ -265,8 +267,8 @@ export function OnboardingWorkflow() {
                                             <Store className="h-5 w-5" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold">POS Demo-Standort</p>
-                                            <p className="text-xs text-muted-foreground">Erstellt einen Beispiel-Verkaufsort in der Innenstadt.</p>
+                                            <p className="text-sm font-bold">{t('onboarding.infrastructure.pos.title')}</p>
+                                            <p className="text-xs text-muted-foreground">{t('onboarding.infrastructure.pos.description')}</p>
                                         </div>
                                     </div>
                                     <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${infraData.createDemoPOS ? 'border-primary bg-primary' : 'border-muted'}`}>
@@ -284,8 +286,8 @@ export function OnboardingWorkflow() {
                                             <UserPlus className="h-5 w-5" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold">Beispiel Produkte & Bestände</p>
-                                            <p className="text-xs text-muted-foreground">Füllt Ihr Inventar mit Kaffeebohnen & Zubehör.</p>
+                                            <p className="text-sm font-bold">{t('onboarding.infrastructure.items.title')}</p>
+                                            <p className="text-xs text-muted-foreground">{t('onboarding.infrastructure.items.description')}</p>
                                         </div>
                                     </div>
                                     <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${infraData.createDemoItems ? 'border-primary bg-primary' : 'border-muted'}`}>
@@ -301,7 +303,7 @@ export function OnboardingWorkflow() {
                                 className="w-full h-12 text-lg font-bold shadow-lg"
                                 disabled={loading}
                             >
-                                {loading ? 'Instanz wird konfiguriert...' : 'Setup abschließen'}
+                                {loading ? t('onboarding.infrastructure.processing') : t('onboarding.infrastructure.finish')}
                             </Button>
                         </CardContent>
                     </div>
@@ -313,22 +315,22 @@ export function OnboardingWorkflow() {
                             <CheckCircle2 className="h-10 w-10" />
                         </div>
                         <div className="space-y-2">
-                            <h2 className="text-2xl font-black">Installation Fertig!</h2>
-                            <p className="text-muted-foreground">Ihr Inventauri Dashboard ist nun einsatzbereit. Wir haben Ihren Admin-Account und das Unternehmen erstellt.</p>
+                            <h2 className="text-2xl font-black">{t('onboarding.success.title')}</h2>
+                            <p className="text-muted-foreground">{t('onboarding.success.description')}</p>
                         </div>
                         <Separator />
                         <div className="grid gap-3">
                             <Button className="h-11 w-full" onClick={() => window.location.href = '/login'}>
-                                Zum Login
+                                {t('onboarding.success.login')}
                             </Button>
-                            <p className="text-[10px] text-muted-foreground italic">Hinweis: Melden Sie sich mit den eben erstellten Zugangsdaten an.</p>
+                            <p className="text-[10px] text-muted-foreground italic">{t('onboarding.success.hint')}</p>
                         </div>
                     </div>
                 )}
             </Card>
 
             <div className="text-center">
-                <p className="text-xs text-muted-foreground font-medium opacity-50">Inventauri Self-Hosted Engine v0.1.0-alpha</p>
+                <p className="text-xs text-muted-foreground font-medium opacity-50">{t('onboarding.footer')}</p>
             </div>
         </div>
     );
